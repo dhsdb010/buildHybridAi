@@ -65,6 +65,7 @@ Label the cloud as "Cloud · Gemini", never plain "iCloud", so nobody thinks the
 - **Mark:** the SF Symbol `asterisk`, which echoes the MTA starburst poster.
 - **App icon:** Day is New Blue with a white mark; Night is black with a New Blue mark. It's the "App Icon · Brand mark" component.
 - **In the app:** a New Blue asterisk at the top left of Home only. It's not a tab icon; Home stays `house`.
+- **Brand Badge:** the asterisk with "TRAVEL COPILOT ·" set on a circle around it (MTA Label style). It's the Figma "Brand Badge" component (tones: On blue, On surface) and `BrandBadge` in SwiftUI. It's used on the Welcome screen; the ring turns once every 24 s and stays still with Reduce Motion.
 
 ## Color: always means status
 | Token | Hex | Use |

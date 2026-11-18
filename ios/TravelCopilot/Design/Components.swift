@@ -369,3 +369,40 @@ struct MTAValueRow: View {
     .overlay(alignment: .bottom) { Rectangle().fill(MTA.subtle).frame(height: 1) }
   }
 }
+
+// MARK: - Brand badge: asterisk with "TRAVEL COPILOT" set on a circle around it
+
+struct BrandBadge: View {
+  var color: Color = MTA.onColor
+  var size: CGFloat = 132
+  var text = "TRAVEL COPILOT · TRAVEL COPILOT · "
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var spin = false
+
+  var body: some View {
+    let chars = Array(text)
+    let radius = size / 2 - 8
+    ZStack {
+      ZStack {
+        ForEach(chars.indices, id: \.self) { i in
+          Text(String(chars[i]))
+            .font(MTAType.label.font)
+            .foregroundStyle(color)
+            .offset(y: -radius)
+            .rotationEffect(.degrees(Double(i) / Double(chars.count) * 360))
+        }
+      }
+      .rotationEffect(.degrees(spin ? 360 : 0))
+      Image(systemName: "asterisk")
+        .font(.system(size: size * 0.42, weight: .semibold))
+        .foregroundStyle(color)
+    }
+    .frame(width: size, height: size)
+    .onAppear {
+      guard !reduceMotion else { return }
+      withAnimation(.linear(duration: 24).repeatForever(autoreverses: false)) { spin = true }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Travel Copilot")
+  }
+}

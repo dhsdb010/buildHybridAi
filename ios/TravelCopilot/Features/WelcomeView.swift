@@ -43,9 +43,7 @@ struct WelcomeView: View {
     ZStack {
       MTA.accent.ignoresSafeArea()
       VStack(alignment: .leading, spacing: 22) {
-        Image(systemName: "asterisk").font(.system(size: 64, weight: .semibold)).foregroundStyle(MTA.onColor)
-          .accessibilityLabel("Travel Copilot")
-        MTALabel("Travel Copilot", color: MTA.onColor)
+        BrandBadge(color: MTA.onColor)
         Text("Your trip, even with no signal.").mta(.displayLarge).foregroundStyle(MTA.onColor)
           .fixedSize(horizontal: false, vertical: true)
         VStack(alignment: .leading, spacing: 16) {
