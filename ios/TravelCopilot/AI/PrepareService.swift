@@ -9,7 +9,43 @@ enum PrepareService {
     var pack: DestinationPack?
   }
 
-  static func prepare(from text: String, ai: AIService) async throws -> Result {
+  enum Step: Int, CaseIterable, Sendable {
+    case bookings, pack, places, map
+
+    var title: String {
+      switch self {
+      case .bookings: "Reading your bookings"
+      case .pack: "Building your phrase & safety pack"
+      case .places: "Finding your places on the map"
+      case .map: "Saving the offline map"
+      }
+    }
+  }
+
+  struct Summary {
+    var items = 0, phrases = 0, places = 0, mapAreas = 0
+    var country: String?
+    var mapError: String?
+  }
+
+  /// The whole set-up: bookings + pack (cloud), then places + offline map (best-effort; never fails set-up).
+  static func setUp(from text: String, ai: AIService, progress: (Step) -> Void) async throws -> Summary {
+    progress(.bookings)
+    let result = try await prepare(from: text, ai: ai) { progress(.pack) }
+    var summary = Summary(items: result.items.count, phrases: result.pack?.phrases.count ?? 0, country: result.pack?.countryName)
+    progress(.places)
+    let allItems = (try? ai.context.fetch(FetchDescriptor<VaultItem>())) ?? result.items
+    let plans = (try? ai.context.fetch(FetchDescriptor<TripPlan>())) ?? []
+    await MapService.locate(items: allItems, plans: plans, context: ai.context)
+    let places = (try? ai.context.fetch(FetchDescriptor<Place>())) ?? []
+    summary.places = places.count
+    progress(.map)
+    do { summary.mapAreas = try await MapService.download(places: places, context: ai.context).count }
+    catch { summary.mapError = error.localizedDescription }
+    return summary
+  }
+
+  static func prepare(from text: String, ai: AIService, onParsed: () -> Void = {}) async throws -> Result {
     let (extraction, _) = try await ai.generate(
       "parseBooking", kind: .prepare, prompt: Prompts.parseBooking(text),
       instructions: Prompts.parseBookingInstructions, as: BookingExtraction.self)
@@ -17,6 +53,7 @@ enum PrepareService {
     let items = extraction.bookings.map(makeItem)
     items.forEach { ai.context.insert($0) }
     try? ai.context.save()
+    onParsed()
 
     // One Destination Pack for the trip's main country (the hotel's, else the first booking's).
     let main = items.first { $0.kind == "hotel" && $0.countryCode != nil } ?? items.first { $0.countryCode != nil }

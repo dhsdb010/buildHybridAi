@@ -36,6 +36,7 @@ targets:
       properties:
         CFBundleDisplayName: Travel Copilot
         UILaunchScreen: {}
+        NSLocationWhenInUseUsageDescription: Shows where you are on your saved trip map, even offline (GPS needs no internet).
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
     settings:
       base:

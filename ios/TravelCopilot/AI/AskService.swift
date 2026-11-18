@@ -7,14 +7,16 @@ import FoundationModels
 /// booking facts always come from stored `VaultItem` fields (plan §2, trust rule).
 @Generable
 struct AskIntent {
-  @Guide(description: "vault = a question about the traveler's own bookings (times, codes, address, phone, taxi). other = anything else.",
-         .anyOf(["vault", "other"]))
+  @Guide(description: "vault = a question about the traveler's own bookings (times, codes, address, phone, taxi). place = how far / how to get to a place on the map. other = anything else.",
+         .anyOf(["vault", "place", "other"]))
   var intent: String
   @Guide(description: "For vault: the number of the booking from the list that the question is about. -1 if none.")
   var itemIndex: Int
   @Guide(description: "For vault: which stored field answers the question. taxi = the user wants to show the address to a driver.",
          .anyOf(VaultField.allCases.map(\.rawValue)))
   var field: String
+  @Guide(description: "For place: the number of the place from the Places list. -1 if none.")
+  var placeIndex: Int
 }
 
 @Generable
@@ -75,19 +77,46 @@ enum VaultAnswerBuilder {
   }
 }
 
+// MARK: - Place answers (computed from saved coordinates, never generated)
+
+struct PlaceAnswer: Equatable, Sendable {
+  let text: String
+  let distance: String
+  let estimate: String
+  let from: String
+}
+
+enum PlaceAnswerBuilder {
+  /// Distance from the hotel (or from the traveler's GPS position when the place *is* the hotel).
+  static func answer(_ place: Place, places: [Place], here: (lat: Double, lon: Double)?) -> PlaceAnswer? {
+    let hotel = places.first { $0.kind == "hotel" }
+    let origin: (lat: Double, lon: Double, name: String)?
+    if let hotel, hotel !== place { origin = (hotel.latitude, hotel.longitude, hotel.name) }
+    else if let here { origin = (here.lat, here.lon, "you") }
+    else { origin = nil }
+    guard let origin else { return nil }
+    let m = PlaceFacts.meters(origin.lat, origin.lon, place.latitude, place.longitude)
+    let d = PlaceFacts.distance(m), e = PlaceFacts.estimate(m)
+    return PlaceAnswer(text: "\(place.name) is \(d) from \(origin.name) — \(e).", distance: d, estimate: e, from: origin.name)
+  }
+}
+
 // MARK: - Prompts
 
 extension Prompts {
   static let askInstructions = """
     You route a traveler's request in a travel app. Classify it; never answer it yourself. \
-    Pick the booking number from the list and the field that answers the question.
+    Pick the booking number from the list and the field that answers the question, \
+    or for distance and directions questions pick the place number.
     """
 
   /// Only booking titles go into the prompt (not their values): keeps the on-device prompt tiny.
-  static func ask(_ question: String, items: [VaultItem]) -> String {
+  static func ask(_ question: String, items: [VaultItem], places: [Place] = []) -> String {
     let list = items.enumerated().map { "\($0.offset): \($0.element.kind) · \($0.element.title)" }
       .joined(separator: "\n")
-    return "Bookings:\n\(list.isEmpty ? "(none)" : list)\n\nRequest: \(question)"
+    let placeList = places.enumerated().map { "\($0.offset): \($0.element.kind) · \($0.element.name)" }
+      .joined(separator: "\n")
+    return "Bookings:\n\(list.isEmpty ? "(none)" : list)\n\nPlaces:\n\(placeList.isEmpty ? "(none)" : placeList)\n\nRequest: \(question)"
   }
 
   static func translateInstructions(to language: String, from source: String, context: TranslationContext) -> String {
@@ -138,6 +167,8 @@ enum ReplyPrompt {
 
 enum AskOutcome {
   case vault(VaultAnswer, item: VaultItem, meta: AIMeta)
+  /// Distance answer computed from saved map coordinates.
+  case place(PlaceAnswer, place: Place, meta: AIMeta)
   /// The question was about bookings, but no stored field answers it.
   case notInVault(meta: AIMeta)
   case translation(TranslationEntry, meta: AIMeta)
@@ -146,9 +177,10 @@ enum AskOutcome {
 
 extension AIService {
   /// Ask mode: on-device classification (Survive policy), then an answer built from stored fields.
-  func ask(_ question: String, items: [VaultItem], pack: DestinationPack?) async throws -> AskOutcome {
+  func ask(_ question: String, items: [VaultItem], pack: DestinationPack?,
+           places: [Place] = [], here: (lat: Double, lon: Double)? = nil) async throws -> AskOutcome {
     let (intent, meta) = try await generate(
-      "classifyAsk", kind: .survive, prompt: Prompts.ask(question, items: items),
+      "classifyAsk", kind: .survive, prompt: Prompts.ask(question, items: items, places: places),
       instructions: Prompts.askInstructions, as: AskIntent.self)
 
     switch intent.intent {
@@ -158,6 +190,11 @@ extension AIService {
             let answer = VaultAnswerBuilder.answer(items[intent.itemIndex], field)
       else { return .notInVault(meta: meta) }
       return .vault(answer, item: items[intent.itemIndex], meta: meta)
+    case "place":
+      guard places.indices.contains(intent.placeIndex),
+            let answer = PlaceAnswerBuilder.answer(places[intent.placeIndex], places: places, here: here)
+      else { return .notInVault(meta: meta) }
+      return .place(answer, place: places[intent.placeIndex], meta: meta)
     default:
       return .other(meta: meta)
     }
@@ -198,6 +235,20 @@ extension AIService {
 // MARK: - Deterministic romanization
 
 enum Romanizer {
+  /// Easier for English speakers: glue polite endings, drop long-vowel doubling, tidy numbers.
+  static func readable(_ s: String) -> String {
+    var t = s
+    for (a, b) in [(" - ", "-"), (" -", "-"), ("- ", "-"),
+                   ("o negai", "onegai"), ("negai shi masu", "negaishimasu"), ("shi masu", "shimasu"),
+                   ("de su", "desu"), ("ma su", "masu"), ("ma sen", "masen"), ("kudasa i", "kudasai")] {
+      t = t.replacingOccurrences(of: a, with: b)
+    }
+    t = t.replacingOccurrences(of: "ou", with: "o").replacingOccurrences(of: "uu", with: "u")
+    // "shinjuku ku" → "shinjuku-ku", "toukyou to" → "tokyo-to" (address suffixes)
+    t = t.replacingOccurrences(of: #" (ku|to|shi|cho|machi)\b"#, with: "-$1", options: .regularExpression)
+    return t.prefix(1).uppercased() + t.dropFirst()
+  }
+
   /// Japanese: CFStringTokenizer transcription gives kanji readings (東京 → toukyou).
   /// Other non-Latin scripts: ICU Any-Latin. Returns "" for Latin-script text.
   static func latin(_ text: String, languageCode: String?) -> String {
@@ -226,10 +277,11 @@ enum Romanizer {
       for p in parts {
         if p == "n", let last = merged.popLast() { merged.append(last + "n") } else { merged.append(p) }
       }
-      return merged.joined(separator: " ")
+      let raw = merged.joined(separator: " ")
         .replacingOccurrences(of: "( ", with: "(").replacingOccurrences(of: " )", with: ")")
         .replacingOccurrences(of: " 。", with: ".").replacingOccurrences(of: "。", with: ".")
         .replacingOccurrences(of: " 、", with: ",").replacingOccurrences(of: " ？", with: "?")
+      return readable(raw)
     }
     return (text.applyingTransform(.toLatin, reverse: false) ?? "")
       .applyingTransform(.stripDiacritics, reverse: false) ?? ""

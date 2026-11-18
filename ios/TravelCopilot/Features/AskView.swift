@@ -9,6 +9,9 @@ struct AskView: View {
   @Environment(\.dismiss) private var dismiss
   @Query(sort: \VaultItem.startDate) private var items: [VaultItem]
   @Query private var packs: [DestinationPack]
+  @Query(sort: \Place.createdAt) private var places: [Place]
+  @Environment(LocationService.self) private var location
+  @Environment(AppRouter.self) private var router
   @State private var mode = 0
   @State private var question = ""
   @State private var asked = ""
@@ -77,7 +80,8 @@ struct AskView: View {
 
   private var suggestions: some View {
     let list = mode == 0
-      ? ["When is check-in?", "What's my hotel booking code?", "Show my hotel to a taxi driver"]
+      ? ["When is check-in?", "What's my hotel booking code?", places.contains { $0.kind == "plan" }
+          ? "How far is \(places.first { $0.kind == "plan" }!.name) from my hotel?" : "Show my hotel to a taxi driver"]
       : ["Where is the nearest pharmacy?", "At the pharmacy: I'm allergic to penicillin", "Please call a taxi"]
     return VStack(alignment: .leading, spacing: 10) {
       MTALabel(mode == 0 ? "Answers come from your saved bookings" : "Context-aware · works offline")
@@ -120,6 +124,23 @@ struct AskView: View {
       Text("Read from your saved booking. The on-device model only picks the field — it never writes the answer.")
         .mta(.body2).foregroundStyle(MTA.text2)
       if answer.showTaxiCard { Button("Show taxi card") { taxiItem = item }.buttonStyle(.mtaPrimary) }
+    case let .place(answer, place, meta):
+      chips(meta)
+      Text(answer.distance).mta(.displayLarge).monospacedDigit().foregroundStyle(MTA.text)
+      MTALabel(answer.estimate, color: MTA.text)
+      Text(answer.text).mta(.body1).foregroundStyle(MTA.text)
+      OutlineCard(stroke: MTA.onTrack) {
+        MTALabel("From your offline map", color: MTA.onTrack)
+        HStack(spacing: 10) {
+          TripBullet(systemName: place.symbol, status: place.kind == "plan" ? .onTrack : .accent, size: 24)
+          Text(place.name).mta(.subheadNormal).foregroundStyle(MTA.text)
+        }
+        FieldRow(label: "From", value: answer.from)
+        FieldRow(label: "Straight line", value: answer.distance)
+      }
+      Text("Calculated from saved coordinates — works offline. The on-device model only picks the place.")
+        .mta(.body2).foregroundStyle(MTA.text2)
+      Button("Open map") { router.tab = .map; dismiss() }.buttonStyle(.mtaPrimary)
     case let .notInVault(meta):
       chips(meta)
       Text("That isn't in your saved bookings, so I won't guess.").mta(.subheadMedium).foregroundStyle(MTA.text)
@@ -149,7 +170,10 @@ struct AskView: View {
     asking = true; error = nil; outcome = nil; asked = q
     defer { asking = false }
     do {
-      let r = mode == 0 ? try await ai.ask(q, items: items, pack: pack) : try await ai.say(q, items: items, pack: pack)
+      let here = location.location.map { (lat: $0.coordinate.latitude, lon: $0.coordinate.longitude) }
+      let r = mode == 0
+        ? try await ai.ask(q, items: items, pack: pack, places: places, here: here)
+        : try await ai.say(q, items: items, pack: pack)
       outcome = r
       question = ""
       if case let .translation(entry, _) = r { translationCard = entry }

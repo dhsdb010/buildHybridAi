@@ -70,3 +70,10 @@ struct RomanizerCleanupTests {
     #expect(r.contains("(ibuprofen)"))
   }
 }
+
+struct RomanizerReadableTests {
+  @Test func politeEndingsAndAddressesReadNaturally() {
+    #expect(Romanizer.readable("kono juusho made o negai shi masu") == "Kono jusho made onegaishimasu")
+    #expect(Romanizer.readable("toukyou to shinjuku ku nishishinjuku 4 - 99 - 1") == "Tokyo-to shinjuku-ku nishishinjuku 4-99-1")
+  }
+}

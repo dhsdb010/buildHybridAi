@@ -49,6 +49,12 @@ struct HomeView: View {
       }
       .navigationDestination(isPresented: $router.showSettings) { SettingsView() }
       .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: pack) }
+      #if DEBUG
+      .task {
+        // `-screen taxi` opens the taxi card (simulator checks).
+        if UserDefaults.standard.string(forKey: "screen") == "taxi" { try? await Task.sleep(for: .seconds(1)); taxiItem = hotel }
+      }
+      #endif
     }
   }
 

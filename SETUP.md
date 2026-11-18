@@ -29,6 +29,9 @@ Debug launch arguments (DEBUG builds only):
 - `-tab trip|prepare|log` opens a tab. `-tripMode calendar` opens Trip as a calendar. `-planDay 2026-12-04` opens Plan a day.
 - `-screen settings|help|ask` opens Settings, Help or Ask.
 - `-appearance 1|2` forces Day (1) or Night (2) for this launch.
+- `-screen taxi` opens the taxi card. Add `-replyStage handover` to stop on the "Turn the phone around" screen.
+- `-onboarding` shows the Welcome / set-up flow even after set-up. `-welcomeAuto` runs it with the sample trip (bookings → pack → places → offline map). `-onboarded YES` skips it.
+- `-tab map -mapMode offline` opens the Map on the saved offline snapshot. Set a fake GPS position with `xcrun simctl location <device> set 35.6905,139.7000`.
 
 ## 3. Day-1 spike checklist (real iPhone with Apple Intelligence)
 | # | Question | How |

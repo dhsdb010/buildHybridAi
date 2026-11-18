@@ -117,6 +117,55 @@ final class TripPlan {
   }
 }
 
+/// A point on the trip map: the hotel, an airport, or a planned place.
+/// Coordinates are looked up once online (Prepare / Download map) and then work offline.
+@Model
+final class Place {
+  var name: String
+  /// hotel · airport · plan
+  var kind: String
+  var latitude: Double
+  var longitude: Double
+  var address: String = ""
+  /// booking · you
+  var source: String = "booking"
+  var createdAt: Date = Date()
+
+  init(name: String, kind: String, latitude: Double, longitude: Double, address: String = "", source: String = "booking") {
+    self.name = name
+    self.kind = kind
+    self.latitude = latitude
+    self.longitude = longitude
+    self.address = address
+    self.source = source
+  }
+
+  var symbol: String {
+    switch kind { case "hotel": "bed.double.fill"; case "airport": "airplane"; default: "mappin.and.ellipse" }
+  }
+}
+
+/// A map area saved for offline use: snapshot images (Day + Night) and the region they cover.
+@Model
+final class MapPack {
+  var name: String              // "Around your hotel" · "Whole trip"
+  var centerLatitude: Double
+  var centerLongitude: Double
+  var spanLatitude: Double
+  var spanLongitude: Double
+  @Attribute(.externalStorage) var dayImage: Data?
+  @Attribute(.externalStorage) var nightImage: Data?
+  var createdAt: Date = Date()
+
+  init(name: String, centerLatitude: Double, centerLongitude: Double, spanLatitude: Double, spanLongitude: Double) {
+    self.name = name
+    self.centerLatitude = centerLatitude
+    self.centerLongitude = centerLongitude
+    self.spanLatitude = spanLatitude
+    self.spanLongitude = spanLongitude
+  }
+}
+
 /// One AI request (or a request the policy deferred/blocked), for the Routing Log.
 @Model
 final class RoutingEntry {

@@ -9,6 +9,7 @@ struct PrepareView: View {
   @Query private var packs: [DestinationPack]
   @State private var text = ""
   @State private var busy = false
+  @State private var step: PrepareService.Step?
   @State private var error: String?
   @FocusState private var editorFocused: Bool
 
@@ -54,7 +55,7 @@ struct PrepareView: View {
           } label: {
             HStack(spacing: 10) {
               if busy { ProgressView().tint(MTA.onColor) }
-              Text(busy ? "Building your pack…" : "Build my offline pack")
+              Text(busy ? (step?.title ?? "Working") + "…" : "Build my offline pack")
             }
           }
           .buttonStyle(.mtaPrimary)
@@ -96,8 +97,9 @@ struct PrepareView: View {
     busy = true; error = nil
     defer { busy = false }
     do {
-      let result = try await PrepareService.prepare(from: text, ai: ai)
-      if result.items.isEmpty { error = "No bookings found in that text." } else { text = "" }
+      let summary = try await PrepareService.setUp(from: text, ai: ai) { step = $0 }
+      if summary.items == 0 { error = "No bookings found in that text." } else { text = "" }
+      if let mapError = summary.mapError { error = "Bookings saved. Map: \(mapError)" }
     } catch {
       self.error = error.localizedDescription
     }
