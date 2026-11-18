@@ -11,6 +11,23 @@ https://www.figma.com/design/YVtC8LUcZoFlw3X2jpwkQm
 | 03 · Wire Flow | 7 trip moments: trigger → Lock Screen → Dynamic Island → screen that a tap opens; App Screen components |
 | 04 · App Screens | Home, Settings, Trip, Calendar, Plan a day, Ask, Prepare, Log, Help (Day + Night) |
 | 05 · Onboarding Flow | First launch: Welcome → Add bookings → Building → You're ready → Home, with branches for "I'll do it later", offline, and a partial set-up (Day + Night) |
+| 06 · Plan Flow | "Help me plan" before bookings: Booked yet? → Brief → Memories → Where → Days → Stay → Eat & see → Book these → Add bookings, with branches for already booked, offline (plus the ⓘ "Why only these places?" sheet), no local score, and Swap (Day + Night) |
+
+Page 05 now starts with **0 · Sign in**: Continue with Google, Sign in with Apple (App Store rule 4.8 requires it when Google sign-in is offered), or "Continue without an account". Offline features never need an account; "Help me plan it" asks you to sign in first.
+
+## Plan chat (page "06 · Plan Flow")
+- **Online only.** Planning needs live, accurate places, so it runs in the cloud (Gemini with Grounding with Google Maps). Offline, it shows a notice and makes no suggestions. The trip still works offline after set-up.
+- **Components** (page 04, "Plan chat" column):
+  - **Quick Chip** (Default / Selected).
+  - **Chat Turn:** AI is plain text with the asterisk, no bubble; You is a raised pill.
+  - **Plan Step** (Done / Current / Upcoming) and **Plan so far:** Where · When · Stay · Eat · See · Book.
+  - **Option Card** (Default / Kept).
+  - **Book Row** (To book / Booked).
+- **Two scores on every place:** the **Google** score (rating and review count from Maps grounding) next to the **Local** score from the country's own review site: Tabelog (food) and Jalan (hotels) in Japan, Naver/Kakao in Korea, Yelp in the US. A local score comes only from a licensed API. If there's none, the badge reads "Check on Tabelog ↗" and opens the site. Never scrape or estimate a score.
+- **Destinations follow the on-device model's languages:** "Suggest for me" and the destination chips only offer countries whose language the on-device model supports. The app reads the list at runtime from `SystemLanguageModel.default.supportedLanguages`, so offline translation works on the trip. An `info.circle` link, "Why only these places?", opens a sheet that explains this, apologizes for the short list, and says more languages are coming. The user can still type any place.
+- **Memories step:** the chat asks about a trip the user loved and what they didn't enjoy. The on-device model turns the answers into a "What I'll remember" card (Loves / Avoid / Pace). Only that summary goes to the cloud for planning.
+- **Facts vs. words:** the name, address, scores and link come from the data source. The model writes only the "Why" line. Source labels stay visible.
+- **Suggestions aren't bookings:** booking happens on the airline or hotel site, and only pasted confirmations become Vault items.
 
 ## App screens (page "04 · App Screens")
 Day is the main look, following the MTA-style reference (white base, big bold numbers, outlined boxes). There's a Night copy too. Screens are 402 × 874 on the 4·30·15 grid, built only from these components: Nav Bar, Tab Bar, Button, Number Box, Milestone, Card (Notice/Feature), Segmented, Settings Row, Ask Bar.
@@ -49,7 +66,7 @@ Day is the main look, following the MTA-style reference (white base, big bold nu
 | Tabs | `house` / `house.fill` · `suitcase.rolling` / `.fill` · `square.and.arrow.down` / `.fill` · `list.bullet` |
 | Nav | `chevron.left` (push) · `xmark` (modal) · `gearshape` (Home → Settings) |
 | Trip bullets | `airplane` · `bed.double.fill` · `icloud.dashed` (waiting for Wi-Fi) · `checkmark` · `square.and.arrow.down` |
-| Other | `arrow.up` (Ask send) · `phone.fill` (Help call tiles) |
+| Other | `arrow.up` (Ask send) · `phone.fill` (Help call tiles) · `info.circle` (explanations) · `globe` (languages) · `apple.logo` (Sign in with Apple) |
 
 ### Where AI ran / connection (always with a text label)
 | State | Symbol | Used in |
