@@ -1,0 +1,671 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0CA359B8DCF267EEF45FF095 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836881F86764F2101174C04F /* TripView.swift */; };
+		0E31CD5EFFB88BEE0AE1A487 /* SpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */; };
+		0EB0CA84789ED29D6B2BD897 /* AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6A81683B7BACE878B25814 /* AskService.swift */; };
+		1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE0344074B989FEB2BBE0ED /* HelpView.swift */; };
+		177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E61DA002322A92847F3F1B /* RoutingLogView.swift */; };
+		493D05B2779F2214EE824150 /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */; };
+		4F4CC24018A6BC22ECCD6C41 /* CardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */; };
+		4FFC75FE7FF3C448A76355FA /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 95AAFA502E2AC7582C1402ED /* FirebaseAuth */; };
+		50EB0458D3FB3D4E6458A9D9 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = 2F9D8F0429A92267AA991FD6 /* FirebaseAILogic */; };
+		510DF67EBC8B2255EEA1496C /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F1789438F4D0CEC32FB024 /* Theme.swift */; };
+		512A06FAC332DB7B31704621 /* RoutingPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */; };
+		546FB6F017947FCF8242A02D /* VaultAnswerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B06F6982614516D2FD6073E /* VaultAnswerTests.swift */; };
+		596711B81AB14EC3771654C0 /* TravelCopilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86524DAFA599BBCE2A746895 /* TravelCopilotApp.swift */; };
+		5B2E7B8A8E2E93B72316B0F2 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 5A72C650EB0633D1444CE7E7 /* FirebaseRemoteConfig */; };
+		60E045A5EFE6DBEBFA95DB83 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD65BD2D80277E815A4BCCA /* Models.swift */; };
+		621677DB4EF444551C07879A /* PlanDayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F3D1DC5B07860C1E7DD453D /* PlanDayView.swift */; };
+		720DF963539AFC0FB1DB9546 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9947A0ADC3385A1F1317EB /* Components.swift */; };
+		91B00235AE3EC34B29EC1B44 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 999240F7D4BF8FA1C7B33ECB /* FirebaseFirestore */; };
+		91EE705CA3474BFF9F1AFD89 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */; };
+		934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */; };
+		935CB47592B1C362B3F95B11 /* RoutingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */; };
+		9DFD62C5E1C155A9BAF8ED11 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F488FB83045DD50AA4F3DE /* Prompts.swift */; };
+		A569B663C6231D599C587EDE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811A9F16C58C5478C0F5FE7D /* AIService.swift */; };
+		B5C2A1DAFD2774E343B0DA01 /* PrepareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654802749BC3529758083461 /* PrepareService.swift */; };
+		BB3036D7C2D751C550086F58 /* EmergencyNumbers.json in Resources */ = {isa = PBXBuildFile; fileRef = 24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */; };
+		BC774D6160886C11D1E131E3 /* ModelRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */; };
+		BFB008F7F55B47546A9E1AE3 /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB23245D5263C04F74A21BDD /* AskView.swift */; };
+		C26E01045651C5F4FD59BD48 /* PrepareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */; };
+		C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 650C8F1632B44DFCBC5B981D /* SettingsView.swift */; };
+		E55B5D7A60BAEE6091257919 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 73FC01A36D34395EAEE3ED2C /* Assets.xcassets */; };
+		FB93B8197DD2CE5FC964FD81 /* TripTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D66E5FD9612F31C08F4DBF /* TripTimeline.swift */; };
+		FE175C61DF4FE8E7D95A8544 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = AB5470624B9B6A0F20AC6541 /* FirebaseAppCheck */; };
+		FEE517F5818C1C5A0A775A85 /* Connectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0355EE65E03984F07A7CC13 /* Connectivity.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		983E7D5A49EBF87858C9C6C2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A7EB74799B803578EB0F1494 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D7AA43B985E0905B2D9F33A9;
+			remoteInfo = TravelCopilot;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		19F488FB83045DD50AA4F3DE /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
+		1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRouter.swift; sourceTree = "<group>"; };
+		2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicyTests.swift; sourceTree = "<group>"; };
+		24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = EmergencyNumbers.json; sourceTree = "<group>"; };
+		2694CBA496E8FCF219CB2722 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicy.swift; sourceTree = "<group>"; };
+		4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TravelCopilotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyNumbers.swift; sourceTree = "<group>"; };
+		650C8F1632B44DFCBC5B981D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		654802749BC3529758083461 /* PrepareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareService.swift; sourceTree = "<group>"; };
+		704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareView.swift; sourceTree = "<group>"; };
+		73FC01A36D34395EAEE3ED2C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7B06F6982614516D2FD6073E /* VaultAnswerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultAnswerTests.swift; sourceTree = "<group>"; };
+		811A9F16C58C5478C0F5FE7D /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		8216EB2B2631E68DCB98DD52 /* TravelCopilot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TravelCopilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		836881F86764F2101174C04F /* TripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripView.swift; sourceTree = "<group>"; };
+		86524DAFA599BBCE2A746895 /* TravelCopilotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelCopilotApp.swift; sourceTree = "<group>"; };
+		885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViews.swift; sourceTree = "<group>"; };
+		8F3D1DC5B07860C1E7DD453D /* PlanDayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDayView.swift; sourceTree = "<group>"; };
+		9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimelineTests.swift; sourceTree = "<group>"; };
+		AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		AB6A81683B7BACE878B25814 /* AskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskService.swift; sourceTree = "<group>"; };
+		AE9947A0ADC3385A1F1317EB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		B4F1789438F4D0CEC32FB024 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		BB23245D5263C04F74A21BDD /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
+		D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpikeView.swift; sourceTree = "<group>"; };
+		E0355EE65E03984F07A7CC13 /* Connectivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connectivity.swift; sourceTree = "<group>"; };
+		E4D66E5FD9612F31C08F4DBF /* TripTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimeline.swift; sourceTree = "<group>"; };
+		ECD65BD2D80277E815A4BCCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F2E61DA002322A92847F3F1B /* RoutingLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingLogView.swift; sourceTree = "<group>"; };
+		FAE0344074B989FEB2BBE0ED /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		00B47D84C25B1C9B109BC7EC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50EB0458D3FB3D4E6458A9D9 /* FirebaseAILogic in Frameworks */,
+				FE175C61DF4FE8E7D95A8544 /* FirebaseAppCheck in Frameworks */,
+				4FFC75FE7FF3C448A76355FA /* FirebaseAuth in Frameworks */,
+				91B00235AE3EC34B29EC1B44 /* FirebaseFirestore in Frameworks */,
+				5B2E7B8A8E2E93B72316B0F2 /* FirebaseRemoteConfig in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		03D01A9BFC32A908C174E4EA /* TravelCopilotTests */ = {
+			isa = PBXGroup;
+			children = (
+				2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */,
+				9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */,
+				7B06F6982614516D2FD6073E /* VaultAnswerTests.swift */,
+			);
+			path = TravelCopilotTests;
+			sourceTree = "<group>";
+		};
+		3627DF55765954F719353CAB /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				AE9947A0ADC3385A1F1317EB /* Components.swift */,
+				B4F1789438F4D0CEC32FB024 /* Theme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		6FA88329C8D7808A4EC66B93 /* Spike */ = {
+			isa = PBXGroup;
+			children = (
+				D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */,
+			);
+			path = Spike;
+			sourceTree = "<group>";
+		};
+		8F01955C2999ACE7075C7068 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8216EB2B2631E68DCB98DD52 /* TravelCopilot.app */,
+				4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9DBCC03FB9720645E060BEB7 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				86524DAFA599BBCE2A746895 /* TravelCopilotApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		9F5AB0C079FE99326018C479 /* Emergency */ = {
+			isa = PBXGroup;
+			children = (
+				4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */,
+			);
+			path = Emergency;
+			sourceTree = "<group>";
+		};
+		C018FA0D7FE6448A5FB9907F /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				BB23245D5263C04F74A21BDD /* AskView.swift */,
+				885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */,
+				FAE0344074B989FEB2BBE0ED /* HelpView.swift */,
+				AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */,
+				8F3D1DC5B07860C1E7DD453D /* PlanDayView.swift */,
+				704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */,
+				F2E61DA002322A92847F3F1B /* RoutingLogView.swift */,
+				650C8F1632B44DFCBC5B981D /* SettingsView.swift */,
+				836881F86764F2101174C04F /* TripView.swift */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		CC0470671563500034F3A374 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				ECD65BD2D80277E815A4BCCA /* Models.swift */,
+				E4D66E5FD9612F31C08F4DBF /* TripTimeline.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		DE25EA9F09732EEB668CC99D /* TravelCopilot */ = {
+			isa = PBXGroup;
+			children = (
+				2694CBA496E8FCF219CB2722 /* Info.plist */,
+				E3C1451ECEAAA9194CD45FE7 /* AI */,
+				9DBCC03FB9720645E060BEB7 /* App */,
+				3627DF55765954F719353CAB /* Design */,
+				9F5AB0C079FE99326018C479 /* Emergency */,
+				C018FA0D7FE6448A5FB9907F /* Features */,
+				FF359605FB3290F403985DC0 /* Network */,
+				FD252585B786614B7FC3B10A /* Resources */,
+				6FA88329C8D7808A4EC66B93 /* Spike */,
+				CC0470671563500034F3A374 /* Store */,
+			);
+			path = TravelCopilot;
+			sourceTree = "<group>";
+		};
+		E1631CD5C745552F32FBD882 = {
+			isa = PBXGroup;
+			children = (
+				DE25EA9F09732EEB668CC99D /* TravelCopilot */,
+				03D01A9BFC32A908C174E4EA /* TravelCopilotTests */,
+				8F01955C2999ACE7075C7068 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E3C1451ECEAAA9194CD45FE7 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				811A9F16C58C5478C0F5FE7D /* AIService.swift */,
+				AB6A81683B7BACE878B25814 /* AskService.swift */,
+				1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */,
+				654802749BC3529758083461 /* PrepareService.swift */,
+				19F488FB83045DD50AA4F3DE /* Prompts.swift */,
+				3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		FD252585B786614B7FC3B10A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				73FC01A36D34395EAEE3ED2C /* Assets.xcassets */,
+				24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		FF359605FB3290F403985DC0 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				E0355EE65E03984F07A7CC13 /* Connectivity.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		739A38F52F30E64B85A4683A /* TravelCopilotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 408AFDEA9EE0D3118BE5C5E4 /* Build configuration list for PBXNativeTarget "TravelCopilotTests" */;
+			buildPhases = (
+				F6DB5F17A236F078BA0CFCC7 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FC7F2E0793DC536CEDF60EDE /* PBXTargetDependency */,
+			);
+			name = TravelCopilotTests;
+			packageProductDependencies = (
+			);
+			productName = TravelCopilotTests;
+			productReference = 4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D7AA43B985E0905B2D9F33A9 /* TravelCopilot */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80081F3F755A92FCE38DD82 /* Build configuration list for PBXNativeTarget "TravelCopilot" */;
+			buildPhases = (
+				5FF827AD8F2D4688C8428AF1 /* Sources */,
+				0AB2988B948B8092B60CAEA0 /* Resources */,
+				00B47D84C25B1C9B109BC7EC /* Frameworks */,
+				867DB095050B6C7318ECA727 /* Copy GoogleService-Info.plist if present */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TravelCopilot;
+			packageProductDependencies = (
+				2F9D8F0429A92267AA991FD6 /* FirebaseAILogic */,
+				AB5470624B9B6A0F20AC6541 /* FirebaseAppCheck */,
+				95AAFA502E2AC7582C1402ED /* FirebaseAuth */,
+				999240F7D4BF8FA1C7B33ECB /* FirebaseFirestore */,
+				5A72C650EB0633D1444CE7E7 /* FirebaseRemoteConfig */,
+			);
+			productName = TravelCopilot;
+			productReference = 8216EB2B2631E68DCB98DD52 /* TravelCopilot.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A7EB74799B803578EB0F1494 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 9210A4BF8F376069160C1538 /* Build configuration list for PBXProject "TravelCopilot" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = E1631CD5C745552F32FBD882;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8F01955C2999ACE7075C7068 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D7AA43B985E0905B2D9F33A9 /* TravelCopilot */,
+				739A38F52F30E64B85A4683A /* TravelCopilotTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0AB2988B948B8092B60CAEA0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E55B5D7A60BAEE6091257919 /* Assets.xcassets in Resources */,
+				BB3036D7C2D751C550086F58 /* EmergencyNumbers.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		867DB095050B6C7318ECA727 /* Copy GoogleService-Info.plist if present */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy GoogleService-Info.plist if present";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SRC=\"${SRCROOT}/TravelCopilot/Resources/GoogleService-Info.plist\"\nif [ -f \"$SRC\" ]; then\n  cp \"$SRC\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\"\nelse\n  echo \"warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5FF827AD8F2D4688C8428AF1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A569B663C6231D599C587EDE /* AIService.swift in Sources */,
+				0EB0CA84789ED29D6B2BD897 /* AskService.swift in Sources */,
+				BFB008F7F55B47546A9E1AE3 /* AskView.swift in Sources */,
+				4F4CC24018A6BC22ECCD6C41 /* CardViews.swift in Sources */,
+				720DF963539AFC0FB1DB9546 /* Components.swift in Sources */,
+				FEE517F5818C1C5A0A775A85 /* Connectivity.swift in Sources */,
+				934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */,
+				1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */,
+				91EE705CA3474BFF9F1AFD89 /* HomeView.swift in Sources */,
+				BC774D6160886C11D1E131E3 /* ModelRouter.swift in Sources */,
+				60E045A5EFE6DBEBFA95DB83 /* Models.swift in Sources */,
+				621677DB4EF444551C07879A /* PlanDayView.swift in Sources */,
+				B5C2A1DAFD2774E343B0DA01 /* PrepareService.swift in Sources */,
+				C26E01045651C5F4FD59BD48 /* PrepareView.swift in Sources */,
+				9DFD62C5E1C155A9BAF8ED11 /* Prompts.swift in Sources */,
+				177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */,
+				935CB47592B1C362B3F95B11 /* RoutingPolicy.swift in Sources */,
+				C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */,
+				0E31CD5EFFB88BEE0AE1A487 /* SpikeView.swift in Sources */,
+				510DF67EBC8B2255EEA1496C /* Theme.swift in Sources */,
+				596711B81AB14EC3771654C0 /* TravelCopilotApp.swift in Sources */,
+				FB93B8197DD2CE5FC964FD81 /* TripTimeline.swift in Sources */,
+				0CA359B8DCF267EEF45FF095 /* TripView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6DB5F17A236F078BA0CFCC7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				512A06FAC332DB7B31704621 /* RoutingPolicyTests.swift in Sources */,
+				493D05B2779F2214EE824150 /* TripTimelineTests.swift in Sources */,
+				546FB6F017947FCF8242A02D /* VaultAnswerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FC7F2E0793DC536CEDF60EDE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D7AA43B985E0905B2D9F33A9 /* TravelCopilot */;
+			targetProxy = 983E7D5A49EBF87858C9C6C2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1BBF1C1749646D6A85FF7D63 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.buildhybridai.TravelCopilotTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TravelCopilot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TravelCopilot";
+			};
+			name = Debug;
+		};
+		7334B64B7E467E63404AF8F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TravelCopilot/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.buildhybridai.travelcopilot;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		84D2900D1AFA6AB0B0B3AA7A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A265282322C5C73731F4615E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		AA4443C0C7F5192A3F86DD6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TravelCopilot/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.buildhybridai.travelcopilot;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		D5D3BEE4FC2AED7F3309F19B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.buildhybridai.TravelCopilotTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TravelCopilot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TravelCopilot";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		408AFDEA9EE0D3118BE5C5E4 /* Build configuration list for PBXNativeTarget "TravelCopilotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1BBF1C1749646D6A85FF7D63 /* Debug */,
+				D5D3BEE4FC2AED7F3309F19B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9210A4BF8F376069160C1538 /* Build configuration list for PBXProject "TravelCopilot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				84D2900D1AFA6AB0B0B3AA7A /* Debug */,
+				A265282322C5C73731F4615E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A80081F3F755A92FCE38DD82 /* Build configuration list for PBXNativeTarget "TravelCopilot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7334B64B7E467E63404AF8F8 /* Debug */,
+				AA4443C0C7F5192A3F86DD6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.13.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2F9D8F0429A92267AA991FD6 /* FirebaseAILogic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAILogic;
+		};
+		5A72C650EB0633D1444CE7E7 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
+		};
+		95AAFA502E2AC7582C1402ED /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		999240F7D4BF8FA1C7B33ECB /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		AB5470624B9B6A0F20AC6541 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 83D54C47EBBE0AD5DFD38015 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A7EB74799B803578EB0F1494 /* Project object */;
+}

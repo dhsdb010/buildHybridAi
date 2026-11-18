@@ -1,0 +1,22 @@
+# Firebase secrets — never commit
+GoogleService-Info.plist
+*.appcheck-debug-token
+.env
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.moved-aside
+.swiftpm/xcode/
+.build/
+
+# macOS
+.DS_Store
+
+# Claude local state
+.claude/locks/
+.spm/
+.build-dd/

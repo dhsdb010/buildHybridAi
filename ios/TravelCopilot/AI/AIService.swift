@@ -1,0 +1,100 @@
+import Foundation
+import FirebaseAILogic
+import FoundationModels
+import Observation
+import SwiftData
+
+enum AIServiceError: LocalizedError {
+  case blocked(String)
+  case deferred(String)
+
+  var errorDescription: String? {
+    switch self {
+    case let .blocked(reason): reason
+    case let .deferred(reason): "Saved for later: \(reason)"
+    }
+  }
+}
+
+struct AIMeta: Sendable {
+  let route: Route
+  let source: InferenceSource
+  let latencyMs: Int
+}
+
+/// App-level entry point for AI work: asks `RoutingPolicy` where a task should run,
+/// runs it through `ModelRouter` (Firebase AI Logic), and records every call in the Routing Log.
+@MainActor
+@Observable
+final class AIService {
+  let connectivity: Connectivity
+  let context: ModelContext
+  var dataSaver = true
+
+  init(connectivity: Connectivity, context: ModelContext) {
+    self.connectivity = connectivity
+    self.context = context
+  }
+
+  var deviceModelAvailable: Bool { ModelRouter.systemModel.isAvailable }
+
+  var routingContext: RoutingContext {
+    RoutingContext(
+      isOnline: connectivity.isOnline,
+      isExpensive: connectivity.isExpensive,
+      isConstrained: connectivity.isConstrained,
+      deviceModelAvailable: deviceModelAvailable,
+      dataSaver: dataSaver)
+  }
+
+  private var networkLabel: String {
+    guard connectivity.isOnline else { return "offline" }
+    return connectivity.interface + (connectivity.isExpensive ? " 💸" : "")
+      + (connectivity.isConstrained ? " (low data)" : "")
+  }
+
+  /// Structured generation. Works on both routes: `@Generable` on-device, JSON schema in the cloud.
+  func generate<T: Generable>(
+    _ task: String, kind: TaskKind, prompt: String, instructions: String? = nil, as type: T.Type
+  ) async throws -> (T, AIMeta) {
+    let route = try resolveRoute(task, kind: kind)
+    let start = ContinuousClock.now
+    do {
+      let session = try ModelRouter.session(for: route.route, instructions: instructions)
+      let response = try await session.respond(to: prompt, generating: T.self)
+      let meta = AIMeta(
+        route: route.route, source: ModelRouter.source(of: response.rawResponse),
+        latencyMs: (ContinuousClock.now - start).milliseconds)
+      log(task, kind, reason: route.reason, outcome: "ok", meta: meta)
+      return (response.content, meta)
+    } catch {
+      log(task, kind, reason: route.reason, outcome: "error", route: route.route,
+          latencyMs: (ContinuousClock.now - start).milliseconds, detail: String(describing: error))
+      throw error
+    }
+  }
+
+  private func resolveRoute(_ task: String, kind: TaskKind) throws -> (route: Route, reason: String) {
+    switch RoutingPolicy.decide(kind, routingContext) {
+    case let .run(route, reason):
+      return (route, reason)
+    case let .deferToWiFi(reason):
+      log(task, kind, reason: reason, outcome: "deferred")
+      throw AIServiceError.deferred(reason)
+    case let .blocked(reason):
+      log(task, kind, reason: reason, outcome: "blocked")
+      throw AIServiceError.blocked(reason)
+    }
+  }
+
+  private func log(_ task: String, _ kind: TaskKind, reason: String, outcome: String,
+                   meta: AIMeta? = nil, route: Route? = nil, latencyMs: Int = 0, detail: String? = nil) {
+    let entry = RoutingEntry(task: task, kind: kind, reason: reason, outcome: outcome, network: networkLabel)
+    entry.requestedRoute = (meta?.route ?? route)?.rawValue
+    entry.source = meta.map { $0.source == .onDevice ? "onDevice" : "inCloud" }
+    entry.latencyMs = meta?.latencyMs ?? latencyMs
+    entry.detail = detail
+    context.insert(entry)
+    try? context.save()
+  }
+}

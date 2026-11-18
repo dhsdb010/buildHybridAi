@@ -1,0 +1,15 @@
+{
+  "JP": { "police": "110", "ambulance": "119", "fire": "119" },
+  "KR": { "police": "112", "ambulance": "119", "fire": "119" },
+  "CN": { "police": "110", "ambulance": "120", "fire": "119" },
+  "TW": { "police": "110", "ambulance": "119", "fire": "119" },
+  "TH": { "police": "191", "ambulance": "1669", "fire": "199", "tourist": "1155" },
+  "VN": { "police": "113", "ambulance": "115", "fire": "114" },
+  "US": { "police": "911", "ambulance": "911", "fire": "911" },
+  "MX": { "police": "911", "ambulance": "911", "fire": "911" },
+  "GB": { "police": "999", "ambulance": "999", "fire": "999" },
+  "FR": { "police": "17", "ambulance": "15", "fire": "18", "general": "112" },
+  "DE": { "police": "110", "ambulance": "112", "fire": "112" },
+  "IT": { "police": "112", "ambulance": "118", "fire": "115", "general": "112" },
+  "ES": { "police": "112", "ambulance": "112", "fire": "112" }
+}

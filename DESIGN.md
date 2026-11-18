@@ -1,0 +1,153 @@
+# Design rules — Travel Copilot × MTA
+
+Source: the MTA UX/UI Design System (Spring 2021). The Figma file is "Travel Copilot · Live Activities (MTA style)":
+https://www.figma.com/design/YVtC8LUcZoFlw3X2jpwkQm
+
+| Page | Contents |
+|---|---|
+| 00 · Rules | The rules below, as a board |
+| 01 · Foundations | Color variables, type scale, grids (with visible column overlays) |
+| 02 · Live Activities | Components: Bullet, Pill, Progress, Lock Screen ×7, Dynamic Island Expanded/Compact/Minimal ×7 |
+| 03 · Wire Flow | 7 trip moments: trigger → Lock Screen → Dynamic Island → screen that a tap opens; App Screen components |
+
+## App screens (page "04 · App Screens")
+Day is the main look, following the MTA-style reference (white base, big bold numbers, outlined boxes). There's a Night copy too. Screens are 402 × 874 on the 4·30·15 grid, built only from these components: Nav Bar, Tab Bar, Button, Number Box, Milestone, Card (Notice/Feature), Segmented, Settings Row, Ask Bar.
+
+| Screen | What it shows |
+|---|---|
+| Home | Next moment as a big number (15:00) · countdown boxes · offline-readiness milestones · taxi card shortcut · Ask bar. **Gear (top right) opens Settings** |
+| Settings | Pushed from Home (not a tab). Network (data saver, wait for Wi-Fi, cloud model) · Day/Night · Trip · Privacy |
+| Trip | Trip days as milestones · Vault cards with bullets · check-out notice |
+| Ask | Ask / Say segmented · answer as a big number · 📱 on-device chip · "From your booking" source card |
+| Prepare | Paste box · what you'll have offline · notice that Prepare is the only cloud step · primary button |
+| Log | Device / Cloud / Deferred / Failed boxes · routing entries |
+| Help | 110 / 119 call tiles · medical info card · pre-checked Japanese phrases |
+
+| Trip · Calendar | List / Calendar switch · blue "TOKYO" poster with flight/hotel badges · month grid (done green, today blue ring, planned outline, check-out red, outside the trip gray) · selected-day preview |
+| Plan a day | Time-ordered plan cards with a source chip: You added / From booking / Suggested · Wi-Fi · Live Activity reminder toggle · Add a plan |
+
+### Layout rules (checked on every screen)
+- **Snap to the 4-column grid:** columns are 74.25pt with 15pt gutters inside the 30pt margins. Rows of 4 (number boxes, readiness circles) use one item per column. Rows of 2 (Help tiles) span 2 columns each. Badges on the right edge center on column 4.
+- **Even spacing:** day strips and calendar weeks use equal cells, never spacing driven by text width.
+- **Nav title is truly centered:** the left and right slots are fixed at 88pt each, and the title fills the middle.
+
+### Tab bar: iOS 26 Liquid Glass
+- **Tabs:** 4 tabs, **Home · Trip · Prepare · Log**. Settings isn't a tab; it opens from the **gearshape** on Home.
+- **Shape:** a floating 370 × 70 capsule, 20pt above the bottom edge, with content scrolling under it.
+- **Material:** a Figma `GLASS` effect over a `color/bg/glass` tint. Use `.glassEffect()` / the system `TabView` on iOS.
+- **Active tab:** a `color/fill/selected` pill with the **.fill** SF Symbol in New Blue.
+- **Labels:** the `MTA/Tab` style (11pt Medium, normal case).
+
+### Icons: SF Symbols only
+- **In Figma:** the icons are components named `SF Symbol/<name>`, built from the real glyph outlines in SF Pro. The description of each one gives the SwiftUI code.
+- **In code:** always `Image(systemName:)`.
+
+| Where | Symbol |
+|---|---|
+| Tabs | `house` / `house.fill` · `suitcase.rolling` / `.fill` · `square.and.arrow.down` / `.fill` · `list.bullet` |
+| Nav | `chevron.left` (push) · `xmark` (modal) · `gearshape` (Home → Settings) |
+| Trip bullets | `airplane` · `bed.double.fill` · `icloud.dashed` (waiting for Wi-Fi) · `checkmark` · `square.and.arrow.down` |
+| Other | `arrow.up` (Ask send) · `phone.fill` (Help call tiles) |
+
+### Where AI ran / connection (always with a text label)
+| State | Symbol | Used in |
+|---|---|---|
+| Ran on this iPhone | `iphone` | Log rows (green disc), Ask "On-device" chip |
+| Ran in the cloud (Gemini) | `icloud` | Log rows (New Blue disc) |
+| Waiting for Wi-Fi / Catch-up pending | `icloud.dashed` | Log "Deferred" rows (yellow disc, black glyph), Catch-up Live Activity |
+| Offline | `icloud.slash` | Home "Offline" chip |
+
+Label the cloud as "Cloud · Gemini", never plain "iCloud", so nobody thinks the app syncs to iCloud.
+
+### Brand mark
+- **Mark:** the SF Symbol `asterisk`, which echoes the MTA starburst poster.
+- **App icon:** Day is New Blue with a white mark; Night is black with a New Blue mark. It's the "App Icon · Brand mark" component.
+- **In the app:** a New Blue asterisk at the top left of Home only. It's not a tab icon; Home stays `house`.
+
+## Color: always means status
+| Token | Hex | Use |
+|---|---|---|
+| bg/surface | #000000 | Every surface, including Live Activities |
+| text/primary · text/secondary | #FFFFFF · #969696 | |
+| accent/primary (New Blue) | #0050EA | Actions, neutral bullets |
+| status/on-track | #139240 | Plan is fine |
+| status/obstacle | #FF6B00 | Needs attention (offline pack missing). Black glyphs |
+| status/urgent | #FF0000 | Deadline under 30 min |
+| status/notice | #FFD51F | Waiting (drafts waiting for Wi-Fi). Black glyphs |
+| status/assistance | #8A05B9 | Help and emergency |
+| bg/raised · border/subtle | #3B3B3B | Trigger cards, tracks, outlines |
+
+Use one status color per view. Lifestyle pink (#FF0099) and Dark Blue (#0524C8) are brand-only, so never use them in a Live Activity.
+
+### Day & night (modes of the `MTA Color` collection)
+| Token | Night (Dark) | Day (Light) |
+|---|---|---|
+| bg/surface | #000000 | #FFFFFF |
+| bg/raised | #3B3B3B | #F5F5F5 |
+| text/primary | #FFFFFF | #000000 |
+| text/secondary | #969696 | #3B3B3B |
+| text/inverse · bg/inverse | #000000 · #F5F5F5 | #FFFFFF · #000000 |
+| border/default · border/subtle | #FFFFFF · #3B3B3B | #000000 · #969696 |
+| text/on-color | #FFFFFF | #FFFFFF |
+| text/on-notice | #000000 | #000000 |
+| status/* · accent · brand | unchanged | unchanged |
+
+- **Theme:** the app follows the system appearance.
+- **Glyphs and labels on a status fill** use `on-color`, or `on-notice` on yellow and orange. They never use `text/primary`, which flips with the theme.
+- **Dynamic Island** (Expanded, Compact, Minimal) is always Night because it's black hardware.
+- **Taxi Big-Card** is always Night, for maximum contrast when you show it to a driver.
+- **In Figma:**
+  - The Live Activities page has a "Day · Live Activities" set.
+  - The Wire Flow page has a "Day mode" copy of the flow.
+  - Foundations shows the Night and Day swatches.
+
+## Type
+- **Typeface:** Helvetica Neue on iOS. Figma uses Inter as a stand-in because Helvetica Neue isn't installed there, and Noto Sans JP for Japanese.
+- **Tracking:** −1% on all styles. The Label style is UPPERCASE with +8% tracking.
+- **Weights:** Bold for numbers and headlines, Medium for labels and buttons, Regular for body.
+
+| Style | Size/Line | Weight |
+|---|---|---|
+| Display Large | 48/52 | Bold |
+| Display Medium (Lock Screen hero) | 30/34 | Bold |
+| Headline (Expanded hero) | 26/30 | Bold |
+| Subhead Medium | 24/28 | Medium |
+| Button 1 | 20/24 | Medium |
+| Subhead Normal | 18/22 | Medium |
+| Body 1 | 18/24 | Regular |
+| Button 2 (trailing number, pill) | 16/20 | Medium |
+| Body 2 | 14/18 | Regular |
+| Label | 11/14 | Bold, uppercase |
+
+The PDF's mobile table reuses the desktop line heights (for example 80 for 48pt), so mobile line heights are normalized to about 1.15–1.3×.
+
+## Grid
+- **App screens:** 4 columns · 30 margin · 15 gutter. This is the MTA mobile grid.
+- **Lock Screen Live Activity and Expanded island:** 4 columns · 16 margin · 15 gutter, 16pt top/bottom inset. Size is 370 × 160 maximum on iPhone 17.
+- **Compact island:** 250 × 37, with the bullet on the left and the number on the right.
+- **Minimal island:** 37 × 37, bullet only.
+- **Spacing:** 4 · 8 · 12 · 16 · 24 · 30, on a 4pt baseline.
+- **Radius:** card 20, inner 12, pills and bullets fully round.
+
+## Bullets (from the MTA subway line bullets)
+- **Glyph** says what the item is: ✈ flight, H hotel, ↓ offline pack, ↻ catch-up, ✓ done.
+- **Fill** is the current status color.
+- **Sizes:** 32 on the Lock Screen and Expanded island, 24 on Compact and Minimal.
+
+## Live Activity rules
+1. **Content:** one reminder, one number, one action. Use at most one Pill; tapping anywhere else opens the matching screen through a deep link.
+2. **Facts:** values come only from the Vault. No AI-generated text in a Live Activity.
+3. **Offline:** countdowns use the system timer (`Text(timerInterval:)`), so they keep running offline.
+4. **Copy:** write like a station sign, noun + time ("Check-out 11:00"), in two lines at most.
+5. **Lifetime:** each activity covers one moment and lasts up to 8 hours. It ends with a final state and `dismissalPolicy: .after(+5 min)`.
+
+## Reminder states
+| # | State | Status | Trigger | Who updates it |
+|---|---|---|---|---|
+| 1 | Leave for airport | On track | Departure − 3 h | App, local |
+| 2 | Leave now | Urgent | Leave-by − 30 min | Push (FCM) when online; the timer keeps counting offline |
+| 3 | Offline pack missing | Obstacle | Before boarding, no destination pack | App, foreground |
+| 4 | Hotel check-in | On track | First app open after landing | App, local, offline |
+| 5 | Check-out | Urgent | Check-out day − 2 h | App, local |
+| 6 | Waiting for Wi-Fi | Notice | Drafts queued on a metered or offline network | App (routing policy `deferToWiFi`) |
+| 7 | All caught up | On track | Catch-up pass finished on Wi-Fi | App, cloud; then the activity ends |

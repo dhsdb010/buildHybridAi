@@ -1,0 +1,77 @@
+name: TravelCopilot
+options:
+  bundleIdPrefix: dev.buildhybridai
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 12.13.0
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  TravelCopilot:
+    type: application
+    platform: iOS
+    sources:
+      - path: TravelCopilot
+        excludes:
+          - "Resources/GoogleService-Info.plist"
+    postBuildScripts:
+      - name: Copy GoogleService-Info.plist if present
+        basedOnDependencyAnalysis: false
+        script: |
+          SRC="${SRCROOT}/TravelCopilot/Resources/GoogleService-Info.plist"
+          if [ -f "$SRC" ]; then
+            cp "$SRC" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/"
+          else
+            echo "warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)"
+          fi
+    info:
+      path: TravelCopilot/Info.plist
+      properties:
+        CFBundleDisplayName: Travel Copilot
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.buildhybridai.travelcopilot
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_STRICT_CONCURRENCY: complete
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    dependencies:
+      - package: Firebase
+        product: FirebaseAILogic
+      - package: Firebase
+        product: FirebaseAppCheck
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseRemoteConfig
+  TravelCopilotTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TravelCopilotTests]
+    dependencies:
+      - target: TravelCopilot
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TravelCopilot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TravelCopilot"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  TravelCopilot:
+    build:
+      targets:
+        TravelCopilot: all
+        TravelCopilotTests: [test]
+    test:
+      targets: [TravelCopilotTests]

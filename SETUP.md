@@ -1,0 +1,51 @@
+# Setup
+
+## 1. Generate the Xcode project
+```bash
+cd ios && xcodegen generate && open TravelCopilot.xcodeproj
+```
+`project.yml` is the source of truth; `TravelCopilot.xcodeproj` is generated.
+
+## 2. Firebase (console steps)
+1. Go to https://console.firebase.google.com and create a project (Analytics optional).
+2. In **AI Services → AI Logic**, click **Get started** and choose **Gemini Developer API**. This also enforces App Check for AI Logic.
+3. Under **Project settings → Your apps**, add an **iOS app** with bundle ID `dev.buildhybridai.travelcopilot`.
+4. Download `GoogleService-Info.plist` to `ios/TravelCopilot/Resources/GoogleService-Info.plist`. Git ignores it, so it is never committed.
+5. *(Not needed until day 3–4.)* Under **Security → Authentication**, click **Get started**, open the **Sign-in method** tab, and enable **Anonymous**. This lets the app sign in silently with no login screen, so Firestore can store the Expense Report per user.
+6. *(Not needed until day 3–4.)* Under **Databases & Storage → Firestore**, create a database in test mode.
+7. Run the app once. Copy the `App Check debug token: ...` line from the Xcode console, then go to **Security → App Check → Apps → ⋮ → Manage debug tokens** and add it. Each simulator or device prints its own token.
+
+### Keeping one debug token across reinstalls
+Deleting the app makes App Check print a **new** debug token. To keep the token you already registered, pass it as the `FIRAAppCheckDebugToken` environment variable:
+- **Xcode:** Product → Scheme → Edit Scheme → Run → Arguments → Environment Variables. This is stored in your user-local scheme data, so it isn't committed.
+- **Command line:** `SIMCTL_CHILD_FIRAAppCheckDebugToken=<token> xcrun simctl launch <device> dev.buildhybridai.travelcopilot`
+
+Debug launch arguments (DEBUG builds only):
+- `-autoPrepareSample` loads the sample booking and runs Prepare once you open the Prepare tab.
+- `-askQuestion "What time is check-in?"` asks the Vault once on launch (Ask mode).
+- `-sayText "At the pharmacy: …"` translates once on launch (Say mode) and opens the big card.
+- `-replyText "…"` flips the first big card and submits that reply. The simulator can't type Japanese/Korean/Chinese, so use this to test Flip mode.
+- `-now 2026-12-03T13:40` fakes the current time, so Home's countdown and the calendar's "today" show the sample trip mid-way.
+- `-tab trip|prepare|log` opens a tab. `-tripMode calendar` opens Trip as a calendar. `-planDay 2026-12-04` opens Plan a day.
+- `-screen settings|help|ask` opens Settings, Help or Ask.
+- `-appearance 1|2` forces Day (1) or Night (2) for this launch.
+
+## 3. Day-1 spike checklist (real iPhone with Apple Intelligence)
+| # | Question | How |
+|---|---|---|
+| 1 | Does on-device inference work offline with App Check enforced? | Turn Airplane Mode on and tap **Run .hybrid** and **Run .deviceOnly** |
+| 2 | Is on-device vs cloud reported? | Each result header shows 📱/☁️ and the `modelVersion` |
+| 3 | Does structured output work on-device? | Tap **Structured output** and expect `item=hotel field=checkInTime` |
+| 4 | Can the simulator run Foundation Models? | ✅ Yes on this Mac (simulator reports "available") |
+
+### Results so far (iPhone 17 simulator, Wi-Fi, Nov 17)
+| Test | Result |
+|---|---|
+| `.deviceOnly` | ✅ 📱 `apple-foundation-models-system-language-model`, 6.4 s cold / ~3 s warm, returns just the translation |
+| `.cloudOnly` | ✅ ☁️ `gemini-3.5-flash-lite`, 0.9–2.9 s. App Check debug token accepted. The output is verbose markdown, so the prompts need to constrain the format |
+| `.hybrid` (online) | ✅ chose 📱 on-device first, as designed |
+| Structured output on-device (`@Generable`) | ✅ `item=hotel field=checkInTime` (correct) |
+| On-device vs cloud detection | ✅ via `rawResponse.modelVersion` |
+| **Offline + App Check** | ⏳ needs a real Apple Intelligence iPhone (Airplane Mode) |
+| `isExpensive` / `isConstrained` | ⏳ needs a real iPhone on cellular |
+| 5 | Cellular / Low Data flags | Turn Wi-Fi off and use cellular (look for 💸), then turn on Low Data Mode |
