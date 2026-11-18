@@ -9,6 +9,8 @@ https://www.figma.com/design/YVtC8LUcZoFlw3X2jpwkQm
 | 01 · Foundations | Color variables, type scale, grids (with visible column overlays) |
 | 02 · Live Activities | Components: Bullet, Pill, Progress, Lock Screen ×7, Dynamic Island Expanded/Compact/Minimal ×7 |
 | 03 · Wire Flow | 7 trip moments: trigger → Lock Screen → Dynamic Island → screen that a tap opens; App Screen components |
+| 04 · App Screens | Home, Settings, Trip, Calendar, Plan a day, Ask, Prepare, Log, Help (Day + Night) |
+| 05 · Onboarding Flow | First launch: Welcome → Add bookings → Building → You're ready → Home, with branches for "I'll do it later", offline, and a partial set-up (Day + Night) |
 
 ## App screens (page "04 · App Screens")
 Day is the main look, following the MTA-style reference (white base, big bold numbers, outlined boxes). There's a Night copy too. Screens are 402 × 874 on the 4·30·15 grid, built only from these components: Nav Bar, Tab Bar, Button, Number Box, Milestone, Card (Notice/Feature), Segmented, Settings Row, Ask Bar.
