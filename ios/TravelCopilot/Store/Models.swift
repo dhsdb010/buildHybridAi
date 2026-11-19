@@ -141,7 +141,7 @@ final class Place {
   }
 
   var symbol: String {
-    switch kind { case "hotel": "bed.double.fill"; case "airport": "airplane"; default: "mappin.and.ellipse" }
+    switch kind { case "hotel": "bed.double.fill"; case "airport": "airplane"; default: "mappin" }
   }
 }
 

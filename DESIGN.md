@@ -34,12 +34,13 @@ Day is the main look, following the MTA-style reference (white base, big bold nu
 
 | Screen | What it shows |
 |---|---|
-| Home | Next moment as a big number (15:00) · countdown boxes · offline-readiness milestones · taxi card shortcut · Ask bar. **Gear (top right) opens Settings** |
+| Home | Next moment as a big number (15:00) · countdown boxes · offline-readiness milestones · taxi card shortcut · Ask bar. **Gear (top right) opens Settings**. With no trip yet, the screen says "Start your trip here", has a "Prepare my trip →" button, and shows trip-idea cards (Tokyo, Seoul, …) that open the planner already filled in |
+| Map | **Full screen.** The map runs under the status bar and tab bar. Floating glass controls: Live / Offline, the connection state, and recenter (`location.fill`). A bottom sheet lists places with walk or taxi times plus the Ask bar. Offline: the saved snapshot, area chips, and a "Saved" chip. Pins: hotel = New Blue with `bed.double.fill`, plan = inverse with `mappin`; the GPS dot is New Blue with a halo |
 | Settings | Pushed from Home (not a tab). Network (data saver, wait for Wi-Fi, cloud model) · Day/Night · Trip · Privacy |
 | Trip | Trip days as milestones · Vault cards with bullets · check-out notice |
 | Ask | Ask / Say segmented · answer as a big number · 📱 on-device chip · "From your booking" source card |
 | Prepare | Paste box · what you'll have offline · notice that Prepare is the only cloud step · primary button |
-| Log | Device / Cloud / Deferred / Failed boxes · routing entries |
+| Log | Device / Cloud / Deferred / Failed boxes · routing entries. Failed rows show only a short cause ("Over quota · details"); tapping a row opens Request details with every field and the raw error |
 | Help | 110 / 119 call tiles · medical info card · pre-checked Japanese phrases |
 
 | Trip · Calendar | List / Calendar switch · blue "TOKYO" poster with flight/hotel badges · month grid (done green, today blue ring, planned outline, check-out red, outside the trip gray) · selected-day preview |
@@ -51,7 +52,7 @@ Day is the main look, following the MTA-style reference (white base, big bold nu
 - **Nav title is truly centered:** the left and right slots are fixed at 88pt each, and the title fills the middle.
 
 ### Tab bar: iOS 26 Liquid Glass
-- **Tabs:** 4 tabs, **Home · Trip · Prepare · Log**. Settings isn't a tab; it opens from the **gearshape** on Home.
+- **Tabs:** 5 tabs, **Home · Trip · Map · Prepare · Log**. Settings isn't a tab; it opens from the **gearshape** on Home.
 - **Shape:** a floating 370 × 70 capsule, 20pt above the bottom edge, with content scrolling under it.
 - **Material:** a Figma `GLASS` effect over a `color/bg/glass` tint. Use `.glassEffect()` / the system `TabView` on iOS.
 - **Active tab:** a `color/fill/selected` pill with the **.fill** SF Symbol in New Blue.
@@ -63,7 +64,8 @@ Day is the main look, following the MTA-style reference (white base, big bold nu
 
 | Where | Symbol |
 |---|---|
-| Tabs | `house` / `house.fill` · `suitcase.rolling` / `.fill` · `square.and.arrow.down` / `.fill` · `list.bullet` |
+| Tabs | `house` / `house.fill` · `suitcase.rolling` / `.fill` · `map` / `map.fill` · `square.and.arrow.down` / `.fill` · `list.bullet` |
+| Map | `location.fill` (recenter) · `mappin` (plan pins) · `figure.walk` (walk time) |
 | Nav | `chevron.left` (push) · `xmark` (modal) · `gearshape` (Home → Settings) |
 | Trip bullets | `airplane` · `bed.double.fill` · `icloud.dashed` (waiting for Wi-Fi) · `checkmark` · `square.and.arrow.down` |
 | Other | `arrow.up` (Ask send) · `phone.fill` (Help call tiles) · `info.circle` (explanations) · `globe` (languages) · `apple.logo` (Sign in with Apple) |

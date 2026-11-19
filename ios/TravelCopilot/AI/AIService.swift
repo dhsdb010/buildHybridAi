@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import FirebaseAILogic
 import FoundationModels
@@ -69,6 +70,33 @@ final class AIService {
       return (response.content, meta)
     } catch {
       log(task, kind, reason: route.reason, outcome: "error", route: route.route,
+          latencyMs: (ContinuousClock.now - start).milliseconds, detail: String(describing: error))
+      throw error
+    }
+  }
+
+  /// Cloud-only call with Grounding with Google Maps. Returns the model's text plus the Maps
+  /// grounding chunks (real places: title, Maps link, place ID). Callers must only show places
+  /// that appear in `places`, never names that exist only in the text.
+  func grounded(
+    _ task: String, prompt: String, instructions: String, near: CLLocationCoordinate2D?
+  ) async throws -> (text: String, places: [GoogleMapsGroundingChunk], meta: AIMeta) {
+    let route = try resolveRoute(task, kind: .prepare)
+    guard TravelCopilotApp.firebaseConfigured else { throw ModelRouter.NotConfigured() }
+    let start = ContinuousClock.now
+    do {
+      let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
+        modelName: ModelRouter.cloudModelName,
+        tools: [.googleMaps()],
+        toolConfig: near.map { ToolConfig(retrievalConfig: RetrievalConfig(location: $0)) },
+        systemInstruction: ModelContent(role: "system", parts: instructions))
+      let response = try await model.generateContent(prompt)
+      let chunks = response.candidates.first?.groundingMetadata?.groundingChunks.compactMap(\.maps) ?? []
+      let meta = AIMeta(route: .cloudOnly, source: .inCloud, latencyMs: (ContinuousClock.now - start).milliseconds)
+      log(task, .prepare, reason: route.reason + " · Google Maps", outcome: "ok", meta: meta)
+      return (response.text ?? "", chunks, meta)
+    } catch {
+      log(task, .prepare, reason: route.reason, outcome: "error", route: .cloudOnly,
           latencyMs: (ContinuousClock.now - start).milliseconds, detail: String(describing: error))
       throw error
     }

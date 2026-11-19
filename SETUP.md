@@ -14,6 +14,13 @@ cd ios && xcodegen generate && open TravelCopilot.xcodeproj
 5. *(Not needed until day 3–4.)* Under **Security → Authentication**, click **Get started**, open the **Sign-in method** tab, and enable **Anonymous**. This lets the app sign in silently with no login screen, so Firestore can store the Expense Report per user.
 6. *(Not needed until day 3–4.)* Under **Databases & Storage → Firestore**, create a database in test mode.
 7. Run the app once. Copy the `App Check debug token: ...` line from the Xcode console, then go to **Security → App Check → Apps → ⋮ → Manage debug tokens** and add it. Each simulator or device prints its own token.
+8. **Sign-in (Google / Apple):**
+   1. Under **Security → Authentication → Sign-in method**, enable **Google** and **Apple**.
+   2. Download `GoogleService-Info.plist` again. It now contains `CLIENT_ID` and `REVERSED_CLIENT_ID`, and the build adds the URL scheme automatically.
+   3. Sign in with Apple also needs a development team with the capability in Xcode (Signing & Capabilities). It only works on a signed build.
+9. **Plan chat with Google Maps:** Grounding with Google Maps needs the **Blaze** (pay-as-you-go) plan. On the free tier it returns HTTP 429, and the app falls back to Apple Maps search: the places are real, but there are no Google scores.
+   - Google scores also need the **Places API (New)** enabled on the project's API key.
+   - Without it, the card shows a "Reviews ↗" link to Google Maps instead of a score.
 
 ### Keeping one debug token across reinstalls
 Deleting the app makes App Check print a **new** debug token. To keep the token you already registered, pass it as the `FIRAAppCheckDebugToken` environment variable:
@@ -31,6 +38,8 @@ Debug launch arguments (DEBUG builds only):
 - `-appearance 1|2` forces Day (1) or Night (2) for this launch.
 - `-screen taxi` opens the taxi card. Add `-replyStage handover` to stop on the "Turn the phone around" screen.
 - `-onboarding` shows the Welcome / set-up flow even after set-up. `-welcomeAuto` runs it with the sample trip (bookings → pack → places → offline map). `-onboarded YES` skips it.
+- `-signInSeen NO` shows the sign-in screen again. `-welcomePage 3` opens "Have you booked yet?".
+- `-planAuto` opens the plan chat and answers it with sample data, running the real cloud calls. Add `-planStep brief|memories|destination|days|stay|eat|book` to stop at a step; it stops at `book` if you leave it out.
 - `-tab map -mapMode offline` opens the Map on the saved offline snapshot. Set a fake GPS position with `xcrun simctl location <device> set 35.6905,139.7000`.
 
 ## 3. Day-1 spike checklist (real iPhone with Apple Intelligence)

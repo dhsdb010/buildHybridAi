@@ -5,9 +5,13 @@ import SwiftData
 struct WelcomeView: View {
   @Environment(AIService.self) private var ai
   @Environment(Connectivity.self) private var net
+  @Environment(AuthService.self) private var auth
   @Environment(\.dismiss) private var dismiss
   @AppStorage("onboarded") private var onboarded = false
-  @State private var page = 0          // 0 welcome · 1 bookings · 2 building
+  @AppStorage("signInSeen") private var signInSeen = false
+  @State private var page = 0          // 0 welcome · 3 booked yet? · 1 bookings · 2 building
+  @State private var showPlan = false
+  @State private var signInGate = false
   @State private var text = ""
   @State private var current: PrepareService.Step?
   @State private var done: Set<PrepareService.Step> = []
@@ -17,16 +21,30 @@ struct WelcomeView: View {
 
   var body: some View {
     Group {
-      switch page {
-      case 0: welcome
-      case 1: bookings
-      default: building
+      if !signInSeen {
+        SignInView { signInSeen = true }
+      } else {
+        switch page {
+        case 0: welcome
+        case 3: bookedYet
+        case 1: bookings
+        default: building
+        }
       }
     }
     .animation(.snappy, value: page)
+    .animation(.snappy, value: signInSeen)
+    .fullScreenCover(isPresented: $showPlan) {
+      PlanView(onBooked: { showPlan = false; page = 1 }, onClose: { showPlan = false })
+    }
+    .sheet(isPresented: $signInGate) {
+      SignInView(onDone: { signInGate = false; showPlan = true }, required: true)
+    }
     .task {
       #if DEBUG
         if let p = UserDefaults.standard.string(forKey: "welcomePage"), let n = Int(p) { page = n }
+        // `-planAuto`: open the plan chat straight away (see PlanView.debugAuto).
+        if ProcessInfo.processInfo.arguments.contains("-planAuto") { signInSeen = true; page = 3; showPlan = true }
         // `-welcomeAuto`: fill the sample trip and build, to check the whole set-up end to end.
         if ProcessInfo.processInfo.arguments.contains("-welcomeAuto") {
           try? await Task.sleep(for: .seconds(2))
@@ -53,7 +71,7 @@ struct WelcomeView: View {
         }
         .padding(.top, 6)
         Spacer(minLength: 0)
-        Button { page = 1 } label: {
+        Button { page = 3 } label: {
           Text("Set up my trip").mta(.button1).foregroundStyle(MTA.accent)
             .frame(maxWidth: .infinity, minHeight: 52).background(.white, in: .capsule)
         }
@@ -74,6 +92,44 @@ struct WelcomeView: View {
         Text(detail).mta(.body2).foregroundStyle(MTA.onColor.opacity(0.8))
       }
     }
+  }
+
+  // MARK: - Booked yet? (plan with AI, or paste bookings)
+
+  private var bookedYet: some View {
+    ZStack {
+      MTA.accent.ignoresSafeArea()
+      VStack(alignment: .leading, spacing: 18) {
+        BrandBadge(color: MTA.onColor, size: 110)
+        Text("Have you booked your trip yet?").mta(.displayLarge).foregroundStyle(MTA.onColor)
+          .fixedSize(horizontal: false, vertical: true)
+        Text("If not, plan it here: where to go, where to stay, what to eat. The AI checks live places and local reviews.")
+          .mta(.body1).foregroundStyle(MTA.onColor).fixedSize(horizontal: false, vertical: true)
+        Spacer(minLength: 0)
+        Button { helpMePlan() } label: {
+          Text("Help me plan it").mta(.button1).foregroundStyle(MTA.accent)
+            .frame(maxWidth: .infinity, minHeight: 52).background(.white, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        Button { page = 1 } label: {
+          Text("Yes, add my bookings").mta(.button1).foregroundStyle(MTA.onColor)
+            .frame(maxWidth: .infinity, minHeight: 52).overlay { Capsule().strokeBorder(.white, lineWidth: 2) }
+        }
+        .buttonStyle(.plain)
+        HStack(alignment: .top, spacing: 8) {
+          Image(systemName: "icloud").foregroundStyle(MTA.onColor)
+          Text("Planning needs internet. Your trip works offline later.").mta(.body2).foregroundStyle(MTA.onColor)
+        }
+        .frame(maxWidth: .infinity)
+      }
+      .mtaScreen().padding(.top, 24).padding(.bottom, 12)
+    }
+    .environment(\.colorScheme, .dark)
+  }
+
+  private func helpMePlan() {
+    // Cloud planning has per-user limits, so it needs an account (offline features don't).
+    if auth.isSignedIn || !TravelCopilotApp.firebaseConfigured { showPlan = true } else { signInGate = true }
   }
 
   // MARK: - 2 · Add bookings
@@ -117,7 +173,7 @@ struct WelcomeView: View {
       .navigationTitle("Set up")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) { Button("Back", systemImage: "chevron.left") { page = 0 } }
+        ToolbarItem(placement: .topBarLeading) { Button("Back", systemImage: "chevron.left") { page = 3 } }
         ToolbarItem(placement: .topBarTrailing) { Button("Skip") { finish() } }
         ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { editorFocused = false } }
       }

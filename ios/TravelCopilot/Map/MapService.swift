@@ -70,7 +70,7 @@ enum MapService {
     return [item.addressLocal ?? "", english, neighborhood, item.title]
   }
 
-  private static func search(_ query: String) async -> CLLocationCoordinate2D? {
+  static func search(_ query: String) async -> CLLocationCoordinate2D? {
     let request = MKLocalSearch.Request()
     request.naturalLanguageQuery = query
     guard let response = try? await MKLocalSearch(request: request).start(),

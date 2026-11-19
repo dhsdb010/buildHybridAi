@@ -8,6 +8,9 @@ packages:
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
     from: 12.13.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 9.0.0
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -28,9 +31,20 @@ targets:
           SRC="${SRCROOT}/TravelCopilot/Resources/GoogleService-Info.plist"
           if [ -f "$SRC" ]; then
             cp "$SRC" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/"
+            # Google Sign-In returns to the app through the REVERSED_CLIENT_ID URL scheme.
+            REV=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" "$SRC" 2>/dev/null || true)
+            PL="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+            if [ -n "$REV" ] && [ -f "$PL" ]; then
+              /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" "$PL" 2>/dev/null || true
+              /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" -c "Add :CFBundleURLTypes:0 dict" -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REV" "$PL"
+            fi
           else
             echo "warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)"
           fi
+    entitlements:
+      path: TravelCopilot/TravelCopilot.entitlements
+      properties:
+        com.apple.developer.applesignin: [Default]
     info:
       path: TravelCopilot/Info.plist
       properties:
@@ -53,6 +67,8 @@ targets:
         product: FirebaseAppCheck
       - package: Firebase
         product: FirebaseAuth
+      - package: GoogleSignIn
+        product: GoogleSignIn
       - package: Firebase
         product: FirebaseFirestore
       - package: Firebase

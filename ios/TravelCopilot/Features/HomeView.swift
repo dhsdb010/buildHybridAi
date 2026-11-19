@@ -11,6 +11,7 @@ struct HomeView: View {
   @Query(sort: \TripPlan.start) private var plans: [TripPlan]
   @Query(filter: #Predicate<TranslationEntry> { $0.isDraft }) private var drafts: [TranslationEntry]
   @State private var taxiItem: VaultItem?
+  @State private var template: PlanTemplate?
 
   private var pack: DestinationPack? { packs.first }
   private var hotel: VaultItem? { items.first { $0.kind == "hotel" } }
@@ -49,6 +50,7 @@ struct HomeView: View {
       }
       .navigationDestination(isPresented: $router.showSettings) { SettingsView() }
       .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: pack) }
+      .fullScreenCover(item: $template) { t in PlanView(template: t, onClose: { template = nil }) }
       #if DEBUG
       .task {
         // `-screen taxi` opens the taxi card (simulator checks).
@@ -168,11 +170,29 @@ struct HomeView: View {
   }
 
   private var emptyState: some View {
-    VStack(alignment: .leading, spacing: 20) {
+    VStack(alignment: .leading, spacing: 18) {
       MTALabel("No trip yet")
-      Text("Paste your bookings once. Then it works with no signal.").mta(.displayMedium).foregroundStyle(MTA.text)
-      NoticeCard(text: "Prepare runs once in the cloud on Wi-Fi. After that, Ask, Say and the taxi card work offline.")
-      Button("Prepare my trip") { router.tab = .prepare }.buttonStyle(.mtaPrimary)
+      Text("Start your trip here").mta(.displayMedium).foregroundStyle(MTA.text)
+      Text("Already booked? Add it once on Wi-Fi, then it works with no signal.")
+        .mta(.body1).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
+      Button { router.tab = .prepare } label: {
+        Label("Prepare my trip", systemImage: "arrow.right").labelStyle(TrailingIcon())
+      }
+      .buttonStyle(.mtaPrimary)
+
+      MTALabel("Not booked yet? Start from an idea").padding(.top, 10)
+      ScrollView(.horizontal) {
+        HStack(spacing: MTA.gutter) {
+          ForEach(PlanTemplate.available) { t in
+            TemplateCard(template: t) { template = t }
+          }
+        }
+        .padding(.horizontal, MTA.margin)
+      }
+      .scrollIndicators(.hidden)
+      .padding(.horizontal, -MTA.margin)
+      Text("Opens the AI planner with this trip filled in. You can change anything.")
+        .mta(.body2).foregroundStyle(MTA.text2)
     }
     .mtaScreen().padding(.top, 24)
   }

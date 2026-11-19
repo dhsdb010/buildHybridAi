@@ -11,6 +11,7 @@ struct PrepareView: View {
   @State private var busy = false
   @State private var step: PrepareService.Step?
   @State private var error: String?
+  @State private var showPlan = false
   @FocusState private var editorFocused: Bool
 
   var body: some View {
@@ -19,6 +20,10 @@ struct PrepareView: View {
         VStack(alignment: .leading, spacing: 16) {
           MTALabel("Before you fly · on Wi-Fi")
           Text("Build your offline pack").mta(.displayMedium).foregroundStyle(MTA.text)
+
+          FeatureCard(label: "Not booked yet?", title: "Help me plan",
+                      detail: "Chat with AI: where to go, where to stay, what to eat",
+                      systemImage: "asterisk") { showPlan = true }
 
           MTALabel("Paste booking emails")
           TextEditor(text: $text)
@@ -66,6 +71,7 @@ struct PrepareView: View {
       .scrollIndicators(.hidden)
       .scrollDismissesKeyboard(.immediately)
       .background(MTA.surface)
+      .fullScreenCover(isPresented: $showPlan) { PlanView(onClose: { showPlan = false }) }
       .navigationTitle("Prepare")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

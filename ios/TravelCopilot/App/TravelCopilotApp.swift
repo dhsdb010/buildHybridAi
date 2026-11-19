@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import FirebaseCore
 import FirebaseAppCheck
+import GoogleSignIn
 
 @main
 struct TravelCopilotApp: App {
@@ -24,6 +25,7 @@ struct TravelCopilotApp: App {
   @State private var ai: AIService
   @State private var router = AppRouter()
   @State private var location = LocationService()
+  @State private var auth = AuthService()
 
   init() {
     _ = Self.firebaseConfigured
@@ -41,6 +43,8 @@ struct TravelCopilotApp: App {
         .environment(ai)
         .environment(router)
         .environment(location)
+        .environment(auth)
+        .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
     }
     .modelContainer(container)
   }
