@@ -42,6 +42,7 @@ Debug launch arguments (DEBUG builds only):
 - `-planAuto` opens the plan chat and answers it with sample data, running the real cloud calls. Add `-planStep brief|memories|destination|days|stay|eat|book` to stop at a step; it stops at `book` if you leave it out.
 - `-liveDemo` starts a sample journey Live Activity to the hotel (train → bus → walk → check-in). Add `-liveDemoStep far|train|bus|walk|arriving|arrived` to pick where you are along it. Tap **Done** on the Live Activity to move to the next step.
 - `-notifyIn 8` (debug builds): the next trip reminder fires in 8 seconds instead of at its real time, so you can check the banner and its long-press buttons (Show ticket · Done · Ask Blue). Each scheduled reminder is also printed to the console as `Reminder scheduled: …`.
+- `-offlineFor 30` (debug builds): the app acts offline for the first 30 seconds, then comes back online. Combine with `-sayText "At the pharmacy: I'm allergic to penicillin"` to make an on-device draft and watch the catch-up pass improve it (needs a registered App Check debug token for the cloud step). The Log tab's **Catch-up** filter shows each step.
 - `-tab map -mapMode offline` opens the Map on the saved offline snapshot. Set a fake GPS position with `xcrun simctl location <device> set 35.6905,139.7000`.
 
 ## 3. Day-1 spike checklist (real iPhone with Apple Intelligence)

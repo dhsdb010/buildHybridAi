@@ -148,7 +148,7 @@ struct AskView: View {
       }
       .transition(.move(edge: .bottom).combined(with: .opacity))
     } else {
-      BlueRow(caption: m.caption.nilIfEmpty) {
+      BlueRow(caption: liveCaption(m), captionColor: captionColor(m)) {
         switch m.kind {
         case "vault", "place":
           Text(m.value).mta(m.value.count <= 12 ? .displayLarge : .subheadMedium).monospacedDigit()
@@ -159,8 +159,28 @@ struct AskView: View {
             BookingSource(title: m.sourceTitle, ref: m.sourceRef.nilIfEmpty, symbol: m.sourceSymbol)
           }
         case "translation":
-          Text(m.value).mta(.subheadMedium)
-          if !m.subtitle.isEmpty { Text(m.subtitle).mta(.body2).foregroundStyle(MTA.text2) }
+          // Drawn from the live entry, so the bubble updates itself when the catch-up pass improves it.
+          let e = entry(for: m.link)
+          Text(e?.translation ?? m.value).mta(.subheadMedium).fixedSize(horizontal: false, vertical: true)
+          let roman = e?.romanization ?? m.subtitle
+          if !roman.isEmpty { Text(roman).mta(.body2).foregroundStyle(MTA.text2) }
+          if let draft = e?.draftTranslation {
+            Text(draft).mta(.body2).strikethrough().foregroundStyle(MTA.text2)
+              .accessibilityLabel("Offline draft was: \(draft)")
+          }
+          if let what = e?.whatChanged {
+            Label(what, systemImage: "sparkle").mta(.body2).foregroundStyle(MTA.accent)
+          }
+          if let why = e?.checkReason {
+            VStack(alignment: .leading, spacing: 4) {
+              MTALabel("Check this", color: MTA.urgent)
+              Text("The cloud version changed something, so your draft is kept: \(why).").mta(.body2).foregroundStyle(MTA.text)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MTA.surface, in: .rect(cornerRadius: 10))
+            .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(MTA.urgent, lineWidth: 1.5) }
+          }
           if !m.note.isEmpty { Label(m.note, systemImage: "info.circle").mta(.body2).foregroundStyle(MTA.text2) }
         default:
           Text(m.text).mta(.body1)
@@ -184,9 +204,34 @@ struct AskView: View {
       BubbleLink(title: "Open map", symbol: "map.fill") { router.tab = .map; dismiss() }
     } else if link.hasPrefix("taxi:"), let item = items.first(where: { $0.title == link.dropFirst(5) }) {
       BubbleLink(title: "Show taxi card", symbol: "car.fill") { taxiItem = item }
-    } else if link.hasPrefix("translation:"), let entry = translations.first(where: { $0.translation == link.dropFirst(12) }) {
+    } else if link.hasPrefix("translation:"), let entry = entry(for: link) {
       BubbleLink(title: "Show full screen", symbol: "arrow.up.left.and.arrow.down.right") { translationCard = entry }
     }
+  }
+
+  /// The translation behind a chat bubble: by its id, or (older messages) by its text.
+  private func entry(for link: String) -> TranslationEntry? {
+    guard link.hasPrefix("translation:") else { return nil }
+    let key = String(link.dropFirst(12))
+    return translations.first { $0.uid == key }
+      ?? translations.first { $0.translation == key || $0.draftTranslation == key }
+  }
+
+  /// A translation's caption follows the catch-up pass: draft → improved, or kept for checking.
+  private func liveCaption(_ m: ChatMessage) -> String? {
+    if m.kind == "translation", let e = entry(for: m.link) {
+      if e.checkReason != nil { return "On-device · Draft kept · checked" }
+      if e.draftTranslation != nil { return "Improved in the cloud · \(SourceChip.format(e.improvedLatencyMs)) · was on-device" }
+      if e.improvedAt != nil { return "Checked in the cloud · draft was already good" }
+    }
+    return m.caption.nilIfEmpty
+  }
+
+  private func captionColor(_ m: ChatMessage) -> Color {
+    guard m.kind == "translation", let e = entry(for: m.link) else { return MTA.onTrack }
+    if e.checkReason != nil { return MTA.urgent }
+    if e.isDraft { return MTA.obstacle }
+    return MTA.onTrack
   }
 
   /// "On-device · 4.1 s · From your booking" under Blue's bubble (like Messages' "Delivered").
@@ -227,7 +272,7 @@ struct AskView: View {
       let m = ChatMessage(role: "blue", kind: "translation", text: entry.sourceText)
       m.value = entry.translation; m.subtitle = entry.romanization; m.note = entry.note
       m.caption = caption(meta, entry.isDraft ? "Draft · Say in \(language)" : "Say in \(language)")
-      m.link = "translation:\(entry.translation)"
+      m.link = "translation:\(entry.uid)"
       return m
     case let .other(meta):
       let m = ChatMessage(role: "blue", kind: "other",
@@ -309,6 +354,7 @@ struct BlueAvatar: View {
 /// One of Blue's messages: logo at the bottom-left, grey bubble, optional caption underneath.
 private struct BlueRow<Content: View>: View {
   var caption: String? = nil
+  var captionColor: Color = MTA.onTrack
   @ViewBuilder var content: Content
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
@@ -322,7 +368,7 @@ private struct BlueRow<Content: View>: View {
       }
       if let caption {
         Text(caption.uppercased()).font(.system(size: 11, weight: .semibold)).tracking(0.6)
-          .foregroundStyle(MTA.onTrack).padding(.leading, 36)
+          .foregroundStyle(captionColor).padding(.leading, 36)
       }
     }
     .transition(.move(edge: .bottom).combined(with: .opacity))

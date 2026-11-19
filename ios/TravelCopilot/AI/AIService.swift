@@ -31,6 +31,10 @@ final class AIService {
   let connectivity: Connectivity
   let context: ModelContext
   var dataSaver = true
+  /// The last Log row written, so a caller can add the result (catch-up: improved / kept).
+  private(set) var lastEntry: RoutingEntry?
+  /// Catch-up pass progress, shown on Home.
+  var catchUp: CatchUpState = .idle
 
   init(connectivity: Connectivity, context: ModelContext) {
     self.connectivity = connectivity
@@ -123,6 +127,14 @@ final class AIService {
     entry.latencyMs = meta?.latencyMs ?? latencyMs
     entry.detail = detail
     context.insert(entry)
+    try? context.save()
+    lastEntry = entry
+  }
+
+  /// A Log row that isn't an AI call (e.g. "Catch-up · start: back online → 3 drafts").
+  func note(_ task: String, _ kind: TaskKind, reason: String, outcome: String, note: String? = nil) {
+    log(task, kind, reason: reason, outcome: outcome)
+    lastEntry?.note = note
     try? context.save()
   }
 }

@@ -86,6 +86,15 @@ final class TranslationEntry {
   var latencyMs: Int = 0
   var isDraft: Bool
   var polishedTranslation: String?
+  /// Stable id for links from Blue's chat (the translation text can change when improved).
+  var uid: String = UUID().uuidString
+  /// Catch-up pass: the on-device draft as it was, kept for the "what changed" view.
+  var draftTranslation: String?
+  var whatChanged: String?
+  var improvedAt: Date?
+  var improvedLatencyMs: Int = 0
+  /// Set when the cloud version changed a number or medicine name: the draft is kept ("Check this").
+  var checkReason: String?
 
   init(sourceText: String, translation: String, direction: String, languageCode: String,
        source: String, isDraft: Bool) {
@@ -179,6 +188,8 @@ final class RoutingEntry {
   var outcome: String           // ok · error · deferred · blocked
   var detail: String?
   var network: String
+  /// Extra line for the Log that isn't an error (catch-up: what changed, or why a draft was kept).
+  var note: String?
 
   init(task: String, kind: TaskKind, reason: String, outcome: String, network: String) {
     self.task = task

@@ -119,6 +119,8 @@ struct RootView: View {
   @AppStorage("onboarded") private var onboarded = false
   @AppStorage("planReminders") private var reminders = true
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(AIService.self) private var ai
+  @Environment(Connectivity.self) private var connectivity
   @Query private var items: [VaultItem]
   @Query private var plans: [TripPlan]
   @Query private var packs: [DestinationPack]
@@ -134,6 +136,7 @@ struct RootView: View {
       Tab("Log", systemImage: "list.bullet", value: AppTab.log) { RoutingLogView() }
     }
     .tint(MTA.accent)
+    .overlay(alignment: .top) { CatchUpToast().padding(.top, 4) }
     .sheet(item: $router.ask) { AskView(request: $0) }
     .sheet(isPresented: $router.showHelp) { HelpView() }
     .fullScreenCover(isPresented: $showWelcome) { WelcomeView() }
@@ -182,6 +185,14 @@ struct RootView: View {
       #endif
       await TripReminders.sync(events: TripTimeline.events(items: items, plans: plans),
                                place: packs.first?.countryName ?? "Trip", enabled: reminders)
+    }
+    // Catch-up pass: when the app is open and the connection comes back, improve offline drafts.
+    .task(id: "\(connectivity.isOnline)-\(connectivity.isGoodForCloud)-\(scenePhase == .active)") {
+      guard scenePhase == .active, connectivity.isOnline,
+            ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+      try? await Task.sleep(for: .seconds(2))   // let the connection settle
+      guard !Task.isCancelled else { return }
+      await CatchUpService.run(ai: ai, pack: packs.first)
     }
     .onAppear {
       // First launch with an empty Vault → Welcome / set up your trip.

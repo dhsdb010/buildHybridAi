@@ -87,6 +87,8 @@ struct HomeView: View {
 
       progressBar(now: now, range: range)
 
+      if case let .waiting(n) = ai.catchUp { improveNow(n) }
+
       MTALabel("Offline ready")
       GridRow4 {
         ForEach(checks, id: \.label) { c in
@@ -142,6 +144,17 @@ struct HomeView: View {
     }
   }
 
+  /// On roaming / Low Data the catch-up pass waits for Wi-Fi; this lets the traveler run it now.
+  private func improveNow(_ n: Int) -> some View {
+    OutlineCard {
+      MTALabel("On roaming or Low Data")
+      Text("\(n) draft\(n == 1 ? "" : "s") wait for Wi-Fi").mta(.subheadMedium).foregroundStyle(MTA.text)
+      Text("Improving uses a little mobile data.").mta(.body2).foregroundStyle(MTA.text2)
+      Button("Improve now") { Task { await CatchUpService.run(ai: ai, manual: true, pack: pack) } }
+        .buttonStyle(.mtaPrimary)
+    }
+  }
+
   @ViewBuilder
   private func boxes(next: TripEvent?, now: Date, ready: Int, total: Int) -> some View {
     let secs = max(0, Int(next?.date.timeIntervalSince(now) ?? 0))
@@ -153,7 +166,8 @@ struct HomeView: View {
       NumberBox(value: String(format: "%02d", hours), caption: "Hours")
       NumberBox(value: String(format: "%02d", mins), caption: "Min")
     }
-    NumberBox(value: "\(drafts.count)", caption: "Drafts", style: .filled)
+    // Orange while offline drafts wait for the catch-up pass.
+    NumberBox(value: "\(drafts.count)", caption: "Drafts", style: drafts.isEmpty ? .filled : .status(.obstacle))
     NumberBox(value: "\(ready)/\(total)", caption: "Ready", style: ready == total ? .status(.onTrack) : .status(.obstacle))
   }
 

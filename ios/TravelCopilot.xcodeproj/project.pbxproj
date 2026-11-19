@@ -13,6 +13,7 @@
 		12C8A5B538C1CF391AC3555B /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657B71922D12DD14BBCF2B72 /* Speech.swift */; };
 		1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE0344074B989FEB2BBE0ED /* HelpView.swift */; };
 		177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E61DA002322A92847F3F1B /* RoutingLogView.swift */; };
+		20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C7BA93EA70257ECCAE299C /* CatchUpService.swift */; };
 		2FAF49E7597FADABE9CF054A /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 5A72C650EB0633D1444CE7E7 /* FirebaseRemoteConfig */; };
 		42507D778612384BB91504BF /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0A5B99648BA70E434E2030 /* PlanView.swift */; };
 		430F10EE367826B6BB9454E5 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CB8AF8CFFC97B61CB2B58E /* MapScreen.swift */; };
@@ -62,6 +63,7 @@
 		E40AC5FD4F2EDABFA5F9672E /* JourneyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985D06F52FFB9D2128C266F2 /* JourneyIntent.swift */; };
 		E55B5D7A60BAEE6091257919 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 73FC01A36D34395EAEE3ED2C /* Assets.xcassets */; };
 		E7E2725A3DEB6CD48202E7D5 /* TravelCopilotWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6E02FC1AF031F047E940AC9C /* TravelCopilotWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		ED57198397D6C96D94C269AD /* CatchUpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */; };
 		EE012B5BFE59439EC3E36385 /* TripReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D486C5664E573DD226E81A5 /* TripReminders.swift */; };
 		FB93B8197DD2CE5FC964FD81 /* TripTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D66E5FD9612F31C08F4DBF /* TripTimeline.swift */; };
 		FC31FEA36350CB048D39DB3F /* JourneyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985D06F52FFB9D2128C266F2 /* JourneyIntent.swift */; };
@@ -114,6 +116,7 @@
 		2E77E1D276180137848AD1DF /* TripActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripActivity.swift; sourceTree = "<group>"; };
 		3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicy.swift; sourceTree = "<group>"; };
 		4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TravelCopilotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchUpTests.swift; sourceTree = "<group>"; };
 		4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyNumbers.swift; sourceTree = "<group>"; };
 		5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		613C423B335623E6820F3919 /* Journey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Journey.swift; sourceTree = "<group>"; };
@@ -131,6 +134,7 @@
 		8216EB2B2631E68DCB98DD52 /* TravelCopilot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TravelCopilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		836881F86764F2101174C04F /* TripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripView.swift; sourceTree = "<group>"; };
 		86524DAFA599BBCE2A746895 /* TravelCopilotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelCopilotApp.swift; sourceTree = "<group>"; };
+		87C7BA93EA70257ECCAE299C /* CatchUpService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchUpService.swift; sourceTree = "<group>"; };
 		885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViews.swift; sourceTree = "<group>"; };
 		8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProgressTests.swift; sourceTree = "<group>"; };
 		8F3D1DC5B07860C1E7DD453D /* PlanDayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDayView.swift; sourceTree = "<group>"; };
@@ -179,6 +183,7 @@
 		03D01A9BFC32A908C174E4EA /* TravelCopilotTests */ = {
 			isa = PBXGroup;
 			children = (
+				4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */,
 				01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */,
 				6E6F5800C063D8BE20AB2C4E /* MapTests.swift */,
 				1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */,
@@ -332,6 +337,7 @@
 			children = (
 				811A9F16C58C5478C0F5FE7D /* AIService.swift */,
 				AB6A81683B7BACE878B25814 /* AskService.swift */,
+				87C7BA93EA70257ECCAE299C /* CatchUpService.swift */,
 				1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */,
 				FC4BDD73B7D0C33DB3181838 /* PlanService.swift */,
 				654802749BC3529758083461 /* PrepareService.swift */,
@@ -512,6 +518,7 @@
 				BFB008F7F55B47546A9E1AE3 /* AskView.swift in Sources */,
 				622FC6E0748A92A3918E17A5 /* AuthService.swift in Sources */,
 				4F4CC24018A6BC22ECCD6C41 /* CardViews.swift in Sources */,
+				20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */,
 				720DF963539AFC0FB1DB9546 /* Components.swift in Sources */,
 				FEE517F5818C1C5A0A775A85 /* Connectivity.swift in Sources */,
 				934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */,
@@ -564,6 +571,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED57198397D6C96D94C269AD /* CatchUpTests.swift in Sources */,
 				4501A06F0BF84DE076647786 /* JourneyTests.swift in Sources */,
 				8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */,
 				ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */,

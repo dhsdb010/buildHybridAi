@@ -8,7 +8,10 @@ struct RoutingLogView: View {
   @State private var filter = 0
   @State private var selected: RoutingEntry?
 
-  private var shown: [RoutingEntry] { filter == 0 ? entries : entries.filter { $0.outcome == "deferred" } }
+  /// "Catch-up": the drafts made offline and what the cloud did with them later.
+  private var shown: [RoutingEntry] {
+    filter == 0 ? entries : entries.filter { $0.task.hasPrefix("Catch-up") || $0.task == "translate" || $0.outcome == "deferred" }
+  }
 
   var body: some View {
     NavigationStack {
@@ -19,13 +22,13 @@ struct RoutingLogView: View {
           GridRow4 {
             NumberBox(value: "\(entries.filter { $0.source == "onDevice" }.count)", caption: "Device", style: .status(.onTrack))
             NumberBox(value: "\(entries.filter { $0.source == "inCloud" }.count)", caption: "Cloud", style: .filled)
-            NumberBox(value: "\(entries.filter { $0.outcome == "deferred" }.count)", caption: "Deferred")
+            NumberBox(value: "\(entries.filter { $0.outcome == "improved" }.count)", caption: "Improved", style: .status(.accent))
             NumberBox(value: "\(entries.filter { $0.outcome == "blocked" || $0.outcome == "error" }.count)", caption: "Failed")
           }
-          MTASegmented(options: ["All", "Waiting for Wi-Fi"], selection: $filter)
+          MTASegmented(options: ["All", "Catch-up"], selection: $filter)
           MTALabel("Latest")
           if shown.isEmpty {
-            Text(filter == 0 ? "No AI requests yet." : "Nothing is waiting for Wi-Fi.").mta(.body1).foregroundStyle(MTA.text2)
+            Text(filter == 0 ? "No AI requests yet." : "No offline drafts yet. Translations made on the phone show up here, then again when the cloud improves them.").mta(.body1).foregroundStyle(MTA.text2)
           }
           LazyVStack(spacing: 0) {
             ForEach(shown) { e in
@@ -67,6 +70,9 @@ private struct LogRow: View {
         Text(Self.names[entry.task] ?? entry.task).mta(.subheadNormal).foregroundStyle(MTA.text)
         Text("\(entry.kind.capitalized) · \(entry.network) · \(entry.reason)").mta(.body2).foregroundStyle(MTA.text2).lineLimit(2)
         if entry.detail != nil { MTALabel("\(LogDetail.summary(entry)) · details", color: MTA.urgent) }
+        if let note = entry.note {
+          Text(note).mta(.body2).foregroundStyle(entry.outcome == "kept" ? MTA.urgent : MTA.accent).lineLimit(2)
+        }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       MTALabel(entry.latencyMs > 0 ? SourceChip.format(entry.latencyMs) : "—", color: MTA.text)
@@ -81,12 +87,17 @@ private struct LogRow: View {
   static let names = [
     "classifyAsk": "Ask · classify", "translate": "Say · translate", "translateReply": "Reply · translate",
     "parseBooking": "Prepare · parse booking", "destinationPack": "Prepare · destination pack",
+    "Catch-up · translate": "Catch-up · improve draft", "Catch-up · start": "Catch-up · back online",
   ]
 
   /// iphone = on-device · icloud = cloud · icloud.dashed = waiting for Wi-Fi · exclamationmark = failed
   private var mark: (symbol: String, status: MTAStatus) {
     switch (entry.outcome, entry.source) {
     case ("ok", "onDevice"): ("iphone", .onTrack)
+    case ("improved", _): ("sparkles", .accent)
+    case ("unchanged", _): ("checkmark", .onTrack)
+    case ("kept", _): ("exclamationmark.shield", .urgent)
+    case ("ok", nil): ("arrow.triangle.2.circlepath", .accent)
     case ("ok", _): ("icloud", .accent)
     case ("deferred", _): ("icloud.dashed", .notice)
     default: ("exclamationmark", .urgent)
@@ -117,7 +128,9 @@ private struct LogDetail: View {
           Text(LogRow.names[entry.task] ?? entry.task).mta(.headline).foregroundStyle(MTA.text)
           FieldRow(label: "Time", value: entry.timestamp.formatted(date: .abbreviated, time: .standard))
           FieldRow(label: "Kind", value: entry.kind.capitalized)
-          FieldRow(label: "Outcome", value: entry.outcome, highlight: entry.outcome == "ok" ? nil : .urgent)
+          FieldRow(label: "Outcome", value: entry.outcome,
+                   highlight: ["ok", "improved", "unchanged"].contains(entry.outcome) ? nil : .urgent)
+          if let note = entry.note { FieldRow(label: "Result", value: note) }
           FieldRow(label: "Ran on", value: entry.source == "onDevice" ? "This iPhone" : entry.source == "inCloud" ? "Cloud · Gemini" : "—")
           FieldRow(label: "Route", value: entry.requestedRoute ?? "—")
           FieldRow(label: "Network", value: entry.network)

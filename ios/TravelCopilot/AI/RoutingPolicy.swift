@@ -6,6 +6,8 @@ import Foundation
 /// - `catchUp`: improves earlier drafts → cloud, and can wait for good Wi-Fi.
 enum TaskKind: String, Codable, Sendable {
   case survive, prepare, catchUp
+  /// The traveler tapped "Improve now": catch-up even on mobile data.
+  case catchUpNow
 }
 
 /// The network + device facts the policy needs, as a plain value so it can be unit-tested.
@@ -64,6 +66,10 @@ enum RoutingPolicy {
         return .deferToWiFi(reason: "Roaming data saver → waiting for Wi-Fi")
       }
       return .run(.cloudOnly, reason: "Good connection → cloud catch-up")
+
+    case .catchUpNow:
+      guard ctx.isOnline else { return .deferToWiFi(reason: "Offline → waiting for a connection") }
+      return .run(.cloudOnly, reason: ctx.isMetered ? "You tapped Improve now (uses mobile data)" : "You tapped Improve now")
     }
   }
 }
