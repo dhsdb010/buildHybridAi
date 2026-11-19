@@ -38,6 +38,15 @@ struct TravelCopilotApp: App {
     _ai = State(initialValue: AIService(connectivity: connectivity, context: container.mainContext))
     // Done on the Live Activity / a notification → next step of the journey.
     JourneyIntentHandler.done = { await TripReminders.markDone($0) }
+    // If the app was woken just for Done (not running before), rebuild the trip from storage.
+    let context = container.mainContext
+    TripReminders.reload = {
+      let items = (try? context.fetch(FetchDescriptor<VaultItem>(sortBy: [SortDescriptor(\.startDate)]))) ?? []
+      let plans = (try? context.fetch(FetchDescriptor<TripPlan>())) ?? []
+      let place = (try? context.fetch(FetchDescriptor<DestinationPack>()))?.first?.countryName ?? "Trip"
+      let enabled = UserDefaults.standard.object(forKey: "planReminders") as? Bool ?? true
+      return (TripTimeline.events(items: items, plans: plans), place, enabled)
+    }
     UNUserNotificationCenter.current().delegate = notifications
   }
 
@@ -194,19 +203,40 @@ final class NotificationActions: NSObject, UNUserNotificationCenterDelegate, @un
 
   func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
     let info = response.notification.request.content.userInfo
-    let stepID = info["stepID"] as? String
-    let card = info["card"] as? String
-    let ask = info["ask"] as? String ?? ""
-    let action = response.actionIdentifier
+    let target = Self.target(action: response.actionIdentifier, info: info)
     await MainActor.run {
-      switch action {
-      case "done": if let stepID { Task { await TripReminders.markDone(stepID) } }
-      case "ask":
-        var c = URLComponents(string: "travelcopilot://ask")!; c.queryItems = [URLQueryItem(name: "q", value: ask)]
-        if let u = c.url { router?.open(u) }
-      case "card": if let card, let u = URL(string: card) { router?.open(u) }
-      default: router?.tab = .home
+      switch target {
+      case let .done(stepID): Task { await TripReminders.markDone(stepID) }
+      case let .open(url): router?.open(url)
+      case .home: router?.tab = .home
       }
+    }
+  }
+}
+
+extension NotificationActions {
+  enum Target: Equatable {
+    case done(String)
+    case open(URL)
+    case home
+  }
+
+  /// Where a notification action leads. Done marks the step; Ask opens Blue with the step in the field;
+  /// the card button opens the ticket / taxi card / map; tapping the notification itself opens the trip.
+  static func target(action: String, info: [AnyHashable: Any]) -> Target {
+    let stepID = info["stepID"] as? String
+    switch action {
+    case "done":
+      return stepID.map { .done($0) } ?? .home
+    case "ask":
+      var c = URLComponents(string: "travelcopilot://ask")!
+      c.queryItems = [URLQueryItem(name: "q", value: info["ask"] as? String ?? "")]
+      return c.url.map { .open($0) } ?? .home
+    case "card":
+      return (info["card"] as? String).flatMap(URL.init(string:)).map { .open($0) } ?? .home
+    default:
+      // A journey step opens the trip; anything else opens Home.
+      return stepID != nil ? .open(URL(string: "travelcopilot://trip")!) : .home
     }
   }
 }

@@ -46,6 +46,7 @@
 		A15735C5738067AAC9D7576A /* TripLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5492B0747E7054BCBA3908 /* TripLiveActivity.swift */; };
 		A569B663C6231D599C587EDE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811A9F16C58C5478C0F5FE7D /* AIService.swift */; };
 		AAA32FEF0B263583EE635B39 /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
+		ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */; };
 		B58D944999E7043D7BF0834F /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
 		B5C2A1DAFD2774E343B0DA01 /* PrepareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654802749BC3529758083461 /* PrepareService.swift */; };
 		BB3036D7C2D751C550086F58 /* EmergencyNumbers.json in Resources */ = {isa = PBXBuildFile; fileRef = 24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */; };
@@ -106,6 +107,7 @@
 		1459BFFDE05E2EE32F3BB1E5 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		19F488FB83045DD50AA4F3DE /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
 		1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRouter.swift; sourceTree = "<group>"; };
+		1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationTests.swift; sourceTree = "<group>"; };
 		2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicyTests.swift; sourceTree = "<group>"; };
 		24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = EmergencyNumbers.json; sourceTree = "<group>"; };
 		2694CBA496E8FCF219CB2722 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 			children = (
 				01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */,
 				6E6F5800C063D8BE20AB2C4E /* MapTests.swift */,
+				1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */,
 				0056BDD0D6B1A0A3CB7E5239 /* PlanTests.swift */,
 				2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */,
 				8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */,
@@ -563,6 +566,7 @@
 			files = (
 				4501A06F0BF84DE076647786 /* JourneyTests.swift in Sources */,
 				8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */,
+				ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */,
 				755DC8506DC3C5E88C9F47BD /* PlanTests.swift in Sources */,
 				512A06FAC332DB7B31704621 /* RoutingPolicyTests.swift in Sources */,
 				A11D6D3F100F44A910823B5F /* TripProgressTests.swift in Sources */,

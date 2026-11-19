@@ -1,0 +1,348 @@
+<title>Travel Copilot Status</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column like a trip brief; signage-style uppercase labels and status chips taken from the app itself. */
+:root {
+  --bg: #FFFFFF;
+  --panel: #F4F6FA;
+  --fg: #0B0D12;
+  --fg2: #4A505C;
+  --line: #DCE1EA;
+  --accent: #0050EA;
+  --ok: #139240;
+  --warn: #C25400;
+  --bad: #D10F0F;
+  --diagram: #FFFFFF;
+  --font-text: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A0C10; --panel: #151922; --fg: #F2F4F8; --fg2: #A3AAB8; --line: #2A303C;
+    --accent: #4D8BFF; --ok: #3CC46C; --warn: #FF9A3C; --bad: #FF5A5A; --diagram: #F2F4F8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A0C10; --panel: #151922; --fg: #F2F4F8; --fg2: #A3AAB8; --line: #2A303C;
+  --accent: #4D8BFF; --ok: #3CC46C; --warn: #FF9A3C; --bad: #FF5A5A; --diagram: #F2F4F8;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-text); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+main { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.02em; margin: 0; font-weight: 800; text-wrap: balance; }
+h2 { font-size: 28px; letter-spacing: -0.01em; margin: 0; font-weight: 700; text-wrap: balance; }
+h3 { font-size: 18px; margin: 0; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg2); }
+.lede { font-size: 19px; color: var(--fg2); max-width: 62ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  border: 2px solid currentColor; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+.chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); } .chip.info { color: var(--accent); }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { border: 2px solid var(--fg); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat b { font-size: 34px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat.ok { background: var(--ok); border-color: var(--ok); color: var(--bg); }
+.stat.ok .label, .stat.dark .label { color: inherit; opacity: 0.85; }
+.stat.dark { background: var(--fg); color: var(--bg); }
+@media (max-width: 620px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.diagram { background: var(--diagram); border: 1px solid var(--line); border-radius: 16px; padding: 16px; overflow-x: auto; }
+.diagram pre { margin: 0; }
+.caption { font-size: 14px; color: var(--fg2); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg2); background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 14px; white-space: nowrap; }
+.list { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.row .chip { justify-self: start; align-self: start; }
+@media (max-width: 560px) { .row { grid-template-columns: 1fr; gap: 6px; } }
+.row h3 + p { margin-top: 2px; color: var(--fg2); }
+.callout { background: var(--panel); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
+.callout.risk { border-left: 0; box-shadow: inset 0 0 0 2px var(--bad); background: transparent; }
+.plan { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 680px) { .plan { grid-template-columns: 1fr; } }
+.phase { border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.phase ul, .callout ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.phase .when { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+code { font-family: var(--font-mono); font-size: 0.88em; background: var(--panel); padding: 1px 6px; border-radius: 6px; }
+header { display: flex; flex-direction: column; gap: 14px; }
+a { color: var(--accent); }
+</style>
+
+<main>
+<header>
+  <span class="label">Travel Copilot · #BuildHybridAI 2026 · status on Thu 19 Nov</span>
+  <h1>Where the app stands, how it works, and what's next</h1>
+  <p class="lede">An iOS trip companion that keeps your bookings, plans and help on the phone, and uses Firebase AI Logic to run AI on the device first and in the cloud when it needs to. 11 days to the deadline (Mon 30 Nov, 2 pm).</p>
+  <div class="chips">
+    <span class="chip ok">46 tests pass</span>
+    <span class="chip ok">Pushed to GitHub · main</span>
+    <span class="chip warn">Not tested on a real iPhone</span>
+    <span class="chip bad">No README / TestFlight / video yet</span>
+  </div>
+</header>
+
+<section>
+  <span class="label">Pipeline health</span>
+  <h2>Does the main AI pipeline work? Yes, in the simulator</h2>
+  <p>These numbers come from the app's own call log on the iPhone 17 simulator, where every AI request is recorded with its route, where it actually ran, and how long it took.</p>
+  <div class="stats">
+    <div class="stat"><span class="label">AI calls logged</span><b>38</b></div>
+    <div class="stat ok"><span class="label">On-device</span><b>15</b></div>
+    <div class="stat dark"><span class="label">Cloud · Gemini</span><b>17</b></div>
+    <div class="stat"><span class="label">Failed</span><b>6</b></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Task</th><th>Kind</th><th>Ran on</th><th>Calls</th><th>Avg time</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Blue: read your question</td><td>Survive</td><td>On-device</td><td class="num">10</td><td class="num">3.2 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Planner: remember a past trip</td><td>Survive</td><td>On-device</td><td class="num">5</td><td class="num">4.6 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Read pasted booking emails</td><td>Prepare</td><td>Cloud</td><td class="num">1</td><td class="num">2.8 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Build phrase &amp; safety pack</td><td>Prepare</td><td>Cloud</td><td class="num">1</td><td class="num">3.2 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Planner: destination ideas, day outline</td><td>Prepare</td><td>Cloud</td><td class="num">10</td><td class="num">2.8 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Planner: hotels &amp; food (Google Maps grounding)</td><td>Prepare</td><td>Cloud</td><td class="num">10</td><td class="num">1.3–37 s</td><td><span class="chip warn">6 × quota 429</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">All 6 failures are HTTP 429 "quota exceeded" from Google Maps grounding on the free tier. The planner already falls back to Apple Maps search, so the traveler still gets real places.</p>
+  <div class="callout risk">
+    <h3>What isn't proven yet</h3>
+    <ul>
+      <li><b>Airplane mode on a real iPhone.</b> Every on-device result so far ran in the simulator on a Mac. The plan's day-1 check (does on-device AI work through Firebase AI Logic with no signal and App Check on?) still needs an Apple Intelligence iPhone. The whole pitch depends on it.</li>
+      <li><b>Cloud fallback in hybrid mode.</b> All Survive calls stayed on the device, so we've never actually seen hybrid hand a request to Gemini.</li>
+      <li><b>App Check outside debug.</b> Only the debug provider is set up. A TestFlight build needs App Attest, or written steps for judges.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <span class="label">App map</span>
+  <h2>How the app is put together</h2>
+  <p>Screens never call AI directly. They go through <code>AIService</code>, which asks the routing policy where a task should run, sends it through Firebase AI Logic, and logs the result. Bookings and answers are stored on the phone in SwiftData.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph Screens
+    W[Welcome + Sign-in]
+    H[Home]
+    T[Trip]
+    M[Map]
+    P[Prepare]
+    L[Log]
+    B((Blue chat))
+  end
+  subgraph Services
+    AS[AIService]
+    RP[RoutingPolicy]
+    MR[ModelRouter]
+    PS[PrepareService]
+    PL[PlanService]
+    ASK[Ask + AskGuard]
+    TR[TripReminders + Journey]
+    MS[MapService]
+  end
+  subgraph Phone storage SwiftData
+    V[(Vault bookings)]
+    PK[(Phrase pack)]
+    PLC[(Places + offline map)]
+    CH[(Chat history)]
+    RL[(Routing log)]
+  end
+  subgraph Firebase
+    AIL[AI Logic]
+    AFM[Apple on-device model]
+    GEM[Gemini 3.5 Flash-Lite]
+    GM[Google Maps grounding]
+    AC[App Check]
+    AU[Auth: Google / Apple]
+  end
+  subgraph Apple
+    LA[Live Activity + Dynamic Island]
+    NO[Notifications]
+    MK[MapKit search + snapshots]
+  end
+  W --> PL
+  P --> PS
+  B --> ASK
+  ASK --> AS
+  PS --> AS
+  PL --> AS
+  AS --> RP
+  AS --> MR
+  MR --> AIL
+  AIL --> AFM
+  AIL --> GEM
+  AS --> GM
+  AIL -.-> AC
+  W -.-> AU
+  AS --> RL
+  PS --> V
+  PS --> PK
+  PS --> MS
+  MS --> PLC
+  MS --> MK
+  B --> CH
+  H --> TR
+  T --> TR
+  TR --> LA
+  TR --> NO
+  L --> RL
+  M --> PLC
+</pre></div>
+</section>
+
+<section>
+  <span class="label">User flow</span>
+  <h2>How a traveler uses it, start to finish</h2>
+  <p>Before the trip the app needs the internet once to read bookings and save maps. During the trip everything a traveler needs works with no signal.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A[Open app] --> B[Welcome pages]
+  B --> C{Have bookings already?}
+  C -- No --> D[Sign in with Google or Apple]
+  D --> E[Plan with AI]
+  E --> E1[Pick country + dates]
+  E1 --> E2[Tell it a past trip you loved<br/>on-device]
+  E2 --> E3[Destination ideas + day outline<br/>cloud]
+  E3 --> E4[Hotels, food, sights<br/>Google Maps or Apple Maps]
+  E4 --> E5[Book them yourself]
+  E5 --> F
+  C -- Yes --> F[Paste confirmation emails]
+  F --> G[Prepare, cloud]
+  G --> G1[Read bookings into the Vault]
+  G --> G2[Phrase + safety pack]
+  G --> G3[Find places on the map]
+  G --> G4[Save offline map]
+  G1 & G2 & G3 & G4 --> H[Home: countdown + 4/4 offline ready]
+  H --> I[During the trip, works offline]
+  I --> I1[Live Activity: step by step to the hotel]
+  I --> I2[Reminders per step:<br/>Done · Ask · show ticket]
+  I --> I3[Trip: bookings + calendar]
+  I --> I4[Map: places, walk or taxi time]
+  I --> I5[Taxi card: hotel address in Japanese]
+  I --> I6[Help: emergency numbers]
+  I --> I7((Blue chat))
+  I1 --> J[Arrived: room info + check-out time]
+</pre></div>
+</section>
+
+<section>
+  <span class="label">Hybrid routing</span>
+  <h2>How each AI request picks device or cloud</h2>
+  <p>Every request has a kind. <b>Survive</b> is help during the trip, so it prefers the phone. <b>Prepare</b> is set-up work that needs the cloud. <b>Catch-up</b> improves earlier drafts on good Wi-Fi; it's designed in the policy but nothing uses it yet.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  R[AI request] --> K{Kind?}
+  K -- Survive --> S1{Online?}
+  S1 -- No --> S2{Apple Intelligence on?}
+  S2 -- Yes --> D1[On-device only]
+  S2 -- No --> X1[Blocked: tell the user]
+  S1 -- Yes --> S3{Roaming / low data<br/>and data saver on?}
+  S3 -- Yes --> D1
+  S3 -- No --> HY[Hybrid: on-device first,<br/>Gemini if it can't]
+  K -- Prepare --> P1{Online?}
+  P1 -- No --> X2[Blocked: needs internet]
+  P1 -- Yes --> C1[Cloud only]
+  K -- Catch-up --> U1{Online and not metered?}
+  U1 -- No --> Q[Wait for Wi-Fi]
+  U1 -- Yes --> C1
+  D1 & HY & C1 --> LOG[Log: route, where it ran, time]
+</pre></div>
+</section>
+
+<section>
+  <span class="label">Blue</span>
+  <h2>How a Blue chat answer is made</h2>
+  <p>The on-device model never writes the answer. It only picks which booking and which field the question is about; the app shows that stored value. A keyword check stops small talk from getting a booking value.</p>
+  <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  actor You
+  participant Chat as Blue chat
+  participant AI as AIService
+  participant Dev as On-device model
+  participant G as AskGuard
+  participant DB as Vault + chat history
+  You->>Chat: When is hotel check-in?
+  Chat->>DB: save your message
+  Chat->>AI: classify (Survive)
+  AI->>Dev: bookings list + question
+  Dev-->>AI: vault · booking 1 · checkIn
+  AI->>G: does the question ask for check-in?
+  G-->>AI: yes
+  AI->>DB: read the stored check-in field
+  DB-->>AI: 2026-12-03 15:00
+  AI-->>Chat: 15:00 · Thu, Dec 3 · On-device 4.1 s
+  Chat->>DB: save Blue's answer
+  Chat-->>You: answer bubble + 2 follow-up questions
+  Note over You,Chat: "Hello" fails AskGuard and gets a help reply instead.<br/>あ switches to Say in Japanese (translation).
+</pre></div>
+</section>
+
+<section>
+  <span class="label">Progress</span>
+  <h2>What's built</h2>
+  <div class="list">
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Prepare: paste emails → Vault, phrase pack, places, offline map</h3><p>Cloud reads bookings; maps are saved for offline use.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Blue chat with saved history</h3><p>Messages-style page, suggestions from your bookings, on-device answers, small-talk guard, あ for translation, New chat.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Journey Live Activity and Dynamic Island</h3><p>Step by step to the hotel with the vehicle on the track, Done button, arrived card with room info.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Home, Trip list and calendar, Map, Taxi card, Help numbers, Routing log</h3><p>The Blue button sits at the side of Home, Trip and Map.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>AI trip planner with sign-in</h3><p>Memories on-device, ideas and outline in the cloud, real places from Google Maps with an Apple Maps fallback.</p></div></div>
+    <div class="row"><span class="chip warn">Unchecked</span><div><h3>Notification actions, expanded Dynamic Island, deep links, dragging the map sheet</h3><p>Built, but the simulator can't press and hold or drag, so these haven't been tried.</p></div></div>
+    <div class="row"><span class="chip bad">Missing</span><div><h3>Catch-up pass</h3><p>Offline translations are marked as drafts, but nothing improves them when the signal returns. This was the main hybrid moment in the original plan.</p></div></div>
+    <div class="row"><span class="chip bad">Missing</span><div><h3>Photo reading (menus, signs)</h3><p>Planned as cloud reading online and Apple Vision text recognition offline.</p></div></div>
+    <div class="row"><span class="chip bad">Missing</span><div><h3>Emergency info card</h3><p>Allergies, medicines and contacts shown large in the local language. Help has numbers only.</p></div></div>
+    <div class="row"><span class="chip bad">Missing</span><div><h3>Submission items</h3><p>README, TestFlight link, App Attest or judge instructions, the 3-minute video, Devpost text.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <span class="label">Decide</span>
+  <h2>What we need to figure out</h2>
+  <div class="list">
+    <div class="row"><span class="chip info">Story</span><div><h3>Which story does the video tell?</h3><p>The original plan was "offline translation that upgrades itself when you're back online". The app has grown into a trip copilot: bookings, step-by-step journey and Blue. Pick one 3-minute story and build the missing piece it needs.</p></div></div>
+    <div class="row"><span class="chip info">Blue</span><div><h3>What should Blue answer?</h3><p>Today it answers booking facts, distances and translations only. Travelers will ask "where can I eat nearby?" or "is my train late?". Option: when online, send open questions to Gemini with a clear Cloud label; when offline, say what it can do instead.</p></div></div>
+    <div class="row"><span class="chip info">Hybrid</span><div><h3>Where do judges see device and cloud working together?</h3><p>Right now it's a label under each answer. A catch-up moment (draft on-device, improved in the cloud later, shown in the chat) would show it much more clearly.</p></div></div>
+    <div class="row"><span class="chip info">Cost</span><div><h3>Google Maps grounding quota</h3><p>The free tier returns 429 after a few calls. Either enable billing for the demo account or show the Apple Maps fallback on purpose.</p></div></div>
+    <div class="row"><span class="chip info">Device</span><div><h3>Which iPhone records the demo?</h3><p>It needs Apple Intelligence (iPhone 15 Pro or later) for the airplane-mode part.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <span class="label">Next</span>
+  <h2>Suggested plan for the next 11 days</h2>
+  <div class="plan">
+    <div class="phase"><span class="when">Thu 19 – Sat 21</span><h3>Prove the base</h3><ul>
+      <li>Run the airplane-mode test on a real iPhone with App Check on</li>
+      <li>Pick the video story and Blue's scope</li>
+      <li>Write the README (setup, how AI Logic is used, architecture)</li>
+      <li>Fix small bugs: answers repeat the raw date under the big time, a planner label says "near near", saved chat buttons find bookings by name</li>
+    </ul></div>
+    <div class="phase"><span class="when">Sun 22 – Tue 24</span><h3>Make hybrid visible</h3><ul>
+      <li>Catch-up pass: offline drafts improved by Gemini when Wi-Fi returns, updated in Blue's chat and the Log</li>
+      <li>Blue: open questions go to the cloud when online, clearly labeled</li>
+      <li>Try the unchecked parts on a device: notification buttons, expanded Dynamic Island, deep links</li>
+    </ul></div>
+    <div class="phase"><span class="when">Wed 25 – Thu 26</span><h3>One more traveler feature</h3><ul>
+      <li>Emergency info card (allergies, medicines) in the local language, or</li>
+      <li>Photo reading: menu or sign, cloud online, Vision text offline</li>
+    </ul></div>
+    <div class="phase"><span class="when">Fri 27 – Mon 30 (2 pm)</span><h3>Ship</h3><ul>
+      <li>App Attest or judge debug-token steps, TestFlight public link</li>
+      <li>Record the video on the iPhone with airplane mode on screen</li>
+      <li>Devpost text, submit by Sunday; Monday is buffer</li>
+    </ul></div>
+  </div>
+</section>
+</main>

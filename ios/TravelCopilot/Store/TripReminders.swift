@@ -17,6 +17,8 @@ enum TripReminders {
 
   /// Last input, so Done (from the Live Activity or a notification) can move the journey on.
   private static var last: (events: [TripEvent], place: String, enabled: Bool)?
+  /// Reads the trip from storage when Done arrives before the app has synced (woken in the background).
+  static var reload: (@MainActor () -> (events: [TripEvent], place: String, enabled: Bool))?
 
   static func sync(events: [TripEvent], place: String, enabled: Bool, now: Date = AppClock.now) async {
     last = (events, place, enabled)
@@ -29,8 +31,8 @@ enum TripReminders {
   static func markDone(_ id: String) async {
     JourneyDone.mark(id)
     UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["trip-\(id)"])
-    guard let last else { return }
-    await updateActivity(last.events, place: last.place, enabled: last.enabled, now: AppClock.now)
+    guard let input = last ?? reload?() else { return }
+    await updateActivity(input.events, place: input.place, enabled: input.enabled, now: AppClock.now)
   }
 
   // MARK: Notifications
@@ -43,29 +45,96 @@ enum TripReminders {
     guard (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) == true else { return }
 
     center.setNotificationCategories(categories)
+    #if DEBUG
+      var firedSoon = false
+    #endif
     let journeyIDs = journeyMembers(events, now: now)
     let done = JourneyDone.ids
+    var notified = Notified.ids
     for e in events where e.date > now && !done.contains(e.id) {
-      let leadTime = e.kind == .depart && e.vehicle != "train" ? airportLead : lead
-      let fire = e.date.addingTimeInterval(-leadTime)
-      guard fire > now else { continue }
+      let r = reminder(e, journey: journeyIDs[e.id])
+      var fire = e.date.addingTimeInterval(-r.lead)
+      if fire <= now {
+        // The lead time already passed but the moment is still ahead (e.g. the first step of a
+        // journey that just synced): remind once, right away, instead of skipping it.
+        guard !notified.contains(e.id) else { continue }
+        fire = now.addingTimeInterval(5)
+        notified.insert(e.id)
+      }
       let content = UNMutableNotificationContent()
-      content.title = e.kind == .depart ? "Leave for the airport" : "\(e.label) in \(Int(leadTime / 60)) min"
-      content.body = "\(title(e)) · \(e.detail)".trimmingCharacters(in: .whitespaces.union(.init(charactersIn: "·")))
+      content.title = r.title
+      content.body = r.body
       content.sound = .default
       content.interruptionLevel = e.kind == .depart || e.kind == .checkOut ? .timeSensitive : .active
-      if let (j, i, n) = journeyIDs[e.id] {
-        // One step at a time: "Step 2 of 3 · Bus 61", with Show card · Done · Ask on long-press.
-        let mode = JourneyMode.of(e)
-        content.title = i < n ? "Step \(i + 1) of \(n) · \(title(e))" : title(e)
-        content.body = [e.detail, "To \(j.stops.last ?? "goal")."].filter { !$0.isEmpty }.joined(separator: " · ")
-        content.categoryIdentifier = "journey-\(mode.rawValue)"
-        content.userInfo = ["stepID": e.id, "card": mode.card.link, "ask": "About \(title(e)): "]
-      }
-      let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
-      let request = UNNotificationRequest(identifier: "trip-\(e.id)", content: content,
-                                          trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false))
+      if let category = r.category { content.categoryIdentifier = category }
+      content.userInfo = r.userInfo
+      let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fire)
+      var trigger: UNNotificationTrigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+      #if DEBUG
+        // `-notifyIn 8`: the next reminder fires in 8 s instead of at its real time (to check it on a device).
+        let soon = UserDefaults.standard.double(forKey: "notifyIn")
+        if soon > 0, !firedSoon { trigger = UNTimeIntervalNotificationTrigger(timeInterval: soon, repeats: false); firedSoon = true }
+        NSLog("Reminder scheduled: %@", "\(e.id) at \(fire) · \(content.title) · \(content.body) · \(content.categoryIdentifier)")
+      #endif
+      let request = UNNotificationRequest(identifier: "trip-\(e.id)", content: content, trigger: trigger)
       try? await center.add(request)
+    }
+    Notified.ids = notified
+  }
+
+  struct Reminder: Equatable {
+    var title: String
+    var body: String
+    var lead: TimeInterval
+    var category: String?
+    var userInfo: [String: String] = [:]
+  }
+
+  /// What a reminder says. Journey steps read like a station sign: "Step 2 of 3 · Bus 61 at 02:51",
+  /// sent 10 min before (so the next step's alert doesn't arrive while you're still on this one).
+  static func reminder(_ e: TripEvent, journey: (Journey, Int, Int)?) -> Reminder {
+    let time = TripTimeline.time(e.date)
+    if let (j, i, n) = journey {
+      let mode = JourneyMode.of(e)
+      let info = ["stepID": e.id, "card": mode.card.link, "ask": "About \(stepName(e)): "]
+      if i < n {
+        let to = j.stops.indices.contains(i + 1) ? j.stops[i + 1] : (j.stops.last ?? "")
+        let next = i + 1 == n && j.goal.kind == .checkIn ? "To \(to), then check in" : "To \(to)"
+        // A train's name is the first part of its detail; don't repeat it under the title.
+        let parts = e.detail.components(separatedBy: " · ").filter { !$0.isEmpty && $0 != stepName(e) }
+        return Reminder(title: "Step \(i + 1) of \(n) · \(stepName(e)) at \(time)",
+                        body: (parts + [next]).joined(separator: " · "),
+                        lead: journeyLead, category: "journey-\(mode.rawValue)", userInfo: info)
+      }
+      // The goal itself.
+      let hotel = e.title.replacingOccurrences(of: "Check in · ", with: "")
+      return Reminder(title: e.kind == .checkIn ? "Check in at \(time) · \(hotel)" : "\(e.label) at \(time)",
+                      body: [e.detail, "Your booking is one tap away."].filter { !$0.isEmpty }.joined(separator: " · "),
+                      lead: journeyLead, category: "journey-\(mode.rawValue)", userInfo: info)
+    }
+    let flight = e.kind == .depart && e.vehicle != "train"
+    let lead = flight ? airportLead : lead
+    let title = flight ? "Leave for the airport · flight at \(time)" : "\(e.label) in \(Int(lead / 60)) min · \(time)"
+    let body = [e.kind == .plan || e.kind == .depart ? e.title : nil, e.detail.isEmpty ? nil : e.detail]
+      .compactMap { $0 }.joined(separator: " · ")
+    return Reminder(title: title, body: body, lead: lead)
+  }
+
+  /// "Bus 61 → Nishi-Shinjuku" → "Bus 61"; a train uses its name ("Narita Express").
+  static func stepName(_ e: TripEvent) -> String {
+    if e.kind == .depart, let name = e.detail.components(separatedBy: " · ").first, !name.isEmpty { return name }
+    return Journey.ends(e.title).from ?? e.title
+  }
+
+  /// Journey steps remind 10 min ahead.
+  static let journeyLead: TimeInterval = 10 * 60
+
+  /// Moments already reminded "right away", so reopening the app doesn't repeat them.
+  enum Notified {
+    private static let key = "remindedNow"
+    static var ids: Set<String> {
+      get { Set(UserDefaults.standard.stringArray(forKey: key) ?? []) }
+      set { UserDefaults.standard.set(Array(newValue.suffix(200)), forKey: key) }
     }
   }
 
@@ -78,7 +147,7 @@ enum TripReminders {
                              options: .foreground, icon: .init(systemImageName: m.card.glyph)),
         UNNotificationAction(identifier: "done", title: m == .hotel ? "Done · I'm here" : "Done · I'm on it",
                              options: [], icon: .init(systemImageName: "checkmark")),
-        UNNotificationAction(identifier: "ask", title: "Ask Travel Copilot", options: .foreground,
+        UNNotificationAction(identifier: "ask", title: "Ask Blue", options: .foreground,
                              icon: .init(systemImageName: "asterisk")),
       ], intentIdentifiers: [])
     })
