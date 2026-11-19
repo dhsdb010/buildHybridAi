@@ -3,6 +3,7 @@ import SwiftData
 import FirebaseCore
 import FirebaseAppCheck
 import GoogleSignIn
+import UserNotifications
 
 @main
 struct TravelCopilotApp: App {
@@ -26,6 +27,7 @@ struct TravelCopilotApp: App {
   @State private var router = AppRouter()
   @State private var location = LocationService()
   @State private var auth = AuthService()
+  private let notifications = NotificationActions()
 
   init() {
     _ = Self.firebaseConfigured
@@ -34,6 +36,9 @@ struct TravelCopilotApp: App {
     self.container = container
     _connectivity = State(initialValue: connectivity)
     _ai = State(initialValue: AIService(connectivity: connectivity, context: container.mainContext))
+    // Done on the Live Activity / a notification → next step of the journey.
+    JourneyIntentHandler.done = { await TripReminders.markDone($0) }
+    UNUserNotificationCenter.current().delegate = notifications
   }
 
   var body: some Scene {
@@ -44,7 +49,8 @@ struct TravelCopilotApp: App {
         .environment(router)
         .environment(location)
         .environment(auth)
-        .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
+        .onOpenURL { url in if !router.open(url) { GIDSignIn.sharedInstance.handle(url) } }
+        .onAppear { notifications.router = router }
     }
     .modelContainer(container)
   }
@@ -67,6 +73,24 @@ final class AppRouter {
   var ask: AskRequest?
   var showHelp = false
   var showSettings = false
+  /// Opens the taxi card on Home (from a Live Activity or notification button).
+  var showTaxi = false
+
+  /// travelcopilot://ask?q=… · ://trip · ://taxi · ://map · ://home. Returns false for other URLs.
+  @discardableResult
+  func open(_ url: URL) -> Bool {
+    guard url.scheme == "travelcopilot" else { return false }
+    switch url.host() {
+    case "ask":
+      let q = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "q" }?.value ?? ""
+      ask = AskRequest(mode: 0, text: q, autoSubmit: false)
+    case "trip": tab = .trip
+    case "map": tab = .map
+    case "taxi": tab = .home; showTaxi = true
+    default: tab = .home
+    }
+    return true
+  }
 
   init() {
     #if DEBUG
@@ -84,7 +108,11 @@ struct RootView: View {
   @Environment(AppRouter.self) private var router
   @AppStorage("appearance") private var appearance = 0   // 0 system · 1 day · 2 night
   @AppStorage("onboarded") private var onboarded = false
+  @AppStorage("planReminders") private var reminders = true
+  @Environment(\.scenePhase) private var scenePhase
   @Query private var items: [VaultItem]
+  @Query private var plans: [TripPlan]
+  @Query private var packs: [DestinationPack]
   @State private var showWelcome = false
 
   var body: some View {
@@ -101,12 +129,84 @@ struct RootView: View {
     .sheet(isPresented: $router.showHelp) { HelpView() }
     .fullScreenCover(isPresented: $showWelcome) { WelcomeView() }
     .preferredColorScheme(appearance == 1 ? .light : appearance == 2 ? .dark : nil)
+    // Notifications + Live Activity for the next trip moment, refreshed when anything changes.
+    .task(id: "\(items.count)-\(plans.count)-\(plans.map(\.start).hashValue)-\(reminders)-\(scenePhase == .active)") {
+      // Not under unit tests (the permission prompt would block the test host).
+      guard scenePhase == .active, ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+      #if DEBUG
+        // `-liveDemo`: a sample journey to the hotel (train → bus → walk → check-in) to see the Live Activity.
+        // `-liveDemoStep far|train|bus|walk|arriving|arrived` picks where you are along it.
+        if ProcessInfo.processInfo.arguments.contains("-liveDemo") {
+          let step = UserDefaults.standard.string(forKey: "liveDemoStep") ?? "train"
+          let shift: Double = switch step {
+          case "far": -16 * 1440
+          case "bus": 35
+          case "walk": 58
+          case "arriving": 68
+          case "arrived": 110
+          default: 0
+          }
+          // Earlier steps count as done (as if you'd tapped Done on each).
+          let order = ["demo-train", "demo-bus", "demo-walk"]
+          let doneCount = ["bus": 1, "walk": 2, "arriving": 3][step] ?? 0
+          UserDefaults.standard.set(Array(order.prefix(doneCount)), forKey: "journeyDone")
+          TripReminders.ignoreWindow = step == "far"
+          let t0 = Date().addingTimeInterval(-shift * 60)
+          func at(_ m: Double) -> Date { t0.addingTimeInterval(m * 60) }
+          let demo = [
+            TripEvent(id: "demo-land", date: at(-40), kind: .arrive, title: "Land at Narita", detail: "TG 642",
+                      itemID: nil, planSource: nil, vehicle: "flight"),
+            TripEvent(id: "demo-train", date: at(18), kind: .depart, title: "Narita → Shinjuku",
+                      detail: "Narita Express · Platform 1 · Car 8", itemID: nil, planSource: nil, vehicle: "train"),
+            TripEvent(id: "demo-bus", date: at(42), kind: .plan, title: "Bus 61 → Nishi-Shinjuku",
+                      detail: "Stop B4 · 3 min from the station", itemID: nil, planSource: "user"),
+            TripEvent(id: "demo-walk", date: at(64), kind: .plan, title: "Walk to the hotel",
+                      detail: "4 min walk", itemID: nil, planSource: "user"),
+            TripEvent(id: "demo-in", date: at(72), kind: .checkIn, title: "Check in · Hotel Hoshizora Shinjuku",
+                      detail: "Ref HSZ-48213", itemID: PersistentIdentifierBox(title: "Hotel Hoshizora Shinjuku"), planSource: nil),
+            TripEvent(id: "demo-out", date: at(72 + 3 * 1440 - 240), kind: .checkOut, title: "Check out · Hotel Hoshizora Shinjuku",
+                      detail: "Ref HSZ-48213", itemID: PersistentIdentifierBox(title: "Hotel Hoshizora Shinjuku"), planSource: nil),
+          ]
+          await TripReminders.sync(events: demo, place: "Tokyo", enabled: true, now: Date())
+          return
+        }
+      #endif
+      await TripReminders.sync(events: TripTimeline.events(items: items, plans: plans),
+                               place: packs.first?.countryName ?? "Trip", enabled: reminders)
+    }
     .onAppear {
       // First launch with an empty Vault → Welcome / set up your trip.
       showWelcome = !onboarded && items.isEmpty
       #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-onboarding") { showWelcome = true }
       #endif
+    }
+  }
+}
+
+/// Long-press actions on journey notifications: Show card · Done · Ask.
+final class NotificationActions: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
+  @MainActor weak var router: AppRouter?
+
+  func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+    [.banner, .sound, .list]
+  }
+
+  func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    let info = response.notification.request.content.userInfo
+    let stepID = info["stepID"] as? String
+    let card = info["card"] as? String
+    let ask = info["ask"] as? String ?? ""
+    let action = response.actionIdentifier
+    await MainActor.run {
+      switch action {
+      case "done": if let stepID { Task { await TripReminders.markDone(stepID) } }
+      case "ask":
+        var c = URLComponents(string: "travelcopilot://ask")!; c.queryItems = [URLQueryItem(name: "q", value: ask)]
+        if let u = c.url { router?.open(u) }
+      case "card": if let card, let u = URL(string: card) { router?.open(u) }
+      default: router?.tab = .home
+      }
     }
   }
 }

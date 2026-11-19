@@ -163,6 +163,59 @@ enum ReplyPrompt {
   }
 }
 
+/// What the local person (driver, clerk) reads on the reply screen, in their own language.
+/// Static text written once (no AI), so it's right every time and works offline.
+struct LocalReplyScreen: Equatable {
+  let title: String
+  let body: String
+  let placeholder: String
+  let send: String
+  let handBack: String
+
+  static let english = LocalReplyScreen(
+    title: "Please type your reply",
+    body: "This traveller is using a translation app. Type your reply below and tap Send. It will be translated into English.",
+    placeholder: "Type here", send: "Send", handBack: "After sending, please hand the phone back.")
+
+  static let byLanguage: [String: LocalReplyScreen] = [
+    "ja": .init(title: "返信を入力してください",
+                body: "このお客様は翻訳アプリを使っています。下に返信を入力して「送信」を押してください。英語に翻訳されます。",
+                placeholder: "ここに入力", send: "送信", handBack: "送信したら、スマートフォンをお客様にお返しください。"),
+    "ko": .init(title: "답변을 입력해 주세요",
+                body: "이 손님은 번역 앱을 사용하고 있습니다. 아래에 답변을 입력하고 '보내기'를 눌러 주세요. 영어로 번역됩니다.",
+                placeholder: "여기에 입력", send: "보내기", handBack: "보낸 후 휴대폰을 손님께 돌려주세요."),
+    "zh": .init(title: "请输入您的回复",
+                body: "这位客人正在使用翻译应用。请在下方输入回复，然后点击“发送”，内容会被翻译成英文。",
+                placeholder: "在此输入", send: "发送", handBack: "发送后，请把手机还给客人。"),
+    "fr": .init(title: "Veuillez écrire votre réponse",
+                body: "Ce voyageur utilise une application de traduction. Écrivez votre réponse ci-dessous et appuyez sur « Envoyer » : elle sera traduite en anglais.",
+                placeholder: "Écrivez ici", send: "Envoyer", handBack: "Après l'envoi, rendez le téléphone au voyageur."),
+    "es": .init(title: "Escriba su respuesta, por favor",
+                body: "Este viajero usa una aplicación de traducción. Escriba su respuesta abajo y pulse «Enviar»: se traducirá al inglés.",
+                placeholder: "Escriba aquí", send: "Enviar", handBack: "Después de enviar, devuelva el teléfono al viajero."),
+    "de": .init(title: "Bitte schreiben Sie Ihre Antwort",
+                body: "Dieser Reisende nutzt eine Übersetzungs-App. Schreiben Sie Ihre Antwort unten und tippen Sie auf „Senden“. Sie wird ins Englische übersetzt.",
+                placeholder: "Hier eingeben", send: "Senden", handBack: "Geben Sie das Telefon danach bitte zurück."),
+    "it": .init(title: "Scriva la sua risposta, per favore",
+                body: "Questo viaggiatore usa un'app di traduzione. Scriva la risposta qui sotto e tocchi «Invia»: verrà tradotta in inglese.",
+                placeholder: "Scriva qui", send: "Invia", handBack: "Dopo l'invio, restituisca il telefono al viaggiatore."),
+    "pt": .init(title: "Escreva sua resposta, por favor",
+                body: "Este viajante está usando um app de tradução. Escreva sua resposta abaixo e toque em “Enviar”: ela será traduzida para o inglês.",
+                placeholder: "Escreva aqui", send: "Enviar", handBack: "Depois de enviar, devolva o telefone ao viajante."),
+    "th": .init(title: "กรุณาพิมพ์คำตอบของคุณ",
+                body: "นักท่องเที่ยวท่านนี้ใช้แอปแปลภาษา กรุณาพิมพ์คำตอบด้านล่างแล้วกด “ส่ง” ข้อความจะถูกแปลเป็นภาษาอังกฤษ",
+                placeholder: "พิมพ์ที่นี่", send: "ส่ง", handBack: "ส่งแล้วกรุณาคืนโทรศัพท์ให้นักท่องเที่ยว"),
+    "vi": .init(title: "Vui lòng nhập câu trả lời",
+                body: "Du khách này đang dùng ứng dụng dịch. Vui lòng nhập câu trả lời bên dưới và nhấn “Gửi”, nội dung sẽ được dịch sang tiếng Anh.",
+                placeholder: "Nhập tại đây", send: "Gửi", handBack: "Gửi xong, vui lòng trả lại điện thoại cho du khách."),
+  ]
+
+  static func screen(for languageCode: String?) -> LocalReplyScreen {
+    guard let code = languageCode?.prefix(2) else { return english }
+    return byLanguage[String(code)] ?? english
+  }
+}
+
 // MARK: - Runtime
 
 enum AskOutcome {

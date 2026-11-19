@@ -29,8 +29,7 @@ struct HomeView: View {
       .background(MTA.surface)
       .safeAreaInset(edge: .bottom) {
         if !items.isEmpty {
-          AskBar(placeholder: "When is check-in?") { router.ask = AskRequest() }
-            .padding(.horizontal, MTA.margin).padding(.bottom, 8)
+          FloatingAsk()
         }
       }
       .navigationTitle("Today")
@@ -50,6 +49,11 @@ struct HomeView: View {
       }
       .navigationDestination(isPresented: $router.showSettings) { SettingsView() }
       .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: pack) }
+      .onChange(of: router.showTaxi, initial: true) { _, show in
+        guard show else { return }
+        router.showTaxi = false
+        taxiItem = hotel
+      }
       .fullScreenCover(item: $template) { t in PlanView(template: t, onClose: { template = nil }) }
       #if DEBUG
       .task {

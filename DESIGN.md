@@ -7,7 +7,7 @@ https://www.figma.com/design/YVtC8LUcZoFlw3X2jpwkQm
 |---|---|
 | 00 · Rules | The rules below, as a board |
 | 01 · Foundations | Color variables, type scale, grids (with visible column overlays) |
-| 02 · Live Activities | Components: Bullet, Pill, Progress, Lock Screen ×7, Dynamic Island Expanded/Compact/Minimal ×7 |
+| 02 · Live Activities | Components: Bullet, Pill, Progress, Lock Screen ×7, Dynamic Island Expanded/Compact/Minimal ×7. **Journey v2**: one step at a time toward a goal (train → bus → walk → check-in → arrived), Dynamic Island, one-step notifications with long-press actions |
 | 03 · Wire Flow | 7 trip moments: trigger → Lock Screen → Dynamic Island → screen that a tap opens; App Screen components |
 | 04 · App Screens | Home, Settings, Trip, Calendar, Plan a day, Ask, Prepare, Log, Help (Day + Night) |
 | 05 · Onboarding Flow | First launch: Welcome → Add bookings → Building → You're ready → Home, with branches for "I'll do it later", offline, and a partial set-up (Day + Night) |
@@ -173,3 +173,13 @@ The PDF's mobile table reuses the desktop line heights (for example 80 for 48pt)
 | 5 | Check-out | Urgent | Check-out day − 2 h | App, local |
 | 6 | Waiting for Wi-Fi | Notice | Drafts queued on a metered or offline network | App (routing policy `deferToWiFi`) |
 | 7 | All caught up | On track | Catch-up pass finished on Wi-Fi | App, cloud; then the activity ends |
+
+## Journey Live Activity (v2)
+
+- **Grid:** 4 columns inside 16 pt margins, 8 pt gutters. "What" spans columns 1–3 (detail 13/16 over title 26/32); "When" is column 4 (status or day word 11/16 over the time 26/32), so both sides line up. Bottom strip: card (cols 1–2) · Ask (col 3) · Done (col 4).
+- **When:** under an hour → live countdown with the status word (ON TRACK · LEAVE NOW · NOW); later today → TODAY + clock time; tomorrow → TOMORROW; further → "THU 3 DEC" + time. Never a multi-day timer.
+- **Track:** one segment per step; the last step ends at the goal (`bed.double.fill` / `airplane`). The vehicle (`tram.fill`, `bus.fill`, `figure.walk`, `figure.outdoor.cycle`, `car.fill`, `ferry.fill`) rides the segment you're on.
+- **Cards:** train/bus → `tram.card.fill`; taxi → `car.fill`; walk/cycle → `map.fill`; check-in → `doc.text.fill` "Show booking"; arrived → `key.fill` "Room info".
+- **Done** (App Intent) marks the step finished; a step also ends when the next one starts. Arrived shows the ref and check-out from the booking for 2 h.
+- **Notifications:** one per step, "Step 2 of 3 · …"; long-press: Show card · Done · Ask Travel Copilot.
+- **Floating Ask:** 48 pt brand button with "NEED HELP? · ASK ANYTHING!" slowly circling it clockwise (84 pt with the ring; still under Reduce Motion). Open, it is as plain as Safari's search bar: a glass field and one round button beside it — ✕ while empty, blue ↑ send once you type; the return key sends too.

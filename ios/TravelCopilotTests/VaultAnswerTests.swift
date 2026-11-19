@@ -40,6 +40,9 @@ struct VaultAnswerTests {
     #expect(ReplyPrompt.text(for: "ja-JP") == "こちらにご返信を入力してください")
     #expect(ReplyPrompt.text(for: "xx") == "Type your reply here")
     #expect(ReplyPrompt.text(for: nil) == "Type your reply here")
+    #expect(LocalReplyScreen.screen(for: "ja-JP").send == "送信")
+    #expect(LocalReplyScreen.screen(for: "xx") == .english)
+    #expect(LocalReplyScreen.byLanguage.values.allSatisfy { !$0.title.isEmpty && !$0.send.isEmpty && !$0.handBack.isEmpty })
   }
 }
 

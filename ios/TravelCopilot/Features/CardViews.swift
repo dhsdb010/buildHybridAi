@@ -44,6 +44,8 @@ struct DraftChip: View {
 private struct CardScaffold<Content: View>: View {
   let languageCode: String?
   let pack: DestinationPack?
+  /// Who gets the phone: "the driver" on the taxi card, "them" elsewhere.
+  var audience = "them"
   @ViewBuilder var content: Content
 
   enum Stage { case main, handOver, reply }
@@ -78,6 +80,10 @@ private struct CardScaffold<Content: View>: View {
       if UserDefaults.standard.string(forKey: "replyStage") == "handover", !DebugFlags.replyUsed {
         DebugFlags.replyUsed = true
         try? await Task.sleep(for: .seconds(1)); stage = .handOver; return
+      }
+      if UserDefaults.standard.string(forKey: "replyStage") == "reply", !DebugFlags.replyUsed {
+        DebugFlags.replyUsed = true
+        try? await Task.sleep(for: .seconds(1)); stage = .reply; return
       }
       guard !DebugFlags.replyUsed, let text = UserDefaults.standard.string(forKey: "replyText") else { return }
       DebugFlags.replyUsed = true
@@ -143,7 +149,7 @@ private struct CardScaffold<Content: View>: View {
         .font(.system(size: 56, weight: .semibold)).foregroundStyle(MTA.notice)
       MTALabel("Step 1 · you", color: .white.opacity(0.6))
       Text("Turn the phone around").mta(.displayMedium).foregroundStyle(.white)
-      Text("Hand it to them. The next screen is in \(language), so they can type their reply — you'll get it back in English.")
+      Text("Hand it to \(audience). The next screen speaks \(language), so they can type their reply. You'll get it back in English.")
         .mta(.body1).foregroundStyle(.white.opacity(0.75))
 
       if Keyboards.has(languageCode) {
@@ -165,35 +171,53 @@ private struct CardScaffold<Content: View>: View {
       }
       Spacer()
       Button { stage = .reply } label: {
-        Text("They have the phone").mta(.button1).frame(maxWidth: .infinity, minHeight: 52)
+        Label("Show the screen for \(audience)", systemImage: "arrow.right").labelStyle(TrailingIcon())
+          .mta(.button1).frame(maxWidth: .infinity, minHeight: 52)
       }
       .buttonStyle(.plain).background(.white, in: .capsule).foregroundStyle(.black)
     }
     .padding(24)
   }
 
-  // MARK: Reply (for the local person, upright, in their language)
+  // MARK: Reply (for the local person: the screen they read, in their language)
 
   private var replyPane: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    let local = LocalReplyScreen.screen(for: languageCode)
+    return VStack(alignment: .leading, spacing: 16) {
       HStack {
+        // Small English line for the traveller, so they know what the other person sees.
+        MTALabel("For \(audience) · in \(language)", color: .white.opacity(0.5))
         Spacer()
-        Button("Close", systemImage: "xmark") { stage = .main }
+        Button("Back to my card", systemImage: "xmark") { stage = .main }
           .labelStyle(.iconOnly).font(.title2).foregroundStyle(.white.opacity(0.7))
       }
-      Text(ReplyPrompt.text(for: languageCode)).mta(.headline).foregroundStyle(MTA.notice)
-      LocalTextField(text: $replyText, languageCode: languageCode) { Task { await sendReply() } }
+      Image(systemName: "character.bubble.fill").font(.system(size: 40, weight: .semibold)).foregroundStyle(MTA.notice)
+        .accessibilityHidden(true)
+      Text(local.title).mta(.displayMedium).foregroundStyle(MTA.notice).fixedSize(horizontal: false, vertical: true)
+      Text(local.body).mta(.body1).foregroundStyle(.white).fixedSize(horizontal: false, vertical: true)
+      LocalTextField(text: $replyText, languageCode: languageCode, placeholder: local.placeholder) { Task { await sendReply() } }
         .frame(maxWidth: .infinity, minHeight: 64, maxHeight: 64)
         .padding(.horizontal, 16)
         .background(.white.opacity(0.12), in: .rect(cornerRadius: 12))
+        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(MTA.notice.opacity(0.6), lineWidth: 2) }
       if let error { Text(error).mta(.body2).foregroundStyle(MTA.urgent) }
       Button { Task { await sendReply() } } label: {
-        Group { if working { ProgressView().tint(.black) } else { Text("OK ✓").mta(.button1) } }
-          .frame(maxWidth: .infinity, minHeight: 52)
+        Group {
+          if working { ProgressView().tint(.black) } else {
+            HStack(spacing: 8) {
+              Image(systemName: "paperplane.fill")
+              Text(local.send).mta(.button1)
+              if local.send != "Send" { Text("· Send").mta(.button2).opacity(0.6) }
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, minHeight: 56)
       }
       .buttonStyle(.plain).background(MTA.notice, in: .capsule).foregroundStyle(MTA.onNotice)
       .disabled(replyText.nilIfEmpty == nil || working)
       .opacity(replyText.nilIfEmpty == nil ? 0.5 : 1)
+      .accessibilityLabel("\(local.send), Send")
+      Text(local.handBack).mta(.body2).foregroundStyle(.white.opacity(0.6)).fixedSize(horizontal: false, vertical: true)
       Spacer()
     }
     .padding(24)
@@ -244,7 +268,7 @@ struct BigCardView: View {
   let pack: DestinationPack?
 
   var body: some View {
-    CardScaffold(languageCode: pack?.languageCode, pack: pack) {
+    CardScaffold(languageCode: pack?.languageCode, pack: pack, audience: "the driver") {
       if let taxiLine = pack?.taxiLine {
         Text(taxiLine).font(.title2.bold()).foregroundStyle(MTA.notice)
       }

@@ -15,6 +15,9 @@ struct PlanDayView: View {
     let all = TripTimeline.events(items: items, plans: plans)
     let range = TripTimeline.range(all)
     let dayEvents = TripTimeline.events(on: day, all)
+    TimelineView(.periodic(from: .now, by: 30)) { _ in
+    let now = AppClock.now
+    let nextID = all.first { $0.date > now }?.id
     ScrollView {
       VStack(alignment: .leading, spacing: 16) {
         MTALabel(dayLine(range))
@@ -22,8 +25,9 @@ struct PlanDayView: View {
         if dayEvents.isEmpty {
           Text("Nothing on this day yet. Add a place, a meal or a ticket.").mta(.body1).foregroundStyle(MTA.text2)
         }
-        ForEach(dayEvents) { e in
-          PlanCard(event: e)
+        ForEach(Array(dayEvents.enumerated()), id: \.element.id) { i, e in
+          let end = dayEvents.indices.contains(i + 1) ? dayEvents[i + 1].date : nil
+          PlanCard(event: e, progress: TripProgress.of(start: e.date, end: end, now: now, isNext: e.id == nextID), now: now)
             .contextMenu {
               if e.kind == .plan, let p = plans.first(where: { "plan-\($0.createdAt.timeIntervalSince1970)" == e.id }) {
                 Button("Delete", systemImage: "trash", role: .destructive) { context.delete(p) }
@@ -31,10 +35,13 @@ struct PlanDayView: View {
             }
         }
         MTAToggleRow(title: "Remind me with Live Activities", isOn: $reminders)
+        Text("A notification 30 min before each plan, and the next one on your Lock Screen with a live countdown.")
+          .mta(.body2).foregroundStyle(MTA.text2)
         NoticeCard(text: "Plans live on this iPhone and work offline. Suggestions need Wi-Fi and are labeled.")
         Button("Add a plan") { adding = true }.buttonStyle(.mtaPrimary).padding(.top, 4)
       }
       .mtaScreen().padding(.top, 8).padding(.bottom, 24)
+    }
     }
     .scrollIndicators(.hidden)
     .background(MTA.surface)
@@ -54,29 +61,64 @@ struct PlanDayView: View {
   }
 }
 
-/// Time + title card with a source chip: From booking / You added / Suggested · Wi-Fi.
+/// Time + title card. The color shows progress (done / now / next / soon / later);
+/// where the plan came from is a neutral chip, so color only ever means status.
 struct PlanCard: View {
   let event: TripEvent
+  var progress: TripProgress = .later
+  var now: Date = AppClock.now
 
   var body: some View {
     HStack(alignment: .top, spacing: 14) {
-      Text(TripTimeline.time(event.date)).mta(.button1).monospacedDigit().foregroundStyle(MTA.text).frame(width: 62, alignment: .leading)
+      VStack(alignment: .leading, spacing: 6) {
+        Text(TripTimeline.time(event.date)).mta(.button1).monospacedDigit().foregroundStyle(fg)
+        if progress == .done {
+          Image(systemName: "checkmark.circle.fill").font(.system(size: 18)).foregroundStyle(MTA.text2)
+        }
+      }
+      .frame(width: 62, alignment: .leading)
       VStack(alignment: .leading, spacing: 4) {
-        Text(event.title).mta(.subheadNormal).foregroundStyle(MTA.text)
-        if !event.detail.isEmpty { Text(event.detail).mta(.body2).foregroundStyle(MTA.text2) }
-        Chip(text: source.text, systemImage: source.symbol, color: source.color)
+        Text(event.title).mta(.subheadNormal).foregroundStyle(fg).strikethrough(progress == .done, color: MTA.text2)
+        if !event.detail.isEmpty { Text(event.detail).mta(.body2).foregroundStyle(fg2) }
+        Chip(text: source.text, systemImage: source.symbol, color: fg2).fixedSize()
       }
       Spacer(minLength: 0)
+      if let label = progress.label(start: event.date, now: now), progress != .done {
+        Text(label.uppercased()).mta(.label).foregroundStyle(pillFG)
+          .padding(.horizontal, 8).padding(.vertical, 4)
+          .background(pillBG, in: .capsule)
+          .fixedSize()
+      }
     }
     .padding(14)
-    .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(source.color, lineWidth: 2) }
+    .background(progress == .now ? MTA.accent : .clear, in: .rect(cornerRadius: 12))
+    .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(stroke, lineWidth: progress == .soon ? 3 : 2) }
+    .opacity(progress == .done ? 0.6 : 1)
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(progress.label(start: event.date, now: now) ?? "")
   }
 
-  private var source: (text: String, symbol: String?, color: Color) {
+  private var stroke: Color {
+    switch progress {
+    case .done: MTA.subtle
+    case .now: MTA.accent
+    case .next: MTA.onTrack
+    case .soon: MTA.urgent
+    case .later: MTA.border
+    }
+  }
+  private var fg: Color { progress == .now ? MTA.onColor : (progress == .done ? MTA.text2 : MTA.text) }
+  private var fg2: Color { progress == .now ? MTA.onColor.opacity(0.85) : MTA.text2 }
+  private var pillBG: Color {
+    switch progress { case .now: MTA.onColor; case .next: MTA.onTrack; case .soon: MTA.urgent; default: .clear }
+  }
+  private var pillFG: Color { progress == .now ? MTA.accent : MTA.onColor }
+
+  private var source: (text: String, symbol: String?) {
     switch event.planSource {
-    case nil: ("From booking", event.symbol, MTA.onTrack)
-    case "suggested": ("Suggested · Wi-Fi", "icloud", MTA.obstacle)
-    default: ("You added", nil, MTA.text)
+    case nil: ("From booking", event.symbol)
+    case "suggested": ("Suggested", "icloud")
+    default: ("You added", nil)
     }
   }
 }

@@ -40,6 +40,7 @@ struct TripView: View {
       }
       .scrollIndicators(.hidden)
       .background(MTA.surface)
+      .safeAreaInset(edge: .bottom) { if !items.isEmpty { FloatingAsk() } }
       .navigationTitle("Trip")
       .navigationBarTitleDisplayMode(.inline)
       .navigationDestination(item: $planDay) { PlanDayView(day: $0) }

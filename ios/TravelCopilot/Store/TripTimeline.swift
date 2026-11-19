@@ -10,6 +10,8 @@ struct TripEvent: Identifiable, Hashable {
   let detail: String
   let itemID: PersistentIdentifierBox?
   let planSource: String?
+  /// Booking kind for flights and trains ("flight" · "train"), so a journey knows what you ride.
+  var vehicle: String? = nil
 
   var symbol: String {
     switch kind {
@@ -61,11 +63,12 @@ enum TripTimeline {
         let route = [item.origin, item.destination].compactMap { $0 }.joined(separator: " → ")
         if let d = date(item.startDate, item.departureTime) {
           out.append(.init(id: "\(item.title)-dep", date: d, kind: .depart, title: route.isEmpty ? item.title : route,
-                           detail: [item.title, item.confirmationCode].compactMap { $0 }.joined(separator: " · "), itemID: box, planSource: nil))
+                           detail: [item.title, item.confirmationCode].compactMap { $0 }.joined(separator: " · "), itemID: box, planSource: nil,
+                           vehicle: item.kind))
         }
         if let d = date(item.endDate ?? item.startDate, item.arrivalTime) {
           out.append(.init(id: "\(item.title)-arr", date: d, kind: .arrive, title: "Land at \(item.destination ?? "destination")",
-                           detail: item.title, itemID: box, planSource: nil))
+                           detail: item.title, itemID: box, planSource: nil, vehicle: item.kind))
         }
       case "hotel":
         if let d = date(item.startDate, item.checkInTime, defaultTime: "15:00") {

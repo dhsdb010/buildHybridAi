@@ -24,6 +24,7 @@ targets:
       - path: TravelCopilot
         excludes:
           - "Resources/GoogleService-Info.plist"
+      - path: Shared
     postBuildScripts:
       - name: Copy GoogleService-Info.plist if present
         basedOnDependencyAnalysis: false
@@ -35,8 +36,9 @@ targets:
             REV=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" "$SRC" 2>/dev/null || true)
             PL="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
             if [ -n "$REV" ] && [ -f "$PL" ]; then
-              /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" "$PL" 2>/dev/null || true
-              /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" -c "Add :CFBundleURLTypes:0 dict" -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REV" "$PL"
+              # Keep the app's own travelcopilot:// scheme (entry 0); Google's goes in entry 1.
+              /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes:1" "$PL" 2>/dev/null || true
+              /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1 dict" -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes array" -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string $REV" "$PL"
             fi
           else
             echo "warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)"
@@ -49,9 +51,14 @@ targets:
       path: TravelCopilot/Info.plist
       properties:
         CFBundleDisplayName: Travel Copilot
+        # Live Activity and notification buttons open the app here (travelcopilot://ask, ://trip, ://taxi, ://map).
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.buildhybridai.travelcopilot
+            CFBundleURLSchemes: [travelcopilot]
         UILaunchScreen: {}
         NSLocationWhenInUseUsageDescription: Shows where you are on your saved trip map, even offline (GPS needs no internet).
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSSupportsLiveActivities: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.buildhybridai.travelcopilot
@@ -69,10 +76,29 @@ targets:
         product: FirebaseAuth
       - package: GoogleSignIn
         product: GoogleSignIn
+      - target: TravelCopilotWidgets
       - package: Firebase
         product: FirebaseFirestore
       - package: Firebase
         product: FirebaseRemoteConfig
+  TravelCopilotWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TravelCopilotWidgets
+      - path: Shared
+    info:
+      path: TravelCopilotWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Travel Copilot
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.buildhybridai.travelcopilot.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SKIP_INSTALL: YES
   TravelCopilotTests:
     type: bundle.unit-test
     platform: iOS
