@@ -188,3 +188,25 @@ final class RoutingEntry {
     self.network = network
   }
 }
+
+/// One message in Blue's chat, saved so the conversation is still there next time.
+/// Answers are stored as what was shown (values copied from bookings), never regenerated.
+@Model
+final class ChatMessage {
+  var createdAt: Date
+  var role: String          // you · blue
+  var kind: String          // text · vault · place · notInVault · other · translation · error
+  var text: String          // your question, or Blue's sentence
+  var value: String = ""    // big value ("15:00", "830 m", the translation)
+  var subtitle: String = "" // day, estimate, or romanization
+  var note: String = ""
+  var sourceTitle: String = ""
+  var sourceRef: String = ""
+  var sourceSymbol: String = ""
+  var caption: String = ""  // "On-device · 4.1 s · From your booking"
+  var link: String = ""     // taxi:<booking title> · map · translation:<translation>
+
+  init(role: String, kind: String, text: String, createdAt: Date = .now) {
+    self.role = role; self.kind = kind; self.text = text; self.createdAt = createdAt
+  }
+}

@@ -77,6 +77,36 @@ enum VaultAnswerBuilder {
   }
 }
 
+// MARK: - Guard: the question must actually ask for what the model picked
+
+/// The small on-device model always picks *some* booking and field, even for "Hello".
+/// So a booking answer is shown only when the question has a word that asks for that field
+/// (or a distance word for places). Otherwise it's small talk and gets the help reply.
+enum AskGuard {
+  static let fieldWords: [VaultField: [String]] = [
+    .confirmationCode: ["code", "confirmation", "booking", "reservation", "ref", "pnr", "number", "reference"],
+    .checkIn: ["check-in", "check in", "checkin", "arrive at the hotel", "get in", "room ready"],
+    .checkOut: ["check-out", "check out", "checkout", "leave the hotel"],
+    .departure: ["depart", "leave", "leaving", "board", "gate", "when", "time", "flight", "train"],
+    .arrival: ["arrive", "arrival", "land", "get there", "when", "time"],
+    .route: ["route", "from", "where", "fly", "going"],
+    .address: ["address", "where", "location", "located"],
+    .taxi: ["taxi", "driver", "cab", "uber", "show"],
+    .phone: ["phone", "call", "contact", "number", "tel"],
+  ]
+  static let placeWords = ["far", "distance", "how long", "get to", "go to", "walk", "near", "close", "minutes", "km", "directions", "way to"]
+
+  static func fits(_ question: String, field: VaultField) -> Bool {
+    let q = question.lowercased()
+    return fieldWords[field, default: []].contains { q.contains($0) }
+  }
+
+  static func fitsPlace(_ question: String) -> Bool {
+    let q = question.lowercased()
+    return placeWords.contains { q.contains($0) }
+  }
+}
+
 // MARK: - Place answers (computed from saved coordinates, never generated)
 
 struct PlaceAnswer: Equatable, Sendable {
@@ -238,12 +268,15 @@ extension AIService {
 
     switch intent.intent {
     case "vault":
+      // Small talk ("Hello") gets the help reply, never a booking value.
+      guard let field = VaultField(rawValue: intent.field), AskGuard.fits(question, field: field)
+      else { return .other(meta: meta) }
       guard items.indices.contains(intent.itemIndex),
-            let field = VaultField(rawValue: intent.field),
             let answer = VaultAnswerBuilder.answer(items[intent.itemIndex], field)
       else { return .notInVault(meta: meta) }
       return .vault(answer, item: items[intent.itemIndex], meta: meta)
     case "place":
+      guard AskGuard.fitsPlace(question) else { return .other(meta: meta) }
       guard places.indices.contains(intent.placeIndex),
             let answer = PlaceAnswerBuilder.answer(places[intent.placeIndex], places: places, here: here)
       else { return .notInVault(meta: meta) }

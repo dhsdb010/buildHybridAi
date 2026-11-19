@@ -1,184 +1,404 @@
 import SwiftUI
 import SwiftData
 
-/// Ask my trip (on-device classifier → stored field) or Say in <language> (context translation).
+/// Blue, the trip chat (Figma: App Screens → "Blue · Chat flow").
+/// Laid out like Messages: your questions on the right in blue, Blue's answers on the left with its logo.
+/// Ask mode: the on-device model only picks a booking field; the answer is that stored value.
+/// The あ button switches to Say in <language> (context translation).
+/// The conversation is saved (`ChatMessage`), so it's still there when you open Blue again.
 struct AskView: View {
   let request: AskRequest
   @Environment(AIService.self) private var ai
   @Environment(Connectivity.self) private var net
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.modelContext) private var context
   @Query(sort: \VaultItem.startDate) private var items: [VaultItem]
   @Query private var packs: [DestinationPack]
   @Query(sort: \Place.createdAt) private var places: [Place]
+  @Query(sort: \ChatMessage.createdAt) private var messages: [ChatMessage]
+  @Query private var translations: [TranslationEntry]
   @Environment(LocationService.self) private var location
   @Environment(AppRouter.self) private var router
-  @State private var mode = 0
+  @State private var sayMode = false
   @State private var question = ""
-  @State private var asked = ""
   @State private var asking = false
-  @State private var outcome: AskOutcome?
-  @State private var error: String?
+  @State private var confirmClear = false
   @State private var taxiItem: VaultItem?
   @State private var translationCard: TranslationEntry?
   @FocusState private var focused: Bool
 
   private var pack: DestinationPack? { packs.first }
+  private var language: String { pack?.languageName ?? "local language" }
 
   var body: some View {
     NavigationStack {
-      ScrollView {
-        VStack(alignment: .leading, spacing: 20) {
-          MTASegmented(options: ["Ask my trip", "Say in \(pack?.languageName ?? "local language")"], selection: $mode)
-          if asking {
-            HStack(spacing: 10) { ProgressView(); Text(mode == 0 ? "Looking in your Vault…" : "Translating…").mta(.body1).foregroundStyle(MTA.text2) }
-          } else if let error {
-            NoticeCard(text: error)
-          } else if let outcome {
-            result(outcome)
-          } else {
-            suggestions
+      ScrollViewReader { proxy in
+        ScrollView {
+          LazyVStack(alignment: .leading, spacing: 12) {
+            stamp(messages.first?.createdAt ?? .now)
+            BlueRow {
+              Text("Hi, I'm Blue 👋").mta(.subheadNormal)
+              Text("I answer from your saved bookings, right on your phone, even with no signal. What do you need?")
+                .mta(.body1)
+            }
+            if messages.isEmpty { SuggestionList(list: suggestions(followUp: false), send: send) }
+            ForEach(Array(messages.enumerated()), id: \.element.id) { i, m in
+              // A time line like Messages when an hour or more passed since the last message.
+              if i > 0, m.createdAt.timeIntervalSince(messages[i - 1].createdAt) > 3600 { stamp(m.createdAt) }
+              message(m, isLast: i == messages.count - 1)
+            }
+            if asking { BlueRow { TypingDots() }.id("typing") }
+            Color.clear.frame(height: 1).id("bottom")
+          }
+          .padding(.horizontal, 16).padding(.vertical, 12)
+        }
+        .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
+        .defaultScrollAnchor(.bottom)
+        .onChange(of: messages.count) { withAnimation(.snappy) { proxy.scrollTo("bottom", anchor: .bottom) } }
+        .onChange(of: asking) { withAnimation(.snappy) { proxy.scrollTo("bottom", anchor: .bottom) } }
+      }
+      .background(MTA.surface)
+      .safeAreaInset(edge: .bottom) { inputBar }
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) { Button("Close", systemImage: "xmark") { dismiss() } }
+        ToolbarItem(placement: .principal) {
+          VStack(spacing: 2) {
+            BlueAvatar(size: 32)
+            Text("Blue").font(.system(size: 12, weight: .semibold)).foregroundStyle(MTA.text)
+          }
+          .accessibilityElement(children: .combine)
+          .accessibilityLabel("Blue, your trip assistant")
+        }
+        if !messages.isEmpty {
+          ToolbarItem(placement: .topBarTrailing) {
+            Button("New chat", systemImage: "square.and.pencil") { confirmClear = true }
           }
         }
-        .mtaScreen().padding(.top, 8).padding(.bottom, 24)
       }
-      .scrollIndicators(.hidden)
-      .scrollDismissesKeyboard(.immediately)
-      .background(MTA.surface)
-      .safeAreaInset(edge: .bottom) { inputBar.padding(.horizontal, MTA.margin).padding(.bottom, 8) }
-      .navigationTitle("Ask")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close", systemImage: "xmark") { dismiss() } } }
+      .confirmationDialog("Start a new chat?", isPresented: $confirmClear, titleVisibility: .visible) {
+        Button("Clear chat history", role: .destructive) { clear() }
+      } message: {
+        Text("This removes the messages with Blue. Your bookings and saved phrases stay.")
+      }
       .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: pack) }
       .fullScreenCover(item: $translationCard) { TranslationCardView(entry: $0, pack: pack) }
     }
     .task {
-      mode = request.mode
-      question = request.text
-      if request.autoSubmit, !question.isEmpty { await submit() } else { focused = true }
+      sayMode = request.mode == 1
+      if request.autoSubmit, let q = request.text.nilIfEmpty { send(q) }
+      else { question = request.text; if !request.text.isEmpty { focused = true } }
     }
-    .onChange(of: mode) { outcome = nil; error = nil }
   }
 
-  // MARK: - Pieces
+  private func stamp(_ date: Date) -> some View {
+    Text(date.formatted(.dateTime.weekday(.wide).hour().minute()))
+      .mta(.label).foregroundStyle(MTA.text2).frame(maxWidth: .infinity)
+  }
+
+  // MARK: - Input (like Messages: あ toggle · field · send)
 
   private var inputBar: some View {
-    HStack {
-      TextField(mode == 0 ? "When is check-in?" : "At the pharmacy: I'm allergic to penicillin", text: $question, axis: .vertical)
-        .mta(.body1).lineLimit(1...3).focused($focused).submitLabel(.send)
-        .onSubmit { Task { await submit() } }
-      Button { Task { await submit() } } label: {
-        Image(systemName: "arrow.up").font(.system(size: 17, weight: .semibold)).foregroundStyle(MTA.onColor)
-          .frame(width: 40, height: 40).background(MTA.accent, in: .circle)
+    HStack(alignment: .bottom, spacing: 8) {
+      Button { withAnimation(.snappy) { sayMode.toggle() } } label: {
+        Text("あ").font(.system(size: 17, weight: .medium))
+          .foregroundStyle(sayMode ? MTA.onColor : MTA.text)
+          .frame(width: 40, height: 40)
+          .background(sayMode ? MTA.accent : MTA.raised, in: .circle)
       }
-      .disabled(question.nilIfEmpty == nil || asking)
-      .accessibilityLabel(mode == 0 ? "Ask" : "Translate")
-    }
-    .padding(.leading, 20).padding(.trailing, 6).padding(.vertical, 6)
-    .background(MTA.surface, in: .rect(cornerRadius: 26))
-    .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(MTA.border, lineWidth: 2) }
-  }
+      .buttonStyle(.plain)
+      .accessibilityLabel(sayMode ? "Say in \(language) is on" : "Say in \(language)")
 
-  private var suggestions: some View {
-    let list = mode == 0
-      ? ["When is check-in?", "What's my hotel booking code?", places.contains { $0.kind == "plan" }
-          ? "How far is \(places.first { $0.kind == "plan" }!.name) from my hotel?" : "Show my hotel to a taxi driver"]
-      : ["Where is the nearest pharmacy?", "At the pharmacy: I'm allergic to penicillin", "Please call a taxi"]
-    return VStack(alignment: .leading, spacing: 10) {
-      MTALabel(mode == 0 ? "Answers come from your saved bookings" : "Context-aware · works offline")
-      ForEach(list, id: \.self) { s in
-        Button { question = s; Task { await submit() } } label: {
-          Text(s).mta(.body1).foregroundStyle(MTA.text).frame(maxWidth: .infinity, alignment: .leading).padding(14)
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(MTA.subtle, lineWidth: 1) }
+      HStack(alignment: .bottom, spacing: 6) {
+        TextField(sayMode ? "Say in \(language)" : "Message Blue", text: $question, axis: .vertical)
+          .mta(.body1).lineLimit(1...5).focused($focused).submitLabel(.send)
+          .padding(.vertical, 9)
+          .onChange(of: question) { _, new in
+            if new.hasSuffix("\n") { question = String(new.dropLast()); send(question) }
+          }
+        Button { send(question) } label: {
+          Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(MTA.onColor)
+            .frame(width: 30, height: 30).background(MTA.accent, in: .circle)
         }
         .buttonStyle(.plain)
+        .opacity(question.nilIfEmpty == nil || asking ? 0.35 : 1)
+        .disabled(question.nilIfEmpty == nil || asking)
+        .padding(.bottom, 5)
+        .accessibilityLabel(sayMode ? "Translate" : "Send")
+      }
+      .padding(.leading, 14).padding(.trailing, 5)
+      .frame(minHeight: 40)
+      .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(MTA.subtle.opacity(0.5), lineWidth: 1) }
+    }
+    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
+    .background(MTA.surface)
+  }
+
+  // MARK: - Messages (drawn from what was saved)
+
+  @ViewBuilder
+  private func message(_ m: ChatMessage, isLast: Bool) -> some View {
+    if m.role == "you" {
+      HStack {
+        Spacer(minLength: 60)
+        Text(m.text).mta(.body1).foregroundStyle(MTA.onColor)
+          .padding(.horizontal, 14).padding(.vertical, 9)
+          .background(MTA.accent, in: .rect(cornerRadius: 20))
+      }
+      .transition(.move(edge: .bottom).combined(with: .opacity))
+    } else {
+      BlueRow(caption: m.caption.nilIfEmpty) {
+        switch m.kind {
+        case "vault", "place":
+          Text(m.value).mta(m.value.count <= 12 ? .displayLarge : .subheadMedium).monospacedDigit()
+            .lineLimit(4).minimumScaleFactor(0.6)
+          if !m.subtitle.isEmpty { Text(m.subtitle).mta(.subheadNormal) }
+          Text(m.text).mta(.body1)
+          if !m.sourceTitle.isEmpty {
+            BookingSource(title: m.sourceTitle, ref: m.sourceRef.nilIfEmpty, symbol: m.sourceSymbol)
+          }
+        case "translation":
+          Text(m.value).mta(.subheadMedium)
+          if !m.subtitle.isEmpty { Text(m.subtitle).mta(.body2).foregroundStyle(MTA.text2) }
+          if !m.note.isEmpty { Label(m.note, systemImage: "info.circle").mta(.body2).foregroundStyle(MTA.text2) }
+        default:
+          Text(m.text).mta(.body1)
+        }
+        linkButton(m.link)
+      }
+      // Suggestions only under Blue's latest message.
+      if isLast {
+        switch m.kind {
+        case "vault": SuggestionList(list: suggestions(followUp: true), send: send)
+        case "notInVault", "other": SuggestionList(list: suggestions(followUp: false), send: send)
+        default: EmptyView()
+        }
       }
     }
   }
 
   @ViewBuilder
-  private func result(_ outcome: AskOutcome) -> some View {
-    MTALabel("You asked")
-    Text(asked).mta(.headline).foregroundStyle(MTA.text)
+  private func linkButton(_ link: String) -> some View {
+    if link == "map" {
+      BubbleLink(title: "Open map", symbol: "map.fill") { router.tab = .map; dismiss() }
+    } else if link.hasPrefix("taxi:"), let item = items.first(where: { $0.title == link.dropFirst(5) }) {
+      BubbleLink(title: "Show taxi card", symbol: "car.fill") { taxiItem = item }
+    } else if link.hasPrefix("translation:"), let entry = translations.first(where: { $0.translation == link.dropFirst(12) }) {
+      BubbleLink(title: "Show full screen", symbol: "arrow.up.left.and.arrow.down.right") { translationCard = entry }
+    }
+  }
+
+  /// "On-device · 4.1 s · From your booking" under Blue's bubble (like Messages' "Delivered").
+  private func caption(_ meta: AIMeta, _ from: String?) -> String {
+    var parts = [meta.source == .onDevice ? "On-device" : "Cloud · Gemini", SourceChip.format(meta.latencyMs)]
+    if !net.isOnline { parts.append("Offline") }
+    if let from { parts.append(from) }
+    return parts.joined(separator: " · ")
+  }
+
+  /// Turns an answer into the message that's saved and shown.
+  private func blueMessage(_ outcome: AskOutcome) -> ChatMessage {
     switch outcome {
     case let .vault(answer, item, meta):
-      chips(meta)
+      let m = ChatMessage(role: "blue", kind: "vault", text: answer.text)
       // "2026-12-03 15:00" → big "15:00" + "Thu, Dec 3"; anything else shown as-is.
       let parts = answer.value.split(separator: " ")
       if parts.count == 2, let d = TripTimeline.date(String(parts[0]), String(parts[1])) {
-        Text(TripTimeline.time(d)).mta(.displayLarge).monospacedDigit().foregroundStyle(MTA.text)
-        MTALabel(TripTimeline.dayTitle(d), color: MTA.text)
-      } else {
-        Text(answer.value).mta(answer.value.count <= 12 ? .displayLarge : .headline).monospacedDigit().foregroundStyle(MTA.text)
-          .lineLimit(3).minimumScaleFactor(0.6)
-      }
-      Text(answer.text).mta(.body1).foregroundStyle(MTA.text)
-      OutlineCard(stroke: MTA.onTrack) {
-        MTALabel("From your booking", color: MTA.onTrack)
-        HStack(spacing: 10) {
-          TripBullet(systemName: item.kind == "hotel" ? "bed.double.fill" : "airplane", size: 24)
-          Text(item.title).mta(.subheadNormal).foregroundStyle(MTA.text)
-        }
-        FieldRow(label: "Value", value: answer.value)
-        if let code = item.confirmationCode { FieldRow(label: "Ref", value: code) }
-      }
-      Text("Read from your saved booking. The on-device model only picks the field — it never writes the answer.")
-        .mta(.body2).foregroundStyle(MTA.text2)
-      if answer.showTaxiCard { Button("Show taxi card") { taxiItem = item }.buttonStyle(.mtaPrimary) }
+        m.value = TripTimeline.time(d); m.subtitle = TripTimeline.dayTitle(d)
+      } else { m.value = answer.value }
+      m.sourceTitle = item.title
+      m.sourceRef = item.confirmationCode ?? ""
+      m.sourceSymbol = item.kind == "hotel" ? "bed.double.fill" : item.kind == "train" ? "tram.fill" : "airplane"
+      m.caption = caption(meta, "From your booking")
+      if answer.showTaxiCard { m.link = "taxi:\(item.title)" }
+      return m
     case let .place(answer, place, meta):
-      chips(meta)
-      Text(answer.distance).mta(.displayLarge).monospacedDigit().foregroundStyle(MTA.text)
-      MTALabel(answer.estimate, color: MTA.text)
-      Text(answer.text).mta(.body1).foregroundStyle(MTA.text)
-      OutlineCard(stroke: MTA.onTrack) {
-        MTALabel("From your offline map", color: MTA.onTrack)
-        HStack(spacing: 10) {
-          TripBullet(systemName: place.symbol, status: place.kind == "plan" ? .onTrack : .accent, size: 24)
-          Text(place.name).mta(.subheadNormal).foregroundStyle(MTA.text)
-        }
-        FieldRow(label: "From", value: answer.from)
-        FieldRow(label: "Straight line", value: answer.distance)
-      }
-      Text("Calculated from saved coordinates — works offline. The on-device model only picks the place.")
-        .mta(.body2).foregroundStyle(MTA.text2)
-      Button("Open map") { router.tab = .map; dismiss() }.buttonStyle(.mtaPrimary)
+      let m = ChatMessage(role: "blue", kind: "place", text: answer.text)
+      m.value = answer.distance; m.subtitle = answer.estimate
+      m.sourceTitle = place.name; m.sourceSymbol = place.symbol
+      m.caption = caption(meta, "From your offline map"); m.link = "map"
+      return m
     case let .notInVault(meta):
-      chips(meta)
-      Text("That isn't in your saved bookings, so I won't guess.").mta(.subheadMedium).foregroundStyle(MTA.text)
+      let m = ChatMessage(role: "blue", kind: "notInVault", text: "That isn't in your saved bookings, so I won't guess.")
+      m.caption = caption(meta, nil)
+      return m
     case let .translation(entry, meta):
-      chips(meta, draft: entry.isDraft)
-      Text(entry.translation).mta(.headline).foregroundStyle(MTA.text)
-      if !entry.romanization.isEmpty { Text(entry.romanization).mta(.body2).foregroundStyle(MTA.text2) }
-      if !entry.note.isEmpty { Label(entry.note, systemImage: "info.circle").mta(.body2).foregroundStyle(MTA.text2) }
-      Button("Show full screen") { translationCard = entry }.buttonStyle(.mtaPrimary)
+      let m = ChatMessage(role: "blue", kind: "translation", text: entry.sourceText)
+      m.value = entry.translation; m.subtitle = entry.romanization; m.note = entry.note
+      m.caption = caption(meta, entry.isDraft ? "Draft · Say in \(language)" : "Say in \(language)")
+      m.link = "translation:\(entry.translation)"
+      return m
     case let .other(meta):
-      chips(meta)
-      Text("I answer questions about your bookings. To talk to someone, switch to Say.").mta(.body1).foregroundStyle(MTA.text)
+      let m = ChatMessage(role: "blue", kind: "other",
+                          text: "Hi! I only answer trip questions from your bookings, so I won't guess. Try one of these, or tap あ to say something in \(language).")
+      m.caption = caption(meta, nil)
+      return m
     }
   }
 
-  private func chips(_ meta: AIMeta, draft: Bool = false) -> some View {
-    HStack(spacing: 8) {
-      SourceChip(source: meta.source, latencyMs: meta.latencyMs)
-      if !net.isOnline { Chip(text: "Offline", systemImage: "icloud.slash") }
-      if draft { Chip(text: "Draft", systemImage: "icloud.dashed", color: MTA.obstacle) }
+  // MARK: - Suggestions (each one is answerable from a stored field)
+
+  private func suggestions(followUp: Bool) -> [Suggestion] {
+    let kinds = Set(items.map(\.kind))
+    var list: [Suggestion] = []
+    if kinds.contains("hotel") {
+      list += [.init(text: "When is hotel check-in?", symbol: "bed.double.fill"),
+               .init(text: "Show my hotel to a taxi driver", symbol: "car.fill"),
+               .init(text: "When is check-out?", symbol: "door.left.hand.open")]
+    }
+    if kinds.contains("train") { list.append(.init(text: "When does my train leave?", symbol: "tram.fill")) }
+    if kinds.contains("flight") { list.append(.init(text: "What's my flight booking code?", symbol: "airplane")) }
+    if let plan = places.first(where: { $0.kind == "plan" }) {
+      list.append(.init(text: "How far is \(plan.name) from my hotel?", symbol: "map.fill"))
+    }
+    if list.isEmpty { list = [.init(text: "What's my booking code?", symbol: "doc.text.fill")] }
+    // After an answer, offer two follow-ups you haven't asked yet.
+    if followUp {
+      let asked = Set(messages.filter { $0.role == "you" }.map(\.text))
+      return Array(list.filter { !asked.contains($0.text) }.prefix(2))
+    }
+    return Array(list.prefix(4))
+  }
+
+  // MARK: - Sending
+
+  private func send(_ text: String) {
+    guard let q = text.nilIfEmpty, !asking else { return }
+    question = ""
+    let say = sayMode
+    withAnimation(.snappy) {
+      context.insert(ChatMessage(role: "you", kind: "text", text: q))
+      asking = true
+    }
+    try? context.save()
+    Task {
+      let reply: ChatMessage
+      do {
+        let here = location.location.map { (lat: $0.coordinate.latitude, lon: $0.coordinate.longitude) }
+        let r = say
+          ? try await ai.say(q, items: items, pack: pack)
+          : try await ai.ask(q, items: items, pack: pack, places: places, here: here)
+        reply = blueMessage(r)
+      } catch {
+        reply = ChatMessage(role: "blue", kind: "error", text: error.localizedDescription)
+      }
+      withAnimation(.snappy) { context.insert(reply); asking = false }
+      try? context.save()
     }
   }
 
-  private func submit() async {
-    guard let q = question.nilIfEmpty, !asking else { return }
-    focused = false
-    asking = true; error = nil; outcome = nil; asked = q
-    defer { asking = false }
-    do {
-      let here = location.location.map { (lat: $0.coordinate.latitude, lon: $0.coordinate.longitude) }
-      let r = mode == 0
-        ? try await ai.ask(q, items: items, pack: pack, places: places, here: here)
-        : try await ai.say(q, items: items, pack: pack)
-      outcome = r
-      question = ""
-      if case let .translation(entry, _) = r { translationCard = entry }
-    } catch {
-      self.error = error.localizedDescription
+  private func clear() {
+    withAnimation(.snappy) { for m in messages { context.delete(m) } }
+    try? context.save()
+  }
+}
+
+// MARK: - Pieces
+
+/// Blue's logo: the brand asterisk on an accent circle.
+struct BlueAvatar: View {
+  var size: CGFloat = 28
+  var body: some View {
+    Image(systemName: "asterisk").font(.system(size: size * 0.46, weight: .bold)).foregroundStyle(MTA.onColor)
+      .frame(width: size, height: size).background(MTA.accent, in: .circle)
+      .accessibilityHidden(true)
+  }
+}
+
+/// One of Blue's messages: logo at the bottom-left, grey bubble, optional caption underneath.
+private struct BlueRow<Content: View>: View {
+  var caption: String? = nil
+  @ViewBuilder var content: Content
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack(alignment: .bottom, spacing: 8) {
+        BlueAvatar()
+        VStack(alignment: .leading, spacing: 6) { content }
+          .foregroundStyle(MTA.text)
+          .padding(.horizontal, 14).padding(.vertical, 10)
+          .background(MTA.raised, in: .rect(cornerRadius: 20))
+        Spacer(minLength: 40)
+      }
+      if let caption {
+        Text(caption.uppercased()).font(.system(size: 11, weight: .semibold)).tracking(0.6)
+          .foregroundStyle(MTA.onTrack).padding(.leading, 36)
+      }
     }
+    .transition(.move(edge: .bottom).combined(with: .opacity))
+  }
+}
+
+/// "From your booking" inset inside Blue's bubble.
+private struct BookingSource: View {
+  let title: String
+  let ref: String?
+  let symbol: String
+  var body: some View {
+    HStack(spacing: 10) {
+      TripBullet(systemName: symbol, size: 24)
+      VStack(alignment: .leading, spacing: 1) {
+        Text(title).mta(.body2).fontWeight(.semibold).foregroundStyle(MTA.text)
+        if let ref { Text("Ref \(ref)").mta(.body2).foregroundStyle(MTA.text2) }
+      }
+    }
+    .padding(10)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(MTA.surface, in: .rect(cornerRadius: 12))
+  }
+}
+
+private struct BubbleLink: View {
+  let title: String
+  let symbol: String
+  var action: () -> Void
+  var body: some View {
+    Button(action: action) {
+      Label(title, systemImage: symbol).mta(.body2).fontWeight(.semibold).foregroundStyle(MTA.accent)
+    }
+    .buttonStyle(.plain)
+  }
+}
+
+private struct Suggestion: Hashable { let text: String; let symbol: String }
+
+/// Tappable starter questions under Blue's message, outlined in accent.
+private struct SuggestionList: View {
+  let list: [Suggestion]
+  var send: (String) -> Void
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      ForEach(list, id: \.self) { s in
+        Button { send(s.text) } label: {
+          HStack(spacing: 8) {
+            Image(systemName: s.symbol).font(.system(size: 14, weight: .semibold)).frame(width: 20)
+            Text(s.text).mta(.button2).multilineTextAlignment(.leading)
+          }
+          .foregroundStyle(MTA.accent)
+          .padding(.horizontal, 14).padding(.vertical, 9)
+          .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(MTA.accent, lineWidth: 1.5) }
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .padding(.leading, 36)
+  }
+}
+
+/// Blue is "typing": three dots that pulse in turn.
+private struct TypingDots: View {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  var body: some View {
+    TimelineView(.animation(paused: reduceMotion)) { tl in
+      let t = tl.date.timeIntervalSinceReferenceDate
+      HStack(spacing: 5) {
+        ForEach(0..<3) { i in
+          Circle().fill(MTA.text2).frame(width: 8, height: 8)
+            .opacity(reduceMotion ? 0.6 : 0.3 + 0.7 * max(0, sin((t * 4) - Double(i) * 0.7)))
+        }
+      }
+      .padding(.vertical, 6)
+    }
+    .accessibilityLabel("Blue is answering")
   }
 }

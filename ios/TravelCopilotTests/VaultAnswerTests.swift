@@ -80,3 +80,20 @@ struct RomanizerReadableTests {
     #expect(Romanizer.readable("toukyou to shinjuku ku nishishinjuku 4 - 99 - 1") == "Tokyo-to shinjuku-ku nishishinjuku 4-99-1")
   }
 }
+
+struct AskGuardTests {
+  @Test func smallTalkNeverGetsABookingValue() {
+    for q in ["Hello", "hi there", "thanks!", "good morning"] {
+      #expect(!VaultField.allCases.contains { AskGuard.fits(q, field: $0) }, "\(q)")
+      #expect(!AskGuard.fitsPlace(q))
+    }
+  }
+
+  @Test func realQuestionsStillFit() {
+    #expect(AskGuard.fits("When is hotel check-in?", field: .checkIn))
+    #expect(AskGuard.fits("What's my flight booking code?", field: .confirmationCode))
+    #expect(AskGuard.fits("Show my hotel to a taxi driver", field: .taxi))
+    #expect(AskGuard.fits("When does my train leave?", field: .departure))
+    #expect(AskGuard.fitsPlace("How far is Senso-ji from my hotel?"))
+  }
+}

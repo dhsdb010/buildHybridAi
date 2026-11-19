@@ -311,30 +311,6 @@ struct SourceChip: View {
   static func format(_ ms: Int) -> String { ms >= 1000 ? String(format: "%.1f s", Double(ms) / 1000) : "\(ms) ms" }
 }
 
-// MARK: - Ask bar (opens Ask)
-
-struct AskBar: View {
-  let placeholder: String
-  var action: () -> Void
-  var body: some View {
-    Button(action: action) {
-      HStack {
-        Text(placeholder).mta(.body1).foregroundStyle(MTA.text2)
-        Spacer()
-        Image(systemName: "arrow.up")
-          .font(.system(size: 17, weight: .semibold)).foregroundStyle(MTA.onColor)
-          .frame(width: 40, height: 40).background(MTA.accent, in: .circle)
-      }
-      .padding(.leading, 20).padding(.trailing, 6)
-      .frame(height: 52)
-      .background(MTA.surface, in: .capsule)
-      .overlay { Capsule().strokeBorder(MTA.border, lineWidth: 2) }
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel("Ask about your trip")
-  }
-}
-
 // MARK: - Screen scaffolding
 
 extension View {

@@ -23,6 +23,8 @@ struct MapScreen: View {
   @State private var taxiItem: VaultItem?
   @State private var camera: MapCameraPosition = .automatic
   @State private var expanded = false
+  /// Dragged all the way down: only the handle stays, so the map gets the screen.
+  @State private var collapsed = false
   @State private var sheetHeight: CGFloat = 0
 
   private var hotel: Place? { places.first { $0.kind == "hotel" } }
@@ -34,7 +36,13 @@ struct MapScreen: View {
       mapLayer.ignoresSafeArea()
       controls.padding(.horizontal, MTA.margin).padding(.top, 4)
     }
-    .safeAreaInset(edge: .bottom, spacing: 0) { sheet }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      // No chat bar here: the Blue button sits at the side, just above the sheet, and opens Blue's chat.
+      VStack(spacing: 0) {
+        if !places.isEmpty { FloatingAsk() }
+        sheet
+      }
+    }
     .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: destinationPacks.first) }
     .onAppear {
       location.start()
@@ -110,10 +118,11 @@ struct MapScreen: View {
       Capsule().fill(MTA.subtle).frame(width: 36, height: 5).frame(maxWidth: .infinity)
         .padding(.bottom, 2)
         .contentShape(.rect)
-        .onTapGesture { withAnimation(.snappy) { expanded.toggle() } }
-        .accessibilityLabel(expanded ? "Show less" : "Show more")
+        .onTapGesture { withAnimation(.snappy) { if collapsed { collapsed = false } else { expanded.toggle() } } }
+        .accessibilityLabel(collapsed || !expanded ? "Show more" : "Show less")
         .accessibilityAddTraits(.isButton)
 
+      if !collapsed {
       HStack(alignment: .center) {
         VStack(alignment: .leading, spacing: 2) {
           MTALabel(offline ? "Saved map · works with no signal" : "\(cityName)\(places.count) places")
@@ -143,9 +152,8 @@ struct MapScreen: View {
       }
       if let error { Text(error).mta(.body2).foregroundStyle(MTA.urgent) }
 
-      if !places.isEmpty {
-        AskBar(placeholder: offline ? "How far is the station?" : "Where can I eat nearby?") { router.ask = AskRequest() }
       }
+
     }
     .padding(.horizontal, MTA.margin).padding(.top, 10).padding(.bottom, 12)
     .background {
@@ -156,7 +164,11 @@ struct MapScreen: View {
     }
     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { sheetHeight = $0 }
     .gesture(DragGesture(minimumDistance: 20).onEnded { v in
-      withAnimation(.snappy) { if v.translation.height < -30 { expanded = true } else if v.translation.height > 30 { expanded = false } }
+      withAnimation(.snappy) {
+        // Up: collapsed → normal → expanded. Down: expanded → normal → just the Ask bar.
+        if v.translation.height < -30 { if collapsed { collapsed = false } else { expanded = true } }
+        else if v.translation.height > 30 { if expanded { expanded = false } else if !places.isEmpty { collapsed = true } }
+      }
     })
   }
 

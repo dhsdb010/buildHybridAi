@@ -31,7 +31,7 @@ struct TravelCopilotApp: App {
 
   init() {
     _ = Self.firebaseConfigured
-    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self)
+    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self)
     let connectivity = Connectivity()
     self.container = container
     _connectivity = State(initialValue: connectivity)
