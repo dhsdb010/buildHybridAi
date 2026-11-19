@@ -18,7 +18,7 @@ struct FloatingAsk: View {
           TimelineView(.animation(paused: reduceMotion)) { tl in
             RingText(text: "NEED HELP? · ASK ANYTHING! · ", radius: 34.5)
               .foregroundStyle(MTA.accent)
-              .rotationEffect(.degrees(reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 16) / 16 * 360))
+              .rotationEffect(.degrees(reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 24) / 24 * 360))
           }
           .frame(width: 84, height: 84)
           BlueAvatar(size: 48)
