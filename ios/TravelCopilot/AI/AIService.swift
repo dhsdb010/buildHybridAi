@@ -65,12 +65,15 @@ final class AIService {
     let route = try resolveRoute(task, kind: kind)
     let start = ContinuousClock.now
     do {
-      let session = try ModelRouter.session(for: route.route, instructions: instructions)
-      let response = try await session.respond(to: prompt, generating: T.self)
+      let (response, retries) = try await CloudRetry.run {
+        // A fresh session per attempt: sessions keep history.
+        let session = try ModelRouter.session(for: route.route, instructions: instructions)
+        return try await session.respond(to: prompt, generating: T.self)
+      }
       let meta = AIMeta(
         route: route.route, source: ModelRouter.source(of: response.rawResponse),
         latencyMs: (ContinuousClock.now - start).milliseconds)
-      log(task, kind, reason: route.reason, outcome: "ok", meta: meta)
+      log(task, kind, reason: route.reason + CloudRetry.note(retries), outcome: "ok", meta: meta)
       return (response.content, meta)
     } catch {
       log(task, kind, reason: route.reason, outcome: "error", route: route.route,
@@ -94,10 +97,10 @@ final class AIService {
         tools: [.googleMaps()],
         toolConfig: near.map { ToolConfig(retrievalConfig: RetrievalConfig(location: $0)) },
         systemInstruction: ModelContent(role: "system", parts: instructions))
-      let response = try await model.generateContent(prompt)
+      let (response, retries) = try await CloudRetry.run { try await model.generateContent(prompt) }
       let chunks = response.candidates.first?.groundingMetadata?.groundingChunks.compactMap(\.maps) ?? []
       let meta = AIMeta(route: .cloudOnly, source: .inCloud, latencyMs: (ContinuousClock.now - start).milliseconds)
-      log(task, .prepare, reason: route.reason + " · Google Maps", outcome: "ok", meta: meta)
+      log(task, .prepare, reason: route.reason + " · Google Maps" + CloudRetry.note(retries), outcome: "ok", meta: meta)
       return (response.text ?? "", chunks, meta)
     } catch {
       log(task, .prepare, reason: route.reason, outcome: "error", route: .cloudOnly,

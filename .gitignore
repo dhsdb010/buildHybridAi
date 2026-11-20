@@ -21,3 +21,4 @@ xcuserdata/
 .spm/
 .build-dd/
 .build-dd-rel/
+.build-dd-dev/

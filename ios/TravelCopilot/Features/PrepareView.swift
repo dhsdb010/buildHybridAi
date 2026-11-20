@@ -11,6 +11,8 @@ struct PrepareView: View {
   @State private var busy = false
   @State private var step: PrepareService.Step?
   @State private var error: String?
+  @State private var info: String?
+  @State private var packBusy = false
   @State private var showPlan = false
   @FocusState private var editorFocused: Bool
 
@@ -54,6 +56,19 @@ struct PrepareView: View {
                      ? "Prepare runs once in the cloud (Gemini). After that, Ask, Say and the taxi card work with no signal."
                      : "You're offline. Prepare needs internet — connect to Wi-Fi to build your pack.")
           if let error { Text(error).mta(.body2).foregroundStyle(MTA.urgent) }
+          if let info { Text(info).mta(.body2).foregroundStyle(MTA.text2) }
+
+          // Bookings saved but no pack yet (the pack call failed): get just the pack, no re-paste.
+          if !items.isEmpty, packs.isEmpty, PrepareService.mainCountry(of: items) != nil {
+            Button { Task { await retryPack() } } label: {
+              HStack(spacing: 10) {
+                if packBusy { ProgressView() }
+                Text(packBusy ? PrepareService.Step.pack.title + "…" : "Get the phrase & safety pack")
+              }
+            }
+            .buttonStyle(.mtaSecondary)
+            .disabled(busy || packBusy || !net.isOnline)
+          }
 
           Button {
             Task { await run() }
@@ -100,14 +115,31 @@ struct PrepareView: View {
 
   private func run() async {
     editorFocused = false
-    busy = true; error = nil
+    busy = true; error = nil; info = nil
     defer { busy = false }
     do {
       let summary = try await PrepareService.setUp(from: text, ai: ai) { step = $0 }
-      if summary.items == 0 { error = "No bookings found in that text." } else { text = "" }
-      if let mapError = summary.mapError { error = "Bookings saved. Map: \(mapError)" }
+      if summary.items == 0 { error = "No bookings found in that text."; return }
+      text = ""
+      if summary.alreadySaved > 0 {
+        info = summary.alreadySaved == summary.items
+          ? "These bookings are already in your Vault."
+          : "\(summary.alreadySaved) of \(summary.items) bookings were already in your Vault."
+      }
+      if let packError = summary.packError {
+        error = "Bookings saved. The phrase & safety pack didn't finish: \(packError)"
+      } else if let mapError = summary.mapError {
+        error = "Bookings saved. Map: \(mapError)"
+      }
     } catch {
       self.error = error.localizedDescription
     }
+  }
+
+  private func retryPack() async {
+    packBusy = true; error = nil; info = nil
+    defer { packBusy = false }
+    do { try await PrepareService.ensurePack(for: items, ai: ai) }
+    catch { self.error = "The phrase & safety pack didn't finish: \(error.localizedDescription)" }
   }
 }

@@ -208,7 +208,9 @@ struct WelcomeView: View {
               NumberBox(value: "\(summary.places)", caption: "Places")
               NumberBox(value: "\(summary.mapAreas)", caption: "Maps", style: summary.mapAreas > 0 ? .status(.onTrack) : .status(.obstacle))
             }
-            NoticeCard(text: summary.mapError == nil
+            NoticeCard(text: summary.packError != nil
+                       ? "Bookings are saved. The phrase & safety pack didn't finish — get it from the Prepare tab on Wi-Fi."
+                       : summary.mapError == nil
                        ? "Everything is on this iPhone now. Turn on Airplane Mode — Ask, Say, the taxi card and the map keep working."
                        : "Bookings and phrases are saved. The offline map didn't finish — try again from the Map tab on Wi-Fi.")
             Button("Start my trip") { if emergencyCards.isEmpty { page = 4 } else { finish() } }.buttonStyle(.mtaPrimary)

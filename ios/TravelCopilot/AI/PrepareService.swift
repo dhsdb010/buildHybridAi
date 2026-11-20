@@ -4,11 +4,6 @@ import SwiftData
 /// Prepare stage: turns pasted confirmation emails into Vault items and a Destination Pack.
 @MainActor
 enum PrepareService {
-  struct Result {
-    var items: [VaultItem]
-    var pack: DestinationPack?
-  }
-
   enum Step: Int, CaseIterable, Sendable {
     case bookings, pack, places, map
 
@@ -23,18 +18,33 @@ enum PrepareService {
   }
 
   struct Summary {
+    /// Bookings in this text: new ones plus ones already in the Vault.
     var items = 0, phrases = 0, places = 0, mapAreas = 0
+    /// Of `items`, how many were already in the Vault (pasting the same email twice).
+    var alreadySaved = 0
     var country: String?
+    /// Set when the bookings were saved but the phrase & safety pack failed; retry with `ensurePack`.
+    var packError: String?
     var mapError: String?
   }
 
-  /// The whole set-up: bookings + pack (cloud), then places + offline map (best-effort; never fails set-up).
+  /// The whole set-up: bookings (cloud; throws if this fails, nothing is saved), then the pack
+  /// (cloud; a failure is reported, not thrown, so the bookings stay), then places + offline map
+  /// (best-effort; never fails set-up).
   static func setUp(from text: String, ai: AIService, progress: (Step) -> Void) async throws -> Summary {
     progress(.bookings)
-    let result = try await prepare(from: text, ai: ai) { progress(.pack) }
-    var summary = Summary(items: result.items.count, phrases: result.pack?.phrases.count ?? 0, country: result.pack?.countryName)
+    let (items, added) = try await saveBookings(from: text, ai: ai)
+    var summary = Summary(items: items.count, alreadySaved: items.count - added)
+    progress(.pack)
+    let allItems = (try? ai.context.fetch(FetchDescriptor<VaultItem>())) ?? items
+    do {
+      let pack = try await ensurePack(for: allItems, ai: ai)
+      summary.phrases = pack?.phrases.count ?? 0
+      summary.country = pack?.countryName
+    } catch {
+      summary.packError = error.localizedDescription
+    }
     progress(.places)
-    let allItems = (try? ai.context.fetch(FetchDescriptor<VaultItem>())) ?? result.items
     let plans = (try? ai.context.fetch(FetchDescriptor<TripPlan>())) ?? []
     await MapService.locate(items: allItems, plans: plans, context: ai.context)
     let places = (try? ai.context.fetch(FetchDescriptor<Place>())) ?? []
@@ -45,22 +55,57 @@ enum PrepareService {
     return summary
   }
 
-  static func prepare(from text: String, ai: AIService, onParsed: () -> Void = {}) async throws -> Result {
+  /// Reads the bookings in `text` and saves the new ones. A booking already in the Vault
+  /// (same booking pasted again) is not added twice; its saved copy is returned instead.
+  static func saveBookings(from text: String, ai: AIService) async throws -> (items: [VaultItem], added: Int) {
     let (extraction, _) = try await ai.generate(
       "parseBooking", kind: .prepare, prompt: Prompts.parseBooking(text),
       instructions: Prompts.parseBookingInstructions, as: BookingExtraction.self)
 
-    let items = extraction.bookings.map(makeItem)
-    items.forEach { ai.context.insert($0) }
+    var saved = (try? ai.context.fetch(FetchDescriptor<VaultItem>())) ?? []
+    var items: [VaultItem] = []
+    var added = 0
+    for item in extraction.bookings.map(makeItem) {
+      if let existing = saved.first(where: { isSameBooking($0, item) }) {
+        if !items.contains(where: { $0 === existing }) { items.append(existing) }
+        continue
+      }
+      ai.context.insert(item)
+      saved.append(item)
+      items.append(item)
+      added += 1
+    }
     try? ai.context.save()
-    onParsed()
+    return (items, added)
+  }
 
-    // One Destination Pack for the trip's main country (the hotel's, else the first booking's).
-    let main = items.first { $0.kind == "hotel" && $0.countryCode != nil } ?? items.first { $0.countryCode != nil }
-    guard let code = main?.countryCode else { return Result(items: items, pack: nil) }
+  /// Same booking: same kind, and the same confirmation code, or (without codes on both)
+  /// the same title and start date. Case, spaces and dashes don't count.
+  static func isSameBooking(_ a: VaultItem, _ b: VaultItem) -> Bool {
+    guard a.kind == b.kind else { return false }
+    func norm(_ s: String?) -> String? {
+      let n = (s ?? "").lowercased().filter { $0.isLetter || $0.isNumber }
+      return n.isEmpty ? nil : n
+    }
+    if let ca = norm(a.confirmationCode), let cb = norm(b.confirmationCode) { return ca == cb }
+    guard let ta = norm(a.title), ta == norm(b.title) else { return false }
+    return norm(a.startDate) == norm(b.startDate)
+  }
+
+  /// The country the pack is for: the hotel's, else the first booking's with a country.
+  static func mainCountry(of items: [VaultItem]) -> VaultItem? {
+    items.first { $0.kind == "hotel" && $0.countryCode != nil } ?? items.first { $0.countryCode != nil }
+  }
+
+  /// One Destination Pack for the trip's main country. Returns the saved pack if there is one,
+  /// so this is also the retry when only the pack failed. Nil when no booking has a country.
+  @discardableResult
+  static func ensurePack(for items: [VaultItem], ai: AIService) async throws -> DestinationPack? {
+    let main = mainCountry(of: items)
+    guard let code = main?.countryCode else { return nil }
 
     let existing = try? ai.context.fetch(FetchDescriptor<DestinationPack>(predicate: #Predicate { $0.countryCode == code }))
-    if let pack = existing?.first { return Result(items: items, pack: pack) }
+    if let pack = existing?.first { return pack }
 
     let (generated, _) = try await ai.generate(
       "destinationPack", kind: .prepare,
@@ -76,7 +121,7 @@ enum PrepareService {
     pack.scams = generated.scams
     ai.context.insert(pack)
     try? ai.context.save()
-    return Result(items: items, pack: pack)
+    return pack
   }
 
   private static func makeItem(_ b: ExtractedBooking) -> VaultItem {
