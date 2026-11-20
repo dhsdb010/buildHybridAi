@@ -5,6 +5,11 @@ import FirebaseAppCheck
 import GoogleSignIn
 import UserNotifications
 
+/// App Check provider for release builds (needs the App Attest capability, set in project.yml).
+final class AppAttestFactory: NSObject, AppCheckProviderFactory {
+  func createProvider(with app: FirebaseApp) -> (any AppCheckProvider)? { AppAttestProvider(app: app) }
+}
+
 @main
 struct TravelCopilotApp: App {
   /// False when GoogleService-Info.plist hasn't been added yet (see SETUP.md).
@@ -16,6 +21,9 @@ struct TravelCopilotApp: App {
       // Prints "App Check debug token: ..." to the Xcode console on first launch.
       // Register it in Firebase console > App Check > Apps > Manage debug tokens.
       AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+    #else
+      // TestFlight and App Store: Apple's App Attest proves requests come from this app.
+      AppCheck.setAppCheckProviderFactory(AppAttestFactory())
     #endif
     FirebaseApp.configure()
     return true
@@ -66,7 +74,12 @@ struct TravelCopilotApp: App {
         .environment(location)
         .environment(auth)
         .onOpenURL { url in if !router.open(url) { GIDSignIn.sharedInstance.handle(url) } }
-        .onAppear { notifications.router = router }
+        .onAppear {
+          notifications.router = router
+          // Siri, the Action Button and the Control Center control open the emergency card.
+          let router = router
+          EmergencyIntentHandler.show = { router.emergency = .card }
+        }
     }
     .modelContainer(container)
   }

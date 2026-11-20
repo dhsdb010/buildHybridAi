@@ -31,6 +31,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Fills your emergency card with your blood type and the medications you choose to share. Read only; stays on this iPhone.</string>
 	<key>NSHealthUpdateUsageDescription</key>

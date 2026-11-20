@@ -22,6 +22,13 @@ cd ios && xcodegen generate && open TravelCopilot.xcodeproj
    - Google scores also need the **Places API (New)** enabled on the project's API key.
    - Without it, the card shows a "Reviews ↗" link to Google Maps instead of a score.
 
+### Signing, App Attest and TestFlight
+- `project.yml` sets the development team (`DEVELOPMENT_TEAM`) with automatic signing. If you build from a fork, change it to your own Team ID.
+- **Debug builds** (simulator, or run from Xcode) use the App Check **debug token**, as above.
+- **Release builds** (TestFlight, App Store) use **App Attest**. In Firebase, go to **Security → App Check → Apps → travelcopilot** and register **App Attest** (no extra settings). Leave the debug token registered for the simulator.
+- `ITSAppUsesNonExemptEncryption` is `NO` (the app only uses standard HTTPS), so App Store Connect doesn't ask about encryption on each upload.
+- **Upload:** in Xcode, choose **Any iOS Device**, then **Product → Archive → Distribute App → TestFlight & App Store**.
+
 ### Keeping one debug token across reinstalls
 Deleting the app makes App Check print a **new** debug token. To keep the token you already registered, pass it as the `FIRAAppCheckDebugToken` environment variable:
 - **Xcode:** Product → Scheme → Edit Scheme → Run → Arguments → Environment Variables. This is stored in your user-local scheme data, so it isn't committed.
@@ -45,6 +52,7 @@ Debug launch arguments (DEBUG builds only):
 - `-offlineFor 30` (debug builds): the app acts offline for the first 30 seconds, then comes back online. Combine with `-sayText "At the pharmacy: I'm allergic to penicillin"` to make an on-device draft and watch the catch-up pass improve it (needs a registered App Check debug token for the cloud step). The Log tab's **Catch-up** filter shows each step.
 - `-logKeep 10` (debug builds): compacts all but the latest 10 Log rows into daily summaries at launch, to see the Log's **Earlier · compacted by day** section. Normally the app keeps the newest calls in detail up to about 10 MB (`RoutingLog.detailBudgetBytes`, roughly 20,000 calls) and compacts older ones; Clear removes both.
 - `-emergency setup|card|english` (debug builds): opens the emergency card quiz, the card, or its English side. Add `-emergencySample` to fill a sample card (penicillin, peanuts, ibuprofen 200 mg, asthma, A+) and run the real one-time translation; add `-emergencyStep 1…6` to jump to a quiz step. `-onboarding -welcomePage 4` shows the emergency card Welcome page. `travelcopilot://emergency` opens the card too.
+- **Emergency card quick access** (on a device): say "Show my emergency card in Travel Copilot" to Siri, or search Spotlight for "Emergency card". Action Button: Settings → Action Button → Shortcut → Travel Copilot → Show emergency card. Control Center: edit → Add a Control → Travel Copilot → Emergency card (also placeable on the Lock Screen). Lock Screen widget: customize the Lock Screen → add Travel Copilot → Emergency card (shows no medical details while locked; a tap opens the card after Face ID).
 - `-tab map -mapMode offline` opens the Map on the saved offline snapshot. Set a fake GPS position with `xcrun simctl location <device> set 35.6905,139.7000`.
 
 ## 3. Day-1 spike checklist (real iPhone with Apple Intelligence)

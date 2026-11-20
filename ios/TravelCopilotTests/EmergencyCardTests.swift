@@ -64,3 +64,24 @@ struct EmergencyCardTests {
     #expect(rows.count == 3 && rows.allSatisfy { $0.value == "なし" })
   }
 }
+
+@MainActor
+struct EmergencyIntentTests {
+  @Test func actionBeforeTheAppIsReadyIsRemembered() async throws {
+    EmergencyIntentHandler.show = nil
+    var opened = 0
+    _ = try await ShowEmergencyCardIntent().perform()   // cold launch: the app isn't ready yet
+    #expect(EmergencyIntentHandler.pending)
+    EmergencyIntentHandler.show = { opened += 1 }        // the app comes up → the card opens
+    #expect(opened == 1 && !EmergencyIntentHandler.pending)
+    _ = try await ShowEmergencyCardIntent().perform()   // app running: opens right away
+    #expect(opened == 2)
+    EmergencyIntentHandler.show = nil
+  }
+
+  @Test func deepLinkOpensTheCard() {
+    let router = AppRouter()
+    #expect(router.open(URL(string: "travelcopilot://emergency")!))
+    #expect(router.emergency == .card)
+  }
+}

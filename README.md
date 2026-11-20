@@ -104,7 +104,7 @@ Measured in the iPhone 17 simulator on a Mac (not yet on a real iPhone):
 - **Blue question test set:** 67 real questions against the on-device model, scored by what Blue would show. **67/67 correct, 0 wrong values**, about 1.1 s per question, all on the device. Before the code rules it was 28/40 with 6 wrong values. Run it yourself: see [SETUP.md](SETUP.md#blues-question-test-set).
 - **Catch-up:** an offline draft improved in the cloud in 1.3–1.7 s; the safety check passed numbers and medicine names.
 - **Cloud fallback:** a translation too long for the on-device model failed on the device and Firebase answered with Gemini (hybrid route, ran in the cloud). On a phone without Apple Intelligence, every Survive request falls back this way.
-- **Unit tests:** 83 passing (`xcodebuild test`), covering routing, Blue's rules, the safety check, catch-up, reminders, the journey, the Log and the emergency card.
+- **Unit tests:** 85 passing (`xcodebuild test`), covering routing, Blue's rules, the safety check, catch-up, reminders, the journey, the Log the emergency card and its quick access.
 
 ---
 
@@ -127,10 +127,10 @@ ios/
     Emergency/   emergency card data, fixed translations, Health reader, translator, emergency numbers
     Features/    screens (Home, Trip, Map, Prepare, Log, Blue chat, Help, Welcome, emergency card)
     Store/       SwiftData models, trip timeline, journey, reminders, Routing Log
-  TravelCopilotWidgets/   journey Live Activity
+  TravelCopilotWidgets/   journey Live Activity, emergency card control and Lock Screen widget
   TravelCopilotTests/     unit tests + Blue question test set
 ```
 
 ## Status
 
-Built and checked in the simulator: everything above. Not done yet: testing on a real iPhone, TestFlight, quick access to the emergency card (Siri, Action Button, Lock Screen widget, Apple Wallet pass).
+Built and checked in the simulator: everything above. Quick access to the emergency card (Siri, Spotlight, Action Button, Control Center, Lock Screen widget) is built but needs a real iPhone to try. Not done yet: testing on a real iPhone, TestFlight, an Apple Wallet pass.

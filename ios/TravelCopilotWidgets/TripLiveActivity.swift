@@ -5,7 +5,11 @@ import WidgetKit
 
 @main
 struct TravelCopilotWidgets: WidgetBundle {
-  var body: some Widget { TripLiveActivity() }
+  var body: some Widget {
+    TripLiveActivity()
+    EmergencyCardWidget()
+    EmergencyCardControl()
+  }
 }
 
 typealias TripState = TripActivityAttributes.ContentState
