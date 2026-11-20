@@ -241,3 +241,31 @@ enum IDRepair {
     if changed { try? context.save() }
   }
 }
+
+/// Older log rows merged into one row per day and kind of call, so the log keeps the whole trip's
+/// numbers (counts, where it ran, average time) without growing forever. Deleted only by Clear.
+@Model
+final class RoutingSummary {
+  var day: Date                 // start of the day
+  var task: String
+  var kind: String
+  var requestedRoute: String?
+  var source: String?
+  var outcome: String
+  var network: String
+  var count: Int = 0
+  var totalLatencyMs: Int = 0
+  var firstAt: Date
+  var lastAt: Date
+
+  init(day: Date, task: String, kind: String, requestedRoute: String?, source: String?, outcome: String,
+       network: String, firstAt: Date) {
+    self.day = day; self.task = task; self.kind = kind; self.requestedRoute = requestedRoute
+    self.source = source; self.outcome = outcome; self.network = network
+    self.firstAt = firstAt; self.lastAt = firstAt
+  }
+
+  var averageLatencyMs: Int { count > 0 ? totalLatencyMs / count : 0 }
+  /// Same rule as the detailed rows: notes ("Catch-up · back online") aren't AI requests.
+  var isRequest: Bool { requestedRoute != nil || outcome != "ok" }
+}

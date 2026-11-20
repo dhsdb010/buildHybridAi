@@ -19,7 +19,11 @@ struct LogCSV: Transferable {
 struct RoutingLogView: View {
   @Environment(\.modelContext) private var context
   @Query(sort: \RoutingEntry.timestamp, order: .reverse) private var entries: [RoutingEntry]
+  @Query(sort: \RoutingSummary.day, order: .reverse) private var summaries: [RoutingSummary]
   @State private var filter = 0
+  @State private var confirmClear = false
+  /// The list shows the newest rows first, a page at a time (totals always cover everything).
+  @State private var showing = 300
   @State private var selected: RoutingEntry?
 
   /// "Catch-up": the drafts made offline and what the cloud did with them later.
@@ -31,14 +35,16 @@ struct RoutingLogView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-          // Notes ("Catch-up · back online") aren't AI requests, so they don't count here.
-          MTALabel("\(entries.filter { $0.requestedRoute != nil || $0.outcome != "ok" }.count) AI requests · keeps the latest \(RoutingLog.limit)")
+          // Totals cover the whole trip: detailed rows plus older days compacted into summaries.
+          // Notes ("Catch-up · back online") aren't AI requests, so they don't count.
+          let t = RoutingLog.totals(entries, summaries)
+          MTALabel("\(t.requests) AI requests\(summaries.isEmpty ? "" : " · older days compacted")")
           Text("Where AI ran").mta(.displayMedium).foregroundStyle(MTA.text)
           GridRow4 {
-            NumberBox(value: "\(entries.filter { $0.source == "onDevice" }.count)", caption: "Device", style: .status(.onTrack))
-            NumberBox(value: "\(entries.filter { $0.source == "inCloud" }.count)", caption: "Cloud", style: .filled)
-            NumberBox(value: "\(entries.filter { $0.outcome == "improved" }.count)", caption: "Improved", style: .status(.accent))
-            NumberBox(value: "\(entries.filter { $0.outcome == "blocked" || $0.outcome == "error" }.count)", caption: "Failed")
+            NumberBox(value: "\(t.device)", caption: "Device", style: .status(.onTrack))
+            NumberBox(value: "\(t.cloud)", caption: "Cloud", style: .filled)
+            NumberBox(value: "\(t.improved)", caption: "Improved", style: .status(.accent))
+            NumberBox(value: "\(t.failed)", caption: "Failed")
           }
           MTASegmented(options: ["All", "Catch-up"], selection: $filter)
           MTALabel("Latest")
@@ -46,10 +52,14 @@ struct RoutingLogView: View {
             Text(filter == 0 ? "No AI requests yet." : "No offline drafts yet. Translations made on the phone show up here, then again when the cloud improves them.").mta(.body1).foregroundStyle(MTA.text2)
           }
           LazyVStack(spacing: 0) {
-            ForEach(shown) { e in
+            ForEach(shown.prefix(showing)) { e in
               Button { selected = e } label: { LogRow(entry: e) }.buttonStyle(.plain)
             }
           }
+          if shown.count > showing {
+            Button("Show \(min(300, shown.count - showing)) more") { showing += 300 }.buttonStyle(.mtaSecondary(height: 44))
+          }
+          if filter == 0 && !summaries.isEmpty { earlier }
         }
         .mtaScreen().padding(.top, 8).padding(.bottom, 24)
       }
@@ -64,26 +74,76 @@ struct RoutingLogView: View {
         }
       }
       #endif
+      .confirmationDialog("Clear the whole AI log?", isPresented: $confirmClear, titleVisibility: .visible) {
+        Button("Clear log", role: .destructive) {
+          entries.forEach(context.delete); summaries.forEach(context.delete); try? context.save()
+        }
+      } message: {
+        Text("Every request and the compacted earlier days are removed. Export it first if you want to keep the numbers. Your bookings and chats stay.")
+      }
       .navigationTitle("Routing log")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .topBarLeading) {
           // CSV of every row, for real-device numbers (Devpost, video). Stays on the phone until you share it.
-          ShareLink(item: LogCSV(text: RoutingLog.csv(entries)),
-                    preview: SharePreview("Travel Copilot AI log · \(entries.count) rows")) {
+          ShareLink(item: LogCSV(text: RoutingLog.csv(entries, summaries: summaries)),
+                    preview: SharePreview("Travel Copilot AI log · \(RoutingLog.totals(entries, summaries).requests) requests")) {
             Label("Export", systemImage: "square.and.arrow.up")
           }
-          .disabled(entries.isEmpty)
+          .disabled(entries.isEmpty && summaries.isEmpty)
         }
         ToolbarItem(placement: .topBarTrailing) {
-          Button("Clear", role: .destructive) { entries.forEach(context.delete) }.disabled(entries.isEmpty)
+          Button("Clear", role: .destructive) { confirmClear = true }.disabled(entries.isEmpty && summaries.isEmpty)
         }
       }
     }
   }
 }
 
-private struct LogRow: View {
+extension RoutingLogView {
+  struct EarlierLine { let label: String; let count: Int; let avgMs: Int }
+
+  /// One line per task and result for the day (summaries that differ only by network are merged).
+  static func lines(_ rows: [RoutingSummary]) -> [EarlierLine] {
+    func label(_ s: RoutingSummary) -> String {
+      let result = s.source == "onDevice" ? "on-device" : s.source == "inCloud" ? "cloud"
+        : ["error", "blocked"].contains(s.outcome) ? "failed" : s.outcome == "ok" ? "note" : s.outcome
+      // "Plan · hotel near Katamachi" → "Plan · hotel": one line per kind of place, not per area.
+      let task = s.task.hasPrefix("Plan · ") ? String(s.task.components(separatedBy: " near ")[0]) : s.task
+      return "\(LogRow.names[task] ?? task) · \(result)"
+    }
+    return Dictionary(grouping: rows, by: label).map { key, group in
+      let n = group.reduce(0) { $0 + $1.count }
+      return EarlierLine(label: key, count: n, avgMs: n > 0 ? group.reduce(0) { $0 + $1.totalLatencyMs } / n : 0)
+    }
+    .sorted { $0.count != $1.count ? $0.count > $1.count : $0.label < $1.label }
+  }
+
+  /// Older days, compacted: one line per day and kind of call, with how many and the average time.
+  var earlier: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      MTALabel("Earlier · compacted by day").padding(.top, 16).padding(.bottom, 4)
+      Text("When the detailed log passes \(RoutingLog.detailBudgetBytes / 1_048_576) MB, older calls are kept as daily totals, so the log covers your whole trip. Clear it when the trip is over.")
+        .mta(.body2).foregroundStyle(MTA.text2).padding(.bottom, 8)
+      ForEach(Dictionary(grouping: summaries, by: \.day).sorted { $0.key > $1.key }, id: \.key) { day, rows in
+        Text(day.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
+          .mta(.subheadNormal).foregroundStyle(MTA.text).padding(.top, 10)
+        ForEach(Self.lines(rows), id: \.label) { line in
+          HStack(spacing: 10) {
+            Text("\(line.count)×").mta(.body2).monospacedDigit().foregroundStyle(MTA.text).frame(width: 44, alignment: .leading)
+            Text(line.label).mta(.body2).foregroundStyle(MTA.text2).lineLimit(1)
+            Spacer()
+            Text(line.avgMs > 0 ? "avg \(SourceChip.format(line.avgMs))" : "—").mta(.body2).monospacedDigit().foregroundStyle(MTA.text2)
+          }
+          .padding(.vertical, 6)
+          .overlay(alignment: .bottom) { Rectangle().fill(MTA.subtle.opacity(0.4)).frame(height: 1) }
+        }
+      }
+    }
+  }
+}
+
+struct LogRow: View {
   let entry: RoutingEntry
 
   var body: some View {

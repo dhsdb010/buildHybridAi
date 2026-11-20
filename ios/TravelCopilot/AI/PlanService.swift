@@ -306,6 +306,12 @@ enum PlanService {
     return text.contains("429") || text.contains("resourceExhausted") || text.contains("permissionDenied") || text.contains("403")
   }
 
+  /// "near Omicho Market" → "Omicho Market", so log labels don't read "near near".
+  static func trimNear(_ area: String) -> String {
+    let t = area.trimmingCharacters(in: .whitespaces)
+    return t.lowercased().hasPrefix("near ") ? String(t.dropFirst(5)) : t
+  }
+
   static func groundedPlaces(_ kind: PlanPlaceKind, area: String, city: String, near: CLLocationCoordinate2D?,
                              brief: PlanBrief, avoid: [String], note: String, day: Int?,
                              ai: AIService) async throws -> [PlanPlace] {
@@ -314,7 +320,7 @@ enum PlanService {
       \(avoid.isEmpty ? "" : "Not these: \(avoid.joined(separator: ", ")).") \(note.isEmpty ? "" : "Request: \(note).")
       Answer with exactly 3 lines and nothing else. Each line: NAME | NEIGHBOURHOOD | why it fits, max 14 words
       """
-    let (text, chunks, _) = try await ai.grounded("Plan · \(kind.rawValue) near \(area)", prompt: prompt,
+    let (text, chunks, _) = try await ai.grounded("Plan · \(kind.rawValue) near \(Self.trimNear(area))", prompt: prompt,
                                                    instructions: instructions, near: near)
     var out: [PlanPlace] = []
     for line in text.split(separator: "\n") {

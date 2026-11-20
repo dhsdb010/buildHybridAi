@@ -130,7 +130,7 @@ final class AIService {
     try? context.save()
     lastEntry = entry
     inserted += 1
-    if inserted % 50 == 0 { RoutingLog.trim(context) }
+    if inserted % 50 == 0 { RoutingLog.compact(context) }
   }
 
   private var inserted = 0

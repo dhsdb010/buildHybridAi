@@ -31,11 +31,16 @@ struct TravelCopilotApp: App {
 
   init() {
     _ = Self.firebaseConfigured
-    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self)
+    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self, RoutingSummary.self)
     let connectivity = Connectivity()
     self.container = container
     IDRepair.run(container.mainContext)
-    RoutingLog.trim(container.mainContext)
+    RoutingLog.compact(container.mainContext)
+    #if DEBUG
+      // `-logKeep 10`: compact all but the latest 10 rows now (to see the Log's "Earlier" section).
+      let keep = UserDefaults.standard.integer(forKey: "logKeep")
+      if keep > 0 { RoutingLog.compact(container.mainContext, keep: keep) }
+    #endif
     _connectivity = State(initialValue: connectivity)
     _ai = State(initialValue: AIService(connectivity: connectivity, context: container.mainContext))
     // Done on the Live Activity / a notification → next step of the journey.

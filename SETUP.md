@@ -43,6 +43,7 @@ Debug launch arguments (DEBUG builds only):
 - `-liveDemo` starts a sample journey Live Activity to the hotel (train → bus → walk → check-in). Add `-liveDemoStep far|train|bus|walk|arriving|arrived` to pick where you are along it. Tap **Done** on the Live Activity to move to the next step.
 - `-notifyIn 8` (debug builds): the next trip reminder fires in 8 seconds instead of at its real time, so you can check the banner and its long-press buttons (Show ticket · Done · Ask Blue). Each scheduled reminder is also printed to the console as `Reminder scheduled: …`.
 - `-offlineFor 30` (debug builds): the app acts offline for the first 30 seconds, then comes back online. Combine with `-sayText "At the pharmacy: I'm allergic to penicillin"` to make an on-device draft and watch the catch-up pass improve it (needs a registered App Check debug token for the cloud step). The Log tab's **Catch-up** filter shows each step.
+- `-logKeep 10` (debug builds): compacts all but the latest 10 Log rows into daily summaries at launch, to see the Log's **Earlier · compacted by day** section. Normally the app keeps the newest calls in detail up to about 10 MB (`RoutingLog.detailBudgetBytes`, roughly 20,000 calls) and compacts older ones; Clear removes both.
 - `-tab map -mapMode offline` opens the Map on the saved offline snapshot. Set a fake GPS position with `xcrun simctl location <device> set 35.6905,139.7000`.
 
 ## 3. Day-1 spike checklist (real iPhone with Apple Intelligence)
