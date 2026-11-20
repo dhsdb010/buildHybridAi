@@ -84,17 +84,22 @@ enum VaultAnswerBuilder {
 /// (or a distance word for places). Otherwise it's small talk and gets the help reply.
 enum AskGuard {
   static let fieldWords: [VaultField: [String]] = [
-    .confirmationCode: ["code", "confirmation", "booking", "reservation", "ref", "pnr", "number", "reference"],
-    .checkIn: ["check-in", "check in", "checkin", "arrive at the hotel", "get in", "room ready"],
-    .checkOut: ["check-out", "check out", "checkout", "leave the hotel"],
-    .departure: ["depart", "leave", "leaving", "board", "gate", "when", "time", "flight", "train"],
-    .arrival: ["arrive", "arrival", "land", "get there", "when", "time"],
-    .route: ["route", "from", "where", "fly", "going"],
-    .address: ["address", "where", "location", "located"],
-    .taxi: ["taxi", "driver", "cab", "uber", "show"],
-    .phone: ["phone", "call", "contact", "number", "tel"],
+    .confirmationCode: ["code", "confirmation", "booking", "reservation", "ref", "pnr", "reference", "予約番号", "確認番号"],
+    .checkIn: ["check-in", "check in", "checkin", "arrive at the hotel", "get in", "room ready", "チェックイン"],
+    .checkOut: ["check-out", "check out", "checkout", "leave the hotel", "チェックアウト"],
+    .departure: ["depart", "leave", "leaving", "board", "when", "time", "flight", "train", "出発"],
+    .arrival: ["arrive", "arrival", "land", "get there", "when", "time", "到着"],
+    .route: ["route", "from", "where", "fly", "going", "go to", "airport"],
+    .address: ["address", "addr", "where", "location", "located", "staying", "住所"],
+    .taxi: ["taxi", "driver", "cab", "uber", "show", "タクシー"],
+    .phone: ["phone", "call", "contact", "tel", "電話"],
   ]
-  static let placeWords = ["far", "distance", "how long", "get to", "go to", "walk", "near", "close", "minutes", "km", "directions", "way to"]
+  static let placeWords = ["far", "distance", "how long", "get to", "go to", "walk", "near", "close", "minutes", "km", "directions", "way to", "navigate"]
+  static let taxiWords = ["taxi", "cab", "driver", "uber", "タクシー"]
+  /// Things travelers ask about that a booking email rarely holds. Blue says it isn't saved
+  /// instead of showing a different field (e.g. the booking code for "seat number").
+  static let unsavedWords = ["seat", "gate", "terminal", "baggage", "luggage", "wifi", "wi-fi", "password",
+                             "breakfast", "cost", "price", "paid", "pay", "flight number", "room number", "parking"]
 
   static func fits(_ question: String, field: VaultField) -> Bool {
     let q = question.lowercased()
@@ -104,6 +109,51 @@ enum AskGuard {
   static func fitsPlace(_ question: String) -> Bool {
     let q = question.lowercased()
     return placeWords.contains { q.contains($0) }
+  }
+
+  /// Whole words only, so "navigate" doesn't count as "gate".
+  static func asksUnsaved(_ question: String) -> Bool {
+    let q = question.lowercased()
+    return unsavedWords.contains { w in
+      q.range(of: "\\b\(NSRegularExpression.escapedPattern(for: w))\\b", options: .regularExpression) != nil
+    }
+  }
+
+  static func wantsTaxi(_ question: String) -> Bool {
+    let q = question.lowercased()
+    return taxiWords.contains { q.contains($0) }
+  }
+
+  /// Which booking kinds a field belongs to (nil = any, e.g. the confirmation code).
+  static func kinds(for field: VaultField) -> Set<String>? {
+    switch field {
+    case .checkIn, .checkOut, .address, .taxi, .phone: ["hotel"]
+    case .departure, .arrival, .route: ["flight", "train"]
+    case .confirmationCode, .none: nil
+    }
+  }
+
+  /// "Where does my flight go?", "Which airport do I fly from?" → the route, not a time.
+  static func asksWhere(_ question: String) -> Bool {
+    let q = question.lowercased()
+    return q.contains("where") || q.contains("which airport")
+  }
+
+  /// The saved place the question names, found by code (the small model often picks the wrong number).
+  /// "the airport" / "Haneda" match the airport; the hotel only counts when nothing else is named,
+  /// because "from my hotel" is where you start, not where you go.
+  static func namedPlace(_ question: String, in places: [Place]) -> Place? {
+    let q = question.lowercased()
+    let named: [Place] = places.filter { (p: Place) -> Bool in names(question: q, place: p) }
+    return named.first { $0.kind != "hotel" } ?? named.first
+  }
+
+  private static func names(question q: String, place p: Place) -> Bool {
+    let name = p.name.lowercased()
+    if q.contains(name) { return true }
+    let words: [String] = name.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init).filter { $0.count >= 4 && $0 != "hotel" }
+    if words.contains(where: { q.contains($0) }) { return true }
+    return p.kind == "airport" && (q.contains("airport") || q.contains("haneda") || q.contains("narita"))
   }
 }
 
@@ -248,6 +298,44 @@ struct LocalReplyScreen: Equatable {
 
 // MARK: - Runtime
 
+/// The code step: turns the model's pick into what Blue shows. No AI here, so it's fully testable.
+enum AskResolver {
+  @MainActor
+  static func resolve(_ intent: AskIntent, question: String, items: [VaultItem], places: [Place],
+                      here: (lat: Double, lon: Double)?, meta: AIMeta) -> AskOutcome {
+    // 1. Asks for something bookings rarely hold (seat, gate, Wi-Fi…): say so, never show another field.
+    if AskGuard.asksUnsaved(question) { return .notInVault(meta: meta) }
+    // 2. Taxi words always mean the hotel's taxi card.
+    if AskGuard.wantsTaxi(question), let hotel = items.first(where: { $0.kind == "hotel" }),
+       let answer = VaultAnswerBuilder.answer(hotel, .taxi) {
+      return .vault(answer, item: hotel, meta: meta)
+    }
+    // 3. Distance questions: the place is found by name in the question, not by the model's number.
+    if intent.intent == "place" || AskGuard.fitsPlace(question) {
+      if AskGuard.fitsPlace(question),
+         let place = AskGuard.namedPlace(question, in: places) ?? places[safe: intent.placeIndex],
+         let answer = PlaceAnswerBuilder.answer(place, places: places, here: here) {
+        return .place(answer, place: place, meta: meta)
+      }
+      if intent.intent == "place" { return AskGuard.fitsPlace(question) ? .notInVault(meta: meta) : .other(meta: meta) }
+    }
+    guard intent.intent == "vault", var field = VaultField(rawValue: intent.field) else { return .other(meta: meta) }
+    // The field decides the kind of booking: check-in is always the hotel, departure a flight or train.
+    // The small model sometimes picks the right field on the wrong booking.
+    var item = items[safe: intent.itemIndex]
+    if let kinds = AskGuard.kinds(for: field), !(item.map { kinds.contains($0.kind) } ?? false) {
+      item = items.first { kinds.contains($0.kind) }
+    }
+    // 4. "Where does my flight go?" → the route; the model tends to pick a time.
+    if item?.kind == "flight", (field == .departure || field == .arrival), AskGuard.asksWhere(question) { field = .route }
+    // 5. Small talk ("Hello") gets the help reply, never a booking value.
+    guard AskGuard.fits(question, field: field) else { return .other(meta: meta) }
+    guard let item, let answer = VaultAnswerBuilder.answer(item, field) else { return .notInVault(meta: meta) }
+    return .vault(answer, item: item, meta: meta)
+  }
+}
+
+
 enum AskOutcome {
   case vault(VaultAnswer, item: VaultItem, meta: AIMeta)
   /// Distance answer computed from saved map coordinates.
@@ -262,28 +350,15 @@ extension AIService {
   /// Ask mode: on-device classification (Survive policy), then an answer built from stored fields.
   func ask(_ question: String, items: [VaultItem], pack: DestinationPack?,
            places: [Place] = [], here: (lat: Double, lon: Double)? = nil) async throws -> AskOutcome {
-    let (intent, meta) = try await generate(
+    let (intent, meta) = try await classify(question, items: items, places: places)
+    return AskResolver.resolve(intent, question: question, items: items, places: places, here: here, meta: meta)
+  }
+
+  /// The model step only: which booking / field / place the question is about. Used by `ask` and the Blue test set.
+  func classify(_ question: String, items: [VaultItem], places: [Place]) async throws -> (AskIntent, AIMeta) {
+    try await generate(
       "classifyAsk", kind: .survive, prompt: Prompts.ask(question, items: items, places: places),
       instructions: Prompts.askInstructions, as: AskIntent.self)
-
-    switch intent.intent {
-    case "vault":
-      // Small talk ("Hello") gets the help reply, never a booking value.
-      guard let field = VaultField(rawValue: intent.field), AskGuard.fits(question, field: field)
-      else { return .other(meta: meta) }
-      guard items.indices.contains(intent.itemIndex),
-            let answer = VaultAnswerBuilder.answer(items[intent.itemIndex], field)
-      else { return .notInVault(meta: meta) }
-      return .vault(answer, item: items[intent.itemIndex], meta: meta)
-    case "place":
-      guard AskGuard.fitsPlace(question) else { return .other(meta: meta) }
-      guard places.indices.contains(intent.placeIndex),
-            let answer = PlaceAnswerBuilder.answer(places[intent.placeIndex], places: places, here: here)
-      else { return .notInVault(meta: meta) }
-      return .place(answer, place: places[intent.placeIndex], meta: meta)
-    default:
-      return .other(meta: meta)
-    }
   }
 
   /// Say mode: translate straight away, no classification step.

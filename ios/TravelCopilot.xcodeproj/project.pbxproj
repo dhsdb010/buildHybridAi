@@ -54,6 +54,7 @@
 		BC774D6160886C11D1E131E3 /* ModelRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */; };
 		BDFE5620E4B4196E6E7DFBF9 /* TripProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C97D2FA8F438F9E591D53E /* TripProgress.swift */; };
 		BFB008F7F55B47546A9E1AE3 /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB23245D5263C04F74A21BDD /* AskView.swift */; };
+		C1B99D6524D42BA6942D7553 /* BlueEvalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */; };
 		C26E01045651C5F4FD59BD48 /* PrepareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */; };
 		C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 650C8F1632B44DFCBC5B981D /* SettingsView.swift */; };
 		C46745ED851A2D4595271D5D /* PlanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4BDD73B7D0C33DB3181838 /* PlanService.swift */; };
@@ -148,6 +149,7 @@
 		ADE8F03E31DE4DEB13130D49 /* TravelCopilot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TravelCopilot.entitlements; sourceTree = "<group>"; };
 		AE9947A0ADC3385A1F1317EB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		B4F1789438F4D0CEC32FB024 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueEvalTests.swift; sourceTree = "<group>"; };
 		BB23245D5263C04F74A21BDD /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 		BE0D68D3DBF952B3805C9D32 /* FloatingAsk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingAsk.swift; sourceTree = "<group>"; };
 		C33BC2EA6361EE2BB55A585F /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 		03D01A9BFC32A908C174E4EA /* TravelCopilotTests */ = {
 			isa = PBXGroup;
 			children = (
+				B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */,
 				4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */,
 				01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */,
 				6E6F5800C063D8BE20AB2C4E /* MapTests.swift */,
@@ -571,6 +574,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1B99D6524D42BA6942D7553 /* BlueEvalTests.swift in Sources */,
 				ED57198397D6C96D94C269AD /* CatchUpTests.swift in Sources */,
 				4501A06F0BF84DE076647786 /* JourneyTests.swift in Sources */,
 				8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */,

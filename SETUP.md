@@ -64,3 +64,15 @@ Debug launch arguments (DEBUG builds only):
 | **Offline + App Check** | ⏳ needs a real Apple Intelligence iPhone (Airplane Mode) |
 | `isExpensive` / `isConstrained` | ⏳ needs a real iPhone on cellular |
 | 5 | Cellular / Low Data flags | Turn Wi-Fi off and use cellular (look for 💸), then turn on Low Data Mode |
+
+## Blue's question test set
+
+56 real questions about the sample Tokyo trip, run against the real on-device model and scored by what Blue would actually show: **correct**, **missed** (said "not in your bookings" when it was saved) or **wrong** (showed a value that doesn't answer the question). It needs Apple Intelligence, takes about a minute, and only runs when asked:
+
+```bash
+cd ios && TEST_RUNNER_BLUE_EVAL=1 xcodebuild test -project TravelCopilot.xcodeproj -scheme TravelCopilot -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TravelCopilotTests/BlueEvalTests 2>&1 | grep BLUE_EVAL
+```
+
+- The first 40 questions were used to tune Blue's rules (`AskResolver`, `AskGuard`); the last 16 ("held out") were written afterwards and are never tuned on, so their score is the honest one.
+- The test fails if Blue shows a single wrong value; accuracy is reported, not enforced.
+- Baseline on 19 Nov 2026 (iPhone 17 simulator): before the fixes 28/40 with 6 wrong; after, 40/40 tuned and 14/16 held out, 0 wrong, all on-device, about 1.1 s per question.
