@@ -202,11 +202,20 @@ struct AskView: View {
   private func linkButton(_ link: String) -> some View {
     if link == "map" {
       BubbleLink(title: "Open map", symbol: "map.fill") { router.tab = .map; dismiss() }
-    } else if link.hasPrefix("taxi:"), let item = items.first(where: { $0.title == link.dropFirst(5) }) {
+    } else if link.hasPrefix("taxi:"), let item = booking(for: link) {
       BubbleLink(title: "Show taxi card", symbol: "car.fill") { taxiItem = item }
     } else if link.hasPrefix("translation:"), let entry = entry(for: link) {
       BubbleLink(title: "Show full screen", symbol: "arrow.up.left.and.arrow.down.right") { translationCard = entry }
     }
+  }
+
+  /// The booking behind a "Show taxi card" button: by its id. Older messages saved the title,
+  /// so a title still works, but only when exactly one booking has it.
+  private func booking(for link: String) -> VaultItem? {
+    let key = String(link.dropFirst(5))
+    if let item = items.first(where: { $0.uid == key }) { return item }
+    let named = items.filter { $0.title == key }
+    return named.count == 1 ? named[0] : nil
   }
 
   /// The translation behind a chat bubble: by its id, or (older messages) by its text.
@@ -256,7 +265,7 @@ struct AskView: View {
       m.sourceRef = item.confirmationCode ?? ""
       m.sourceSymbol = item.kind == "hotel" ? "bed.double.fill" : item.kind == "train" ? "tram.fill" : "airplane"
       m.caption = caption(meta, "From your booking")
-      if answer.showTaxiCard { m.link = "taxi:\(item.title)" }
+      if answer.showTaxiCard { m.link = "taxi:\(item.uid)" }
       return m
     case let .place(answer, place, meta):
       let m = ChatMessage(role: "blue", kind: "place", text: answer.text)

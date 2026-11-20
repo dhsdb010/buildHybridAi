@@ -34,6 +34,8 @@ struct TravelCopilotApp: App {
     let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self)
     let connectivity = Connectivity()
     self.container = container
+    IDRepair.run(container.mainContext)
+    RoutingLog.trim(container.mainContext)
     _connectivity = State(initialValue: connectivity)
     _ai = State(initialValue: AIService(connectivity: connectivity, context: container.mainContext))
     // Done on the Live Activity / a notification → next step of the journey.

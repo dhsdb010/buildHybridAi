@@ -1,5 +1,19 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
+
+/// The log as a .csv file for the share sheet.
+struct LogCSV: Transferable {
+  let text: String
+  static var transferRepresentation: some TransferRepresentation {
+    FileRepresentation(exportedContentType: .commaSeparatedText) { csv in
+      let stamp = Date.now.formatted(.iso8601.year().month().day())
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent("travel-copilot-ai-log-\(stamp).csv")
+      try csv.text.write(to: url, atomically: true, encoding: .utf8)
+      return SentTransferredFile(url)
+    }
+  }
+}
 
 /// Every AI request and where it ran: the hybrid behavior, visible in the product.
 struct RoutingLogView: View {
@@ -17,7 +31,8 @@ struct RoutingLogView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-          MTALabel("\(entries.count) requests")
+          // Notes ("Catch-up · back online") aren't AI requests, so they don't count here.
+          MTALabel("\(entries.filter { $0.requestedRoute != nil || $0.outcome != "ok" }.count) AI requests · keeps the latest \(RoutingLog.limit)")
           Text("Where AI ran").mta(.displayMedium).foregroundStyle(MTA.text)
           GridRow4 {
             NumberBox(value: "\(entries.filter { $0.source == "onDevice" }.count)", caption: "Device", style: .status(.onTrack))
@@ -52,6 +67,14 @@ struct RoutingLogView: View {
       .navigationTitle("Routing log")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          // CSV of every row, for real-device numbers (Devpost, video). Stays on the phone until you share it.
+          ShareLink(item: LogCSV(text: RoutingLog.csv(entries)),
+                    preview: SharePreview("Travel Copilot AI log · \(entries.count) rows")) {
+            Label("Export", systemImage: "square.and.arrow.up")
+          }
+          .disabled(entries.isEmpty)
+        }
         ToolbarItem(placement: .topBarTrailing) {
           Button("Clear", role: .destructive) { entries.forEach(context.delete) }.disabled(entries.isEmpty)
         }

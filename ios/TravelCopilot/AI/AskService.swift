@@ -367,6 +367,12 @@ extension AIService {
     return .translation(entry, meta: meta)
   }
 
+  nonisolated static func isMostlyLatin(_ s: String) -> Bool {
+    let letters = s.unicodeScalars.filter { CharacterSet.letters.contains($0) }
+    guard !letters.isEmpty else { return true }
+    return Double(letters.filter { $0.value <= 0x024F }.count) / Double(letters.count) >= 0.8
+  }
+
   /// Context-aware translation. `out`: English → local language. `in`: a local's reply → English.
   func translate(_ text: String, direction: String, pack: DestinationPack?,
                  situation: String? = nil, hotel: String? = nil) async throws -> (TranslationEntry, AIMeta) {
@@ -384,7 +390,8 @@ extension AIService {
       isDraft: meta.source == .onDevice)
     // Pronunciation is computed on-device by the OS, not generated (works offline, no hallucinated romaji).
     entry.romanization = direction == "out" ? Romanizer.latin(t.translation, languageCode: pack?.languageCode) : ""
-    entry.note = t.note
+    // The note is for the traveler, in English; the small model sometimes writes it in the target language.
+    entry.note = Self.isMostlyLatin(t.note) ? t.note : ""
     entry.situation = situation
     entry.latencyMs = meta.latencyMs
     context.insert(entry)

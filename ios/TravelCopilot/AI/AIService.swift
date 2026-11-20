@@ -129,7 +129,11 @@ final class AIService {
     context.insert(entry)
     try? context.save()
     lastEntry = entry
+    inserted += 1
+    if inserted % 50 == 0 { RoutingLog.trim(context) }
   }
+
+  private var inserted = 0
 
   /// A Log row that isn't an AI call (e.g. "Catch-up · start: back online → 3 drafts").
   func note(_ task: String, _ kind: TaskKind, reason: String, outcome: String, note: String? = nil) {

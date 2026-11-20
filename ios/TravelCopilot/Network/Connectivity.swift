@@ -28,7 +28,11 @@ final class Connectivity {
         #if DEBUG
           // `-offlineFor 30`: act offline for the first 30 s after launch, then come back online
           // (to try offline drafts and the catch-up pass in the simulator).
-          if let until = Connectivity.fakeOfflineUntil, Date() < until { self?.isOnline = false; return }
+          if let until = Connectivity.fakeOfflineUntil, Date() < until {
+            self?.isOnline = false
+            self?.isExpensive = expensive; self?.isConstrained = constrained; self?.interface = iface
+            return
+          }
         #endif
         self?.isOnline = online
         self?.isExpensive = expensive

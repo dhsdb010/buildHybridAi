@@ -159,7 +159,7 @@ struct CatchUpToast: View {
     Group {
       switch ai.catchUp {
       case let .running(n):
-        toast(MTA.accent, "Back online · improving \(n) translation\(n == 1 ? "" : "s")…", "Gemini checks your offline drafts")
+        toast(MTA.accent, "Improving \(n) translation\(n == 1 ? "" : "s")…", "Back online · Gemini checks your offline drafts")
       case let .done(improved, kept, unchanged, failed):
         toast(kept > 0 || failed > 0 ? MTA.obstacle : MTA.onTrack, Self.summary(improved, kept, unchanged, failed), "See the Log for each one")
           .task {
@@ -186,7 +186,7 @@ struct CatchUpToast: View {
     HStack(spacing: 10) {
       Circle().fill(dot).frame(width: 10, height: 10)
       VStack(alignment: .leading, spacing: 1) {
-        Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+        Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white).fixedSize(horizontal: false, vertical: true)
         Text(sub).font(.system(size: 13)).foregroundStyle(.white.opacity(0.7))
       }
     }

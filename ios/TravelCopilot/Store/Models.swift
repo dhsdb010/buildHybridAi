@@ -24,6 +24,8 @@ final class VaultItem {
   var phone: String?
   var countryCode: String?
   var createdAt: Date = Date()
+  /// Stable id for links from Blue's chat (titles can repeat or change).
+  var uid: String = UUID().uuidString
 
   init(kind: String, title: String) {
     self.kind = kind
@@ -219,5 +221,23 @@ final class ChatMessage {
 
   init(role: String, kind: String, text: String, createdAt: Date = .now) {
     self.role = role; self.kind = kind; self.text = text; self.createdAt = createdAt
+  }
+}
+
+/// New `uid` fields get one default value for every row that existed before them.
+/// Give any repeated id a fresh one at launch, so links never point at the wrong row.
+enum IDRepair {
+  @MainActor
+  static func run(_ context: ModelContext) {
+    var changed = false
+    var seen = Set<String>()
+    for item in (try? context.fetch(FetchDescriptor<VaultItem>())) ?? [] {
+      if !seen.insert(item.uid).inserted { item.uid = UUID().uuidString; changed = true }
+    }
+    seen = []
+    for entry in (try? context.fetch(FetchDescriptor<TranslationEntry>())) ?? [] {
+      if !seen.insert(entry.uid).inserted { entry.uid = UUID().uuidString; changed = true }
+    }
+    if changed { try? context.save() }
   }
 }

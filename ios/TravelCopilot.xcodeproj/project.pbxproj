@@ -46,6 +46,7 @@
 		A11D6D3F100F44A910823B5F /* TripProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */; };
 		A15735C5738067AAC9D7576A /* TripLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5492B0747E7054BCBA3908 /* TripLiveActivity.swift */; };
 		A569B663C6231D599C587EDE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811A9F16C58C5478C0F5FE7D /* AIService.swift */; };
+		A5ECDE61815292E24596CFF5 /* RoutingLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */; };
 		AAA32FEF0B263583EE635B39 /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
 		ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */; };
 		B58D944999E7043D7BF0834F /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
@@ -125,6 +126,7 @@
 		650C8F1632B44DFCBC5B981D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		654802749BC3529758083461 /* PrepareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareService.swift; sourceTree = "<group>"; };
 		657B71922D12DD14BBCF2B72 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
+		65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingLog.swift; sourceTree = "<group>"; };
 		6E02FC1AF031F047E940AC9C /* TravelCopilotWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TravelCopilotWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6F5800C063D8BE20AB2C4E /* MapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTests.swift; sourceTree = "<group>"; };
 		704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareView.swift; sourceTree = "<group>"; };
@@ -298,6 +300,7 @@
 			children = (
 				613C423B335623E6820F3919 /* Journey.swift */,
 				ECD65BD2D80277E815A4BCCA /* Models.swift */,
+				65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */,
 				9D486C5664E573DD226E81A5 /* TripReminders.swift */,
 				E4D66E5FD9612F31C08F4DBF /* TripTimeline.swift */,
 			);
@@ -542,6 +545,7 @@
 				B5C2A1DAFD2774E343B0DA01 /* PrepareService.swift in Sources */,
 				C26E01045651C5F4FD59BD48 /* PrepareView.swift in Sources */,
 				9DFD62C5E1C155A9BAF8ED11 /* Prompts.swift in Sources */,
+				A5ECDE61815292E24596CFF5 /* RoutingLog.swift in Sources */,
 				177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */,
 				935CB47592B1C362B3F95B11 /* RoutingPolicy.swift in Sources */,
 				C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */,
