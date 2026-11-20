@@ -18,6 +18,8 @@ struct WelcomeView: View {
   @State private var summary: PrepareService.Summary?
   @State private var error: String?
   @FocusState private var editorFocused: Bool
+  @Query private var emergencyCards: [EmergencyCard]
+  @State private var settingUpCard = false
 
   var body: some View {
     Group {
@@ -28,6 +30,7 @@ struct WelcomeView: View {
         case 0: welcome
         case 3: bookedYet
         case 1: bookings
+        case 4: emergencyIntro
         default: building
         }
       }
@@ -208,7 +211,7 @@ struct WelcomeView: View {
             NoticeCard(text: summary.mapError == nil
                        ? "Everything is on this iPhone now. Turn on Airplane Mode — Ask, Say, the taxi card and the map keep working."
                        : "Bookings and phrases are saved. The offline map didn't finish — try again from the Map tab on Wi-Fi.")
-            Button("Start my trip") { finish() }.buttonStyle(.mtaPrimary)
+            Button("Start my trip") { if emergencyCards.isEmpty { page = 4 } else { finish() } }.buttonStyle(.mtaPrimary)
           } else if error != nil {
             Button("Try again") { page = 1; error = nil }.buttonStyle(.mtaPrimary)
           }
@@ -241,6 +244,49 @@ struct WelcomeView: View {
       summary = result
     } catch {
       self.error = error.localizedDescription
+    }
+  }
+
+  // MARK: - 4 · Emergency card (last page)
+
+  private var emergencyIntro: some View {
+    ZStack {
+      MTA.emergency.ignoresSafeArea()
+      VStack(alignment: .leading, spacing: 20) {
+        Image("StarOfLife").resizable().scaledToFit().padding(12).frame(width: 84, height: 84)
+          .background(.white, in: .circle).accessibilityHidden(true)
+        Text("One more thing: your emergency card").font(.system(size: 38, weight: .bold)).foregroundStyle(.white)
+          .fixedSize(horizontal: false, vertical: true)
+        Text("If you get sick or hurt abroad, show this card. Your allergies, medicines and blood type, in the local language.")
+          .mta(.body1).foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 14) {
+          introPoint(1, "About a minute", "Five quick questions, mostly taps")
+          introPoint(2, "Health can help", "Blood type and medicines, if you allow it")
+          introPoint(3, "Stays on this iPhone", "Never synced; works offline")
+        }
+        Spacer(minLength: 0)
+        Button { settingUpCard = true } label: {
+          Text("Set up my card").font(.system(size: 17, weight: .semibold)).foregroundStyle(MTA.emergency)
+            .frame(maxWidth: .infinity, minHeight: 54).background(.white, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        Button("Later") { finish() }.font(.system(size: 17, weight: .semibold)).foregroundStyle(.white).frame(maxWidth: .infinity)
+      }
+      .padding(.horizontal, 28).padding(.top, 24).padding(.bottom, 12)
+    }
+    .fullScreenCover(isPresented: $settingUpCard) {
+      EmergencySetupView { _ in settingUpCard = false; finish() }
+    }
+  }
+
+  private func introPoint(_ n: Int, _ title: String, _ detail: String) -> some View {
+    HStack(alignment: .top, spacing: 14) {
+      Text("\(n)").font(.system(size: 16, weight: .semibold)).foregroundStyle(MTA.emergency)
+        .frame(width: 36, height: 36).background(.white, in: .circle)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(title).font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
+        Text(detail).mta(.body2).foregroundStyle(.white.opacity(0.85))
+      }
     }
   }
 

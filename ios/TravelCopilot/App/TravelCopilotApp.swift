@@ -31,7 +31,7 @@ struct TravelCopilotApp: App {
 
   init() {
     _ = Self.firebaseConfigured
-    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self, RoutingSummary.self)
+    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self, RoutingSummary.self, EmergencyCard.self)
     let connectivity = Connectivity()
     self.container = container
     IDRepair.run(container.mainContext)
@@ -91,6 +91,8 @@ final class AppRouter {
   var showSettings = false
   /// Opens the taxi card on Home (from a Live Activity or notification button).
   var showTaxi = false
+  /// The emergency card or its setup quiz, over everything (travelcopilot://emergency, Siri, debug).
+  var emergency: EmergencyScreen?
 
   /// travelcopilot://ask?q=… · ://trip · ://taxi · ://map · ://home. Returns false for other URLs.
   @discardableResult
@@ -103,6 +105,7 @@ final class AppRouter {
     case "trip": tab = .trip
     case "map": tab = .map
     case "taxi": tab = .home; showTaxi = true
+    case "emergency": emergency = .card
     default: tab = .home
     }
     return true
@@ -116,6 +119,8 @@ final class AppRouter {
       if let q = d.string(forKey: "askQuestion") { ask = AskRequest(mode: 0, text: q, autoSubmit: true) }
       if let q = d.string(forKey: "sayText") { ask = AskRequest(mode: 1, text: q, autoSubmit: true) }
       switch d.string(forKey: "screen") { case "help": showHelp = true; case "settings": showSettings = true; case "ask": ask = AskRequest(); default: break }
+      // `-emergency setup|card|english`: open the emergency card flow (simulator checks).
+      if let e = d.string(forKey: "emergency") { emergency = EmergencyScreen(rawValue: e) }
     #endif
   }
 }
@@ -146,6 +151,7 @@ struct RootView: View {
     .overlay(alignment: .top) { CatchUpToast().padding(.top, 4) }
     .sheet(item: $router.ask) { AskView(request: $0) }
     .sheet(isPresented: $router.showHelp) { HelpView() }
+    .fullScreenCover(item: $router.emergency) { EmergencyHost(screen: $0) }
     .fullScreenCover(isPresented: $showWelcome) { WelcomeView() }
     .preferredColorScheme(appearance == 1 ? .light : appearance == 2 ? .dark : nil)
     // Notifications + Live Activity for the next trip moment, refreshed when anything changes.

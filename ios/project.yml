@@ -47,6 +47,9 @@ targets:
       path: TravelCopilot/TravelCopilot.entitlements
       properties:
         com.apple.developer.applesignin: [Default]
+        # Emergency card: read blood type and shared medications (read only).
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     info:
       path: TravelCopilot/Info.plist
       properties:
@@ -59,6 +62,8 @@ targets:
         NSLocationWhenInUseUsageDescription: Shows where you are on your saved trip map, even offline (GPS needs no internet).
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSSupportsLiveActivities: true
+        NSHealthShareUsageDescription: Fills your emergency card with your blood type and the medications you choose to share. Read only; stays on this iPhone.
+        NSHealthUpdateUsageDescription: Travel Copilot doesn't write to Health.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.buildhybridai.travelcopilot

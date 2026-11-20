@@ -7,6 +7,8 @@ struct HelpView: View {
   @Environment(\.openURL) private var openURL
   @Query(sort: \VaultItem.startDate) private var items: [VaultItem]
   @Query private var packs: [DestinationPack]
+  @Query private var cards: [EmergencyCard]
+  @State private var emergency: EmergencyScreen?
 
   private var pack: DestinationPack? { packs.first }
   private var code: String? { pack?.countryCode ?? items.first { $0.kind == "hotel" }?.countryCode }
@@ -28,6 +30,8 @@ struct HelpView: View {
           } else {
             NoticeCard(text: "No bundled numbers for this country yet. In most countries, 112 reaches emergency services.")
           }
+
+          emergencyTile
 
           let phrases = (pack?.phrases ?? []).filter { ["help", "pharmacy"].contains($0.situation) }
           if !phrases.isEmpty {
@@ -53,7 +57,35 @@ struct HelpView: View {
       .navigationTitle("Help")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close", systemImage: "xmark") { dismiss() } } }
+      .fullScreenCover(item: $emergency) { EmergencyHost(screen: $0) }
     }
+  }
+
+  /// "My emergency card": shows the card, or starts the 5-question setup.
+  private var emergencyTile: some View {
+    let card = cards.first
+    return Button { emergency = card == nil ? .setup : .card } label: {
+      HStack(spacing: 14) {
+        Image("StarOfLife").resizable().scaledToFit().frame(width: 54, height: 52).accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 4) {
+          MTALabel("Show a doctor or pharmacist")
+          Text("My emergency card").mta(.subheadMedium).foregroundStyle(MTA.text)
+          Text(card == nil ? "Not set up yet · 5 quick questions" : "Allergies, medicines, blood type in \(pack?.languageName ?? "the local language")")
+            .mta(.body2).foregroundStyle(MTA.text2)
+          if card == nil {
+            Text("Set it up").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+              .padding(.horizontal, 14).padding(.vertical, 8).background(MTA.emergency, in: .capsule).padding(.top, 2)
+          }
+        }
+        Spacer(minLength: 0)
+        if card != nil { Image(systemName: "chevron.right").foregroundStyle(MTA.text2) }
+      }
+      .padding(16)
+      .background(MTA.surface, in: .rect(cornerRadius: 20))
+      .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Color.gray.opacity(0.35), lineWidth: 1.5) }
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(card == nil ? "Set up my emergency card" : "Show my emergency card")
   }
 
   /// Red tile spanning 2 grid columns; tap to call.

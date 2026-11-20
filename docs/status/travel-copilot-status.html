@@ -83,13 +83,14 @@ a { color: var(--accent); }
 
 <main>
 <header>
-  <span class="label">Travel Copilot · #BuildHybridAI 2026 · updated Thu 19 Nov, afternoon</span>
+  <span class="label">Travel Copilot · #BuildHybridAI 2026 · updated Thu 19 Nov, evening</span>
   <h1>Where the app stands, how it works, and what's next</h1>
   <p class="lede">An iOS trip companion that keeps your bookings, plans and help on the phone, and uses Firebase AI Logic to run AI on the device first and in the cloud when it needs to. 11 days to the deadline (Mon 30 Nov, 2 pm).</p>
   <div class="chips">
-    <span class="chip ok">58 tests pass</span>
-    <span class="chip ok">Pushed to GitHub · main @ e7a3a5d</span>
-    <span class="chip bad">Cloud calls blocked: App Check token</span>
+    <span class="chip ok">75 tests pass</span>
+    <span class="chip ok">Blue test set 55/57 · 0 wrong</span>
+    <span class="chip ok">Cloud unblocked · catch-up verified</span>
+    <span class="chip ok">GitHub · main @ eb52e45</span>
     <span class="chip warn">Not tested on a real iPhone</span>
     <span class="chip bad">No README / TestFlight / video yet</span>
   </div>
@@ -97,37 +98,37 @@ a { color: var(--accent); }
 
 <section>
   <span class="label">Pipeline health</span>
-  <h2>Does the main AI pipeline work? On-device yes; cloud is blocked today</h2>
-  <p>These numbers come from the app's own call log on the iPhone 17 simulator, where every AI request is recorded with its route, where it actually ran, and how long it took.</p>
+  <h2>Does the main AI pipeline work? Yes, device and cloud, in the simulator</h2>
+  <p>From the app's own AI call log on the iPhone 17 simulator: every request with its route, where it actually ran, and how long it took. Older days are compacted into daily totals, so these cover everything since 18 Nov.</p>
   <div class="stats">
-    <div class="stat"><span class="label">AI calls logged</span><b>51</b></div>
-    <div class="stat ok"><span class="label">On-device</span><b>16</b></div>
-    <div class="stat dark"><span class="label">Cloud · Gemini</span><b>17</b></div>
-    <div class="stat"><span class="label">Failed</span><b>12</b></div>
+    <div class="stat"><span class="label">AI requests</span><b>57</b></div>
+    <div class="stat ok"><span class="label">On-device</span><b>21</b></div>
+    <div class="stat dark"><span class="label">Cloud · Gemini</span><b>22</b></div>
+    <div class="stat"><span class="label">Failed</span><b>13</b></div>
   </div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Task</th><th>Kind</th><th>Ran on</th><th>Calls</th><th>Avg time</th><th>Result</th></tr></thead>
       <tbody>
-        <tr><td>Blue: read your question</td><td>Survive</td><td>On-device</td><td class="num">10</td><td class="num">3.2 s</td><td><span class="chip ok">OK</span></td></tr>
-        <tr><td>Planner: remember a past trip</td><td>Survive</td><td>On-device</td><td class="num">5</td><td class="num">4.6 s</td><td><span class="chip ok">OK</span></td></tr>
-        <tr><td>Read pasted booking emails</td><td>Prepare</td><td>Cloud</td><td class="num">1</td><td class="num">2.8 s</td><td><span class="chip ok">OK</span></td></tr>
-        <tr><td>Build phrase &amp; safety pack</td><td>Prepare</td><td>Cloud</td><td class="num">1</td><td class="num">3.2 s</td><td><span class="chip ok">OK</span></td></tr>
-        <tr><td>Planner: destination ideas, day outline</td><td>Prepare</td><td>Cloud</td><td class="num">10</td><td class="num">2.8 s</td><td><span class="chip ok">OK</span></td></tr>
-        <tr><td>Planner: hotels &amp; food (Google Maps grounding)</td><td>Prepare</td><td>Cloud</td><td class="num">10</td><td class="num">1.3–37 s</td><td><span class="chip warn">6 × quota 429</span></td></tr>
-        <tr><td>Say in Japanese, made offline</td><td>Survive</td><td>On-device</td><td class="num">1</td><td class="num">6.9 s</td><td><span class="chip ok">Draft</span></td></tr>
-        <tr><td>Catch-up: improve that draft</td><td>Catch-up</td><td>Cloud</td><td class="num">5</td><td class="num">0.7 s</td><td><span class="chip bad">App Check 401</span></td></tr>
+        <tr><td>Blue: read your question</td><td>Survive</td><td>On-device</td><td class="num">13</td><td class="num">3.3 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Blue question test set (56 questions)</td><td>Survive</td><td>On-device</td><td class="num">57</td><td class="num">1.1 s</td><td><span class="chip ok">55/57 · 0 wrong</span></td></tr>
+        <tr><td>Blue: open question</td><td>Open</td><td>Cloud</td><td class="num">2</td><td class="num">1.7 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Blue: open question asked offline</td><td>Open</td><td>—</td><td class="num">1</td><td class="num">—</td><td><span class="chip info">Waited, answered later</span></td></tr>
+        <tr><td>Say in Japanese, offline</td><td>Survive</td><td>On-device</td><td class="num">3</td><td class="num">6.2 s</td><td><span class="chip ok">Draft</span></td></tr>
+        <tr><td>Catch-up: improve the draft</td><td>Catch-up</td><td>Cloud</td><td class="num">3</td><td class="num">1.5 s</td><td><span class="chip ok">3 improved</span></td></tr>
+        <tr><td>Planner: memories on-device, ideas and outline in the cloud</td><td>Survive · Prepare</td><td>Both</td><td class="num">15</td><td class="num">2.8–4.6 s</td><td><span class="chip ok">OK</span></td></tr>
+        <tr><td>Planner: hotels &amp; food (Google Maps grounding)</td><td>Prepare</td><td>Cloud</td><td class="num">10</td><td class="num">0.3–37 s</td><td><span class="chip warn">6 × quota 429</span></td></tr>
+        <tr><td>Prepare: read bookings, phrase pack</td><td>Prepare</td><td>Cloud</td><td class="num">2</td><td class="num">3.0 s</td><td><span class="chip ok">OK</span></td></tr>
       </tbody>
     </table>
   </div>
-  <p class="caption">6 failures are HTTP 429 "quota exceeded" from Google Maps grounding on the free tier; the planner falls back to Apple Maps. 5 are new today: Firebase answers 401 "App Check token is invalid" to every cloud call from the simulator. The last cloud call that worked was on 18 Nov at 15:57. The app handles it correctly (drafts stay drafts and retry), but nothing can reach Gemini until the simulator's App Check debug token is registered in the Firebase console.</p>
+  <p class="caption">Failures: 6 are Google Maps quota (429) with the Apple Maps fallback working; 7 are from this morning, before the App Check debug token was registered (401). Since then every cloud call has worked. The test-set runs aren't in the app's log; they run in the test target.</p>
   <div class="callout risk">
     <h3>What isn't proven yet</h3>
     <ul>
-      <li><b>Cloud access today.</b> Register the simulator's App Check debug token (Firebase console → App Check → Manage debug tokens), then re-run the catch-up test to see a draft actually improve.</li>
-      <li><b>Airplane mode on a real iPhone.</b> Every on-device result so far ran in the simulator on a Mac. The plan's day-1 check (does on-device AI work through Firebase AI Logic with no signal and App Check on?) still needs an Apple Intelligence iPhone. The whole pitch depends on it.</li>
-      <li><b>Cloud fallback in hybrid mode.</b> All Survive calls stayed on the device, so we've never actually seen hybrid hand a request to Gemini.</li>
-      <li><b>App Check outside debug.</b> Only the debug provider is set up. A TestFlight build needs App Attest, or written steps for judges.</li>
+      <li><b>Airplane mode on a real iPhone.</b> Every on-device result ran in the simulator on a Mac. Needs an Apple Intelligence iPhone with its own App Check debug token. The whole pitch depends on it.</li>
+      <li><b>A real cloud fallback.</b> Every hybrid call finished on the device; the Log has never shown the device handing a request to Gemini. Plan: a translation into a language the device model doesn't support.</li>
+      <li><b>App Check outside debug.</b> Only the debug provider is set up in code. Release builds need App Attest registered in Firebase plus the App Attest provider in code, and TestFlight needs a developer account.</li>
     </ul>
   </div>
 </section>
@@ -245,7 +246,7 @@ flowchart TD
 <section>
   <span class="label">Hybrid routing</span>
   <h2>How each AI request picks device or cloud</h2>
-  <p>Every request has a kind. <b>Survive</b> is help during the trip, so it prefers the phone. <b>Prepare</b> is set-up work that needs the cloud. <b>Catch-up</b> improves earlier drafts on good Wi-Fi; it's designed in the policy but nothing uses it yet.</p>
+  <p>Every request has a kind. <b>Survive</b> is help during the trip, so it prefers the phone. <b>Prepare</b> is set-up work that needs the cloud. <b>Catch-up</b> improves offline drafts and answers waiting questions on good Wi-Fi. <b>Open</b> questions to Blue go to the cloud, or wait when offline.</p>
   <div class="diagram"><pre class="mermaid">
 flowchart TD
   R[AI request] --> K{Kind?}
@@ -259,6 +260,9 @@ flowchart TD
   K -- Prepare --> P1{Online?}
   P1 -- No --> X2[Blocked: needs internet]
   P1 -- Yes --> C1[Cloud only]
+  K -- Open question --> O1{Online?}
+  O1 -- No --> W[Wait · answered on catch-up]
+  O1 -- Yes --> C1
   K -- Catch-up --> U1{Online and not metered?}
   U1 -- No --> Q[Wait for Wi-Fi]
   U1 -- Yes --> C1
@@ -299,57 +303,61 @@ sequenceDiagram
   <h2>What's built</h2>
   <div class="list">
     <div class="row"><span class="chip ok">Verified</span><div><h3>Prepare: paste emails → Vault, phrase pack, places, offline map</h3><p>Cloud reads bookings; maps are saved for offline use.</p></div></div>
-    <div class="row"><span class="chip ok">Verified</span><div><h3>Blue chat with saved history</h3><p>Messages-style page, suggestions from your bookings, on-device answers, small-talk guard, あ for translation, New chat.</p></div></div>
-    <div class="row"><span class="chip ok">Verified</span><div><h3>Journey Live Activity and Dynamic Island</h3><p>Step by step to the hotel with the vehicle on the track, Done button, arrived card with room info.</p></div></div>
-    <div class="row"><span class="chip ok">Verified</span><div><h3>Home, Trip list and calendar, Map, Taxi card, Help numbers, Routing log</h3><p>The Blue button sits at the side of Home, Trip and Map.</p></div></div>
-    <div class="row"><span class="chip ok">Verified</span><div><h3>AI trip planner with sign-in</h3><p>Memories on-device, ideas and outline in the cloud, real places from Google Maps with an Apple Maps fallback.</p></div></div>
-    <div class="row"><span class="chip ok">Verified</span><div><h3>Trip reminders (fixed today)</h3><p>Step 1 no longer skipped, steps remind 10 min ahead, station-sign titles that fit, "Ask Blue" button, Done moves the Live Activity on even when the app wasn't running. Button routing is unit-tested.</p></div></div>
-    <div class="row"><span class="chip warn">Built</span><div><h3>Catch-up pass (built today)</h3><p>Offline drafts, the safety check on numbers and medicine names, the Log rows, the Home toast and Improve now all work. The cloud step that actually improves a draft is blocked by App Check, so the improved bubble hasn't been seen yet.</p></div></div>
-    <div class="row"><span class="chip warn">Unchecked</span><div><h3>Press-and-hold notification buttons, expanded Dynamic Island, dragging the map sheet</h3><p>The simulator can't touch system screens; try these on a real iPhone.</p></div></div>
-    <div class="row"><span class="chip bad">Missing</span><div><h3>Photo reading (menus, signs)</h3><p>Planned as cloud reading online and Apple Vision text recognition offline.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Blue chat with saved history</h3><p>Messages-style page, suggestions from your bookings, on-device answers, あ for translation, New chat. Links use stable ids.</p></div></div>
+    <div class="row"><span class="chip ok">Verified · new</span><div><h3>Blue answers open questions</h3><p>Online: Gemini, labeled "Cloud · general advice, not from your bookings". Offline: "Waiting for a connection", answered in the same bubble on catch-up.</p></div></div>
+    <div class="row"><span class="chip ok">Verified · new</span><div><h3>Blue question test set</h3><p>56 real questions against the on-device model; fixes took it from 28/40 with 6 wrong values to 55/57 with none. Fails if Blue ever shows a wrong value.</p></div></div>
+    <div class="row"><span class="chip ok">Verified · new</span><div><h3>Catch-up pass</h3><p>Offline draft → back online → Gemini improves it; same bubble shows the struck draft and what changed; code keeps numbers and medicine names identical. Home toast and Log rows confirmed.</p></div></div>
+    <div class="row"><span class="chip ok">Verified · new</span><div><h3>Log: Export and compaction</h3><p>CSV export via the share sheet; past ~10 MB older calls become daily totals kept until Clear; totals add up.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Trip reminders, Journey Live Activity, Dynamic Island</h3><p>Step-by-step reminders 10 min ahead, Done moves the journey on, arrived card with room info.</p></div></div>
+    <div class="row"><span class="chip ok">Verified</span><div><h3>Home, Trip, Map, Taxi card, Help numbers, AI trip planner with sign-in</h3><p>Blue button at the side of Home, Trip and Map.</p></div></div>
+    <div class="row"><span class="chip warn">Unchecked</span><div><h3>Press-and-hold notification buttons, expanded Dynamic Island, Export share sheet, dragging the map sheet</h3><p>The simulator can't touch system screens; try these on a real iPhone.</p></div></div>
     <div class="row"><span class="chip bad">Missing</span><div><h3>Emergency info card</h3><p>Allergies, medicines and contacts shown large in the local language. Help has numbers only.</p></div></div>
-    <div class="row"><span class="chip bad">Missing</span><div><h3>Submission items</h3><p>README, TestFlight link, App Attest or judge instructions, the 3-minute video, Devpost text.</p></div></div>
+    <div class="row"><span class="chip bad">Missing</span><div><h3>Submission items</h3><p>README, TestFlight link, App Attest in code, the 3-minute video, Devpost text.</p></div></div>
   </div>
 </section>
 
 <section>
   <span class="label">Decide</span>
-  <h2>What we need to figure out</h2>
+  <h2>Decided, and still open</h2>
   <div class="list">
-    <div class="row"><span class="chip info">Story</span><div><h3>Which story does the video tell?</h3><p>The original plan was "offline translation that upgrades itself when you're back online". The app has grown into a trip copilot: bookings, step-by-step journey and Blue. Pick one 3-minute story and build the missing piece it needs.</p></div></div>
-    <div class="row"><span class="chip info">Blue</span><div><h3>What should Blue answer?</h3><p>Today it answers booking facts, distances and translations only. Travelers will ask "where can I eat nearby?" or "is my train late?". Option: when online, send open questions to Gemini with a clear Cloud label; when offline, say what it can do instead.</p></div></div>
-    <div class="row"><span class="chip info">Hybrid</span><div><h3>Where do judges see device and cloud working together?</h3><p>The catch-up pass is now built: draft on-device offline, improved in the cloud later, shown in the same chat bubble and the Log. It needs one working cloud run to film.</p></div></div>
-    <div class="row"><span class="chip info">Cost</span><div><h3>Google Maps grounding quota</h3><p>The free tier returns 429 after a few calls. Either enable billing for the demo account or show the Apple Maps fallback on purpose.</p></div></div>
-    <div class="row"><span class="chip info">Device</span><div><h3>Which iPhone records the demo?</h3><p>It needs Apple Intelligence (iPhone 15 Pro or later) for the airplane-mode part.</p></div></div>
+    <div class="row"><span class="chip ok">Decided</span><div><h3>Video story</h3><p>Prepare → Survive in airplane mode (a Blue answer and a translation draft) → Catch-up: the same bubble improves itself, then the Log. The Journey Live Activity is opening B-roll only.</p></div></div>
+    <div class="row"><span class="chip ok">Decided</span><div><h3>Blue's scope</h3><p>Booking facts and saved places on-device; open questions to Gemini with a Cloud label; offline they wait and are answered on catch-up. Built.</p></div></div>
+    <div class="row"><span class="chip ok">Decided</span><div><h3>Next feature</h3><p>Emergency info card, not photo reading (no second AI pipeline).</p></div></div>
+    <div class="row"><span class="chip ok">Decided</span><div><h3>AI harness plan</h3><p>Use its words in the README and Devpost for what already exists (control plane, draft-then-review, code checks). Don't rebuild: no callback refactor, confidence score, Firestore sync or expense features.</p></div></div>
+    <div class="row"><span class="chip info">Open</span><div><h3>Maps quota for the demo</h3><p>Recommended: Apple Maps as the demo default, with places cached during Prepare, so the video never waits on a live grounding call.</p></div></div>
+    <div class="row"><span class="chip info">Open</span><div><h3>Demo iPhone and Apple Developer account</h3><p>An iPhone 15 Pro or later for airplane mode, and a $99/year account for App Attest and TestFlight.</p></div></div>
   </div>
 </section>
 
 <section>
   <span class="label">Next</span>
-  <h2>Suggested plan for the next 11 days</h2>
+  <h2>What to do next</h2>
   <div class="plan">
-    <div class="phase"><span class="when">Thu 19 – Sat 21</span><h3>Prove the base</h3><ul>
-      <li><s>Fix trip reminders</s> · done 19 Nov</li>
-      <li>Register the App Check debug token so cloud calls work again</li>
-      <li>Run the airplane-mode test on a real iPhone with App Check on</li>
-      <li>Pick the video story and Blue's scope</li>
-      <li>Write the README (setup, how AI Logic is used, architecture)</li>
-      <li>Fix small bugs: answers repeat the raw date under the big time, a planner label says "near near", saved chat buttons find bookings by name</li>
+    <div class="phase"><span class="when">Now · Fri 20</span><h3>Claude</h3><ul>
+      <li>A real cloud fallback in the Log (translation into a language the device doesn't support → Gemini)</li>
+      <li>Loosen Blue's keyword check where the model is right (the 2 held-out misses), keeping 0 wrong</li>
+      <li>Stop repeating the raw date under the big time in answers</li>
+      <li>README draft: what it does, how AI Logic is used, architecture, harness terms</li>
     </ul></div>
-    <div class="phase"><span class="when">Sun 22 – Tue 24</span><h3>Make hybrid visible</h3><ul>
-      <li><s>Catch-up pass</s> · built 19 Nov, two days early; needs the cloud step confirmed</li>
-      <li>Blue question test set (about 40 real questions, run against the on-device model)</li>
-      <li>Blue: open questions go to the cloud when online, clearly labeled</li>
-      <li>Try the unchecked parts on a device: notification buttons, expanded Dynamic Island, deep links</li>
+    <div class="phase"><span class="when">Now · Fri 20</span><h3>You</h3><ul>
+      <li>Real iPhone test in airplane mode (register that phone's App Check debug token first), then send the Log export</li>
+      <li>Apple Developer account, if not yet (needed for App Attest and TestFlight)</li>
     </ul></div>
-    <div class="phase"><span class="when">Wed 25 – Thu 26</span><h3>One more traveler feature</h3><ul>
-      <li>Emergency info card (allergies, medicines) in the local language, or</li>
-      <li>Photo reading: menu or sign, cloud online, Vision text offline</li>
+    <div class="phase"><span class="when">Sat 21 – Tue 24</span><h3>Ship early</h3><ul>
+      <li>App Attest provider for release builds, first TestFlight build</li>
+      <li>Demo mode: Apple Maps for planner places, places cached during Prepare</li>
+      <li>Try the unchecked parts on the iPhone: notification buttons, expanded Dynamic Island, Export</li>
     </ul></div>
-    <div class="phase"><span class="when">Fri 27 – Mon 30 (2 pm)</span><h3>Ship</h3><ul>
-      <li>App Attest or judge debug-token steps, TestFlight public link</li>
-      <li>Record the video on the iPhone with airplane mode on screen</li>
-      <li>Devpost text, submit by Sunday; Monday is buffer</li>
+    <div class="phase"><span class="when">Wed 25 – Thu 26</span><h3>One feature</h3><ul>
+      <li>Emergency info card: labels pre-translated, your values translated once in Prepare and checked by code</li>
+      <li>Strip personal data (passport, card numbers) before cloud Prepare</li>
+    </ul></div>
+    <div class="phase"><span class="when">Fri 27 – Sun 29</span><h3>Submission</h3><ul>
+      <li>Record the video on the iPhone: Prepare → airplane mode → back online → catch-up → Log</li>
+      <li>Devpost text with real-device numbers from the Log export; submit Sunday</li>
+    </ul></div>
+    <div class="phase"><span class="when">Mon 30 · until 2 pm</span><h3>Buffer</h3><ul>
+      <li>Nothing planned</li>
     </ul></div>
   </div>
 </section>

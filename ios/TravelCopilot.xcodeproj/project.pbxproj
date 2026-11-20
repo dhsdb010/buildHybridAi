@@ -15,9 +15,11 @@
 		177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E61DA002322A92847F3F1B /* RoutingLogView.swift */; };
 		20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C7BA93EA70257ECCAE299C /* CatchUpService.swift */; };
 		2FAF49E7597FADABE9CF054A /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 5A72C650EB0633D1444CE7E7 /* FirebaseRemoteConfig */; };
+		412986252DAEE02E80FF847A /* EmergencyHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4084E2D51493C65A6D5C74 /* EmergencyHealth.swift */; };
 		42507D778612384BB91504BF /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0A5B99648BA70E434E2030 /* PlanView.swift */; };
 		430F10EE367826B6BB9454E5 /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CB8AF8CFFC97B61CB2B58E /* MapScreen.swift */; };
 		4501A06F0BF84DE076647786 /* JourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */; };
+		46D39048C94145FCB45D601C /* EmergencyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */; };
 		493D05B2779F2214EE824150 /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */; };
 		4ACB0C7D633ED0601046DD86 /* FloatingAsk.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0D68D3DBF952B3805C9D32 /* FloatingAsk.swift */; };
 		4F3CCBC386A596D1DC65E69A /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */; };
@@ -35,18 +37,22 @@
 		6F54D7FAE810AD8474488BEA /* TripProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C97D2FA8F438F9E591D53E /* TripProgress.swift */; };
 		720DF963539AFC0FB1DB9546 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9947A0ADC3385A1F1317EB /* Components.swift */; };
 		755DC8506DC3C5E88C9F47BD /* PlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0056BDD0D6B1A0A3CB7E5239 /* PlanTests.swift */; };
+		7E14881422F56284192FE1F3 /* EmergencyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D09794BD64245A7C0D7F10 /* EmergencyCard.swift */; };
+		8488FF24EB3313796D9A1829 /* EmergencySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */; };
 		89B1BC6196B581658C1CC3F0 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B01E54B5BE66127232A220 /* SignInView.swift */; };
 		8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6F5800C063D8BE20AB2C4E /* MapTests.swift */; };
 		91B00235AE3EC34B29EC1B44 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 106B1C4E768A77DEA65D8986 /* GoogleSignIn */; };
 		91EE705CA3474BFF9F1AFD89 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */; };
 		934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */; };
 		935CB47592B1C362B3F95B11 /* RoutingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */; };
+		95D5CAFBC13DB52BA423ADE0 /* FallbackProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B514C832175BEB0434DF2179 /* FallbackProbeTests.swift */; };
 		9DFD62C5E1C155A9BAF8ED11 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F488FB83045DD50AA4F3DE /* Prompts.swift */; };
 		9E6A52699503F7E2F5C2B712 /* PlanComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C8D4F6051458138268DA4E /* PlanComponents.swift */; };
 		A11D6D3F100F44A910823B5F /* TripProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */; };
 		A15735C5738067AAC9D7576A /* TripLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5492B0747E7054BCBA3908 /* TripLiveActivity.swift */; };
 		A569B663C6231D599C587EDE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811A9F16C58C5478C0F5FE7D /* AIService.swift */; };
 		A5ECDE61815292E24596CFF5 /* RoutingLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */; };
+		A601F3A7AB2DBA660776B769 /* EmergencyTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */; };
 		AAA32FEF0B263583EE635B39 /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
 		ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */; };
 		B58D944999E7043D7BF0834F /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
@@ -63,6 +69,7 @@
 		C6E27337324372E40C98F972 /* MapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96719AC94683792A5682336E /* MapService.swift */; };
 		C7A674ABCF03F400FE506BD4 /* BlueOpenQuestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6F879C3B29864AFC832C8B /* BlueOpenQuestions.swift */; };
 		CE98C72D27FF3A0099C28A20 /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 613C423B335623E6820F3919 /* Journey.swift */; };
+		D7F91A2AFB71D01596FF420F /* EmergencyCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF50028C4639B474A47F989F /* EmergencyCardTests.swift */; };
 		E40AC5FD4F2EDABFA5F9672E /* JourneyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985D06F52FFB9D2128C266F2 /* JourneyIntent.swift */; };
 		E55B5D7A60BAEE6091257919 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 73FC01A36D34395EAEE3ED2C /* Assets.xcassets */; };
 		E7E2725A3DEB6CD48202E7D5 /* TravelCopilotWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6E02FC1AF031F047E940AC9C /* TravelCopilotWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -109,6 +116,7 @@
 		0056BDD0D6B1A0A3CB7E5239 /* PlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTests.swift; sourceTree = "<group>"; };
 		00CB8AF8CFFC97B61CB2B58E /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
 		01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyTests.swift; sourceTree = "<group>"; };
+		03D09794BD64245A7C0D7F10 /* EmergencyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyCard.swift; sourceTree = "<group>"; };
 		1459BFFDE05E2EE32F3BB1E5 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		19F488FB83045DD50AA4F3DE /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
 		1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRouter.swift; sourceTree = "<group>"; };
@@ -116,12 +124,15 @@
 		1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationTests.swift; sourceTree = "<group>"; };
 		2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicyTests.swift; sourceTree = "<group>"; };
 		24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = EmergencyNumbers.json; sourceTree = "<group>"; };
+		251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyCardView.swift; sourceTree = "<group>"; };
 		2694CBA496E8FCF219CB2722 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2E4084E2D51493C65A6D5C74 /* EmergencyHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyHealth.swift; sourceTree = "<group>"; };
 		2E77E1D276180137848AD1DF /* TripActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripActivity.swift; sourceTree = "<group>"; };
 		3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicy.swift; sourceTree = "<group>"; };
 		4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TravelCopilotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchUpTests.swift; sourceTree = "<group>"; };
 		4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyNumbers.swift; sourceTree = "<group>"; };
+		5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyTranslator.swift; sourceTree = "<group>"; };
 		5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		613C423B335623E6820F3919 /* Journey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Journey.swift; sourceTree = "<group>"; };
 		627FEBE76477A33961C8483D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -153,10 +164,12 @@
 		ADE8F03E31DE4DEB13130D49 /* TravelCopilot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TravelCopilot.entitlements; sourceTree = "<group>"; };
 		AE9947A0ADC3385A1F1317EB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		B4F1789438F4D0CEC32FB024 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B514C832175BEB0434DF2179 /* FallbackProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FallbackProbeTests.swift; sourceTree = "<group>"; };
 		B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueEvalTests.swift; sourceTree = "<group>"; };
 		BB23245D5263C04F74A21BDD /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 		BE0D68D3DBF952B3805C9D32 /* FloatingAsk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingAsk.swift; sourceTree = "<group>"; };
 		C33BC2EA6361EE2BB55A585F /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencySetupView.swift; sourceTree = "<group>"; };
 		CA5492B0747E7054BCBA3908 /* TripLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripLiveActivity.swift; sourceTree = "<group>"; };
 		D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpikeView.swift; sourceTree = "<group>"; };
 		E0355EE65E03984F07A7CC13 /* Connectivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connectivity.swift; sourceTree = "<group>"; };
@@ -167,6 +180,7 @@
 		FAE0344074B989FEB2BBE0ED /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		FC4BDD73B7D0C33DB3181838 /* PlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanService.swift; sourceTree = "<group>"; };
 		FD0A5B99648BA70E434E2030 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		FF50028C4639B474A47F989F /* EmergencyCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyCardTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -191,6 +205,8 @@
 			children = (
 				B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */,
 				4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */,
+				FF50028C4639B474A47F989F /* EmergencyCardTests.swift */,
+				B514C832175BEB0434DF2179 /* FallbackProbeTests.swift */,
 				01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */,
 				6E6F5800C063D8BE20AB2C4E /* MapTests.swift */,
 				1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */,
@@ -253,7 +269,10 @@
 		9F5AB0C079FE99326018C479 /* Emergency */ = {
 			isa = PBXGroup;
 			children = (
+				03D09794BD64245A7C0D7F10 /* EmergencyCard.swift */,
+				2E4084E2D51493C65A6D5C74 /* EmergencyHealth.swift */,
 				4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */,
+				5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */,
 			);
 			path = Emergency;
 			sourceTree = "<group>";
@@ -272,6 +291,8 @@
 			children = (
 				BB23245D5263C04F74A21BDD /* AskView.swift */,
 				885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */,
+				251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */,
+				C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */,
 				FAE0344074B989FEB2BBE0ED /* HelpView.swift */,
 				AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */,
 				00CB8AF8CFFC97B61CB2B58E /* MapScreen.swift */,
@@ -531,7 +552,12 @@
 				20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */,
 				720DF963539AFC0FB1DB9546 /* Components.swift in Sources */,
 				FEE517F5818C1C5A0A775A85 /* Connectivity.swift in Sources */,
+				7E14881422F56284192FE1F3 /* EmergencyCard.swift in Sources */,
+				46D39048C94145FCB45D601C /* EmergencyCardView.swift in Sources */,
+				412986252DAEE02E80FF847A /* EmergencyHealth.swift in Sources */,
 				934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */,
+				8488FF24EB3313796D9A1829 /* EmergencySetupView.swift in Sources */,
+				A601F3A7AB2DBA660776B769 /* EmergencyTranslator.swift in Sources */,
 				4ACB0C7D633ED0601046DD86 /* FloatingAsk.swift in Sources */,
 				1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */,
 				91EE705CA3474BFF9F1AFD89 /* HomeView.swift in Sources */,
@@ -584,6 +610,8 @@
 			files = (
 				C1B99D6524D42BA6942D7553 /* BlueEvalTests.swift in Sources */,
 				ED57198397D6C96D94C269AD /* CatchUpTests.swift in Sources */,
+				D7F91A2AFB71D01596FF420F /* EmergencyCardTests.swift in Sources */,
+				95D5CAFBC13DB52BA423ADE0 /* FallbackProbeTests.swift in Sources */,
 				4501A06F0BF84DE076647786 /* JourneyTests.swift in Sources */,
 				8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */,
 				ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */,

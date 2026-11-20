@@ -26,6 +26,8 @@ enum MTA {
   static let obstacle = fixed(0xFF6B00)
   static let notice = fixed(0xFFD51F)
   static let assistance = fixed(0x8A05B9)
+  /// Emergency card only: Star of Life blue (calmer than the app accent, the color people know from ambulances).
+  static let emergency = fixed(0x166BAD)
   /// Glyphs/labels on blue, green, red, purple fills.
   static let onColor = Color.white
   /// Glyphs/labels on yellow and orange fills.
