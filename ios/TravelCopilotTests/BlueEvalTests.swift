@@ -72,6 +72,7 @@ struct BlueEvalTests {
     .init(q: "Tell me a joke", expect: .noValue, group: "small talk"),
     .init(q: "What's the weather tomorrow?", expect: .noValue, group: "out of scope"),
     .init(q: "Can you recommend a ramen place?", expect: .noValue, group: "out of scope"),
+    .init(q: "Where can I eat nearby?", expect: .noValue, group: "out of scope"),
     // Asks for something that isn't saved: must not show a different value
     .init(q: "What's my seat number?", expect: .noValue, group: "not saved"),
     .init(q: "What gate does my flight leave from?", expect: .noValue, group: "not saved"),
@@ -139,8 +140,10 @@ struct BlueEvalTests {
       return (place.name == name ? .correct : .wrong, "place: \(place.name)")
     case let (.place(_, place, _), _):
       return (.wrong, "place: \(place.name)")
-    case (.notInVault, .noValue), (.other, .noValue):
+    case (.notInVault, .noValue), (.other, .noValue), (.cloudAnswer, .noValue), (.waiting, .noValue):
       return (.correct, "no value")
+    case (.cloudAnswer, _), (.waiting, _):
+      return (.missed, "open question")
     case (.notInVault, _):
       return (.missed, "not in bookings")
     case (.other, _):

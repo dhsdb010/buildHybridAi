@@ -8,6 +8,9 @@ enum TaskKind: String, Codable, Sendable {
   case survive, prepare, catchUp
   /// The traveler tapped "Improve now": catch-up even on mobile data.
   case catchUpNow
+  /// An open question to Blue ("Where can I eat nearby?"): the cloud only, since the small
+  /// on-device model shouldn't make up places or facts. Offline it waits for the connection.
+  case open
 }
 
 /// The network + device facts the policy needs, as a plain value so it can be unit-tested.
@@ -70,6 +73,10 @@ enum RoutingPolicy {
     case .catchUpNow:
       guard ctx.isOnline else { return .deferToWiFi(reason: "Offline → waiting for a connection") }
       return .run(.cloudOnly, reason: ctx.isMetered ? "You tapped Improve now (uses mobile data)" : "You tapped Improve now")
+
+    case .open:
+      guard ctx.isOnline else { return .deferToWiFi(reason: "Offline → answered when you're back online") }
+      return .run(.cloudOnly, reason: ctx.isMetered ? "Open question → cloud (uses a little mobile data)" : "Open question → cloud")
     }
   }
 }

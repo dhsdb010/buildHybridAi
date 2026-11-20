@@ -28,7 +28,7 @@ struct RoutingLogView: View {
 
   /// "Catch-up": the drafts made offline and what the cloud did with them later.
   private var shown: [RoutingEntry] {
-    filter == 0 ? entries : entries.filter { $0.task.hasPrefix("Catch-up") || $0.task == "translate" || $0.outcome == "deferred" }
+    filter == 0 ? entries : entries.filter { $0.task.hasPrefix("Catch-up") || $0.task == "translate" || $0.task == "Blue · open question" || $0.outcome == "deferred" }
   }
 
   var body: some View {
@@ -171,6 +171,7 @@ struct LogRow: View {
     "classifyAsk": "Ask · classify", "translate": "Say · translate", "translateReply": "Reply · translate",
     "parseBooking": "Prepare · parse booking", "destinationPack": "Prepare · destination pack",
     "Catch-up · translate": "Catch-up · improve draft", "Catch-up · start": "Catch-up · back online",
+    "Blue · open question": "Blue · open question (cloud)",
   ]
 
   /// iphone = on-device · icloud = cloud · icloud.dashed = waiting for Wi-Fi · exclamationmark = failed

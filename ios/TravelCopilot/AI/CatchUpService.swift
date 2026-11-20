@@ -9,7 +9,7 @@ enum CatchUpState: Equatable {
   /// Drafts are waiting: roaming / Low Data with data saver on. Home offers Improve now.
   case waiting(Int)
   case running(Int)
-  case done(improved: Int, kept: Int, unchanged: Int, failed: Int)
+  case done(improved: Int, kept: Int, unchanged: Int, failed: Int, answered: Int = 0)
 }
 
 @Generable
@@ -38,11 +38,18 @@ enum CatchUpService {
   }
 
   /// `manual`: the traveler tapped Improve now (allowed on mobile data).
+  /// Open questions asked offline, oldest first: Blue's "waiting" messages.
+  static func waitingQuestions(_ context: ModelContext) -> [ChatMessage] {
+    (try? context.fetch(FetchDescriptor<ChatMessage>(
+      predicate: #Predicate { $0.kind == "waiting" }, sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+  }
+
   @discardableResult
   static func run(ai: AIService, manual: Bool = false, pack: DestinationPack?) async -> CatchUpState {
     guard !running else { return ai.catchUp }
     let drafts = Array(pending(ai.context).prefix(batch))
-    guard !drafts.isEmpty else { ai.catchUp = .idle; return .idle }
+    let questions = Array(waitingQuestions(ai.context).prefix(batch))
+    guard !drafts.isEmpty || !questions.isEmpty else { ai.catchUp = .idle; return .idle }
     let kind: TaskKind = manual ? .catchUpNow : .catchUp
     switch RoutingPolicy.decide(kind, ai.routingContext) {
     case .run: break
@@ -53,9 +60,30 @@ enum CatchUpService {
 
     running = true
     defer { running = false }
-    ai.catchUp = .running(drafts.count)
+    ai.catchUp = .running(drafts.count + questions.count)
+    var waiting: [String] = []
+    if !drafts.isEmpty { waiting.append("\(drafts.count) draft\(drafts.count == 1 ? "" : "s") to check") }
+    if !questions.isEmpty { waiting.append("\(questions.count) question\(questions.count == 1 ? "" : "s") to answer") }
     ai.note("Catch-up · start", kind, reason: manual ? "You tapped Improve now" : "Back online",
-            outcome: "ok", note: "\(drafts.count) draft\(drafts.count == 1 ? "" : "s") to check")
+            outcome: "ok", note: waiting.joined(separator: " · "))
+
+    // Questions asked offline: answer them now, in the same chat bubble.
+    var answered = 0
+    let items = (try? ai.context.fetch(FetchDescriptor<VaultItem>())) ?? []
+    for m in questions {
+      do {
+        let (answer, meta) = try await ai.openAnswer(m.note, items: items, pack: pack)
+        m.kind = "cloud"
+        m.text = answer
+        m.caption = "Answered when back online · Cloud · \(SourceChip.format(meta.latencyMs))"
+        m.note = m.note.isEmpty ? "asked offline" : m.note
+        ai.lastEntry?.note = "Answered a question asked offline"
+        answered += 1
+      } catch {
+        // Stays "waiting"; the next pass retries it.
+      }
+      try? ai.context.save()
+    }
 
     var improved = 0, kept = 0, unchanged = 0, failed = 0
     let language = pack?.languageName ?? "the local language"
@@ -101,7 +129,7 @@ enum CatchUpService {
       }
       try? ai.context.save()
     }
-    ai.catchUp = .done(improved: improved, kept: kept, unchanged: unchanged, failed: failed)
+    ai.catchUp = .done(improved: improved, kept: kept, unchanged: unchanged, failed: failed, answered: answered)
     return ai.catchUp
   }
 }
@@ -159,9 +187,9 @@ struct CatchUpToast: View {
     Group {
       switch ai.catchUp {
       case let .running(n):
-        toast(MTA.accent, "Improving \(n) translation\(n == 1 ? "" : "s")…", "Back online · Gemini checks your offline drafts")
-      case let .done(improved, kept, unchanged, failed):
-        toast(kept > 0 || failed > 0 ? MTA.obstacle : MTA.onTrack, Self.summary(improved, kept, unchanged, failed), "See the Log for each one")
+        toast(MTA.accent, "Catching up on \(n) item\(n == 1 ? "" : "s")…", "Back online · Gemini checks your offline drafts and questions")
+      case let .done(improved, kept, unchanged, failed, answered):
+        toast(kept > 0 || failed > 0 ? MTA.obstacle : MTA.onTrack, Self.summary(improved, kept, unchanged, failed, answered), "See the Log for each one")
           .task {
             try? await Task.sleep(for: .seconds(4))
             if case .done = ai.catchUp { withAnimation(.snappy) { ai.catchUp = .idle } }
@@ -173,8 +201,9 @@ struct CatchUpToast: View {
     .animation(.snappy, value: ai.catchUp)
   }
 
-  static func summary(_ improved: Int, _ kept: Int, _ unchanged: Int, _ failed: Int) -> String {
+  static func summary(_ improved: Int, _ kept: Int, _ unchanged: Int, _ failed: Int, _ answered: Int = 0) -> String {
     var parts: [String] = []
+    if answered > 0 { parts.append("\(answered) question\(answered == 1 ? "" : "s") answered") }
     if improved > 0 { parts.append("\(improved) improved") }
     if unchanged > 0 { parts.append("\(unchanged) already good") }
     if kept > 0 { parts.append("\(kept) kept for you to check") }

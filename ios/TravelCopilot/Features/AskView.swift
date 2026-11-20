@@ -182,6 +182,13 @@ struct AskView: View {
             .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(MTA.urgent, lineWidth: 1.5) }
           }
           if !m.note.isEmpty { Label(m.note, systemImage: "info.circle").mta(.body2).foregroundStyle(MTA.text2) }
+        case "cloud":
+          Label("Cloud · Gemini", systemImage: "icloud").mta(.body2).fontWeight(.semibold).foregroundStyle(MTA.accent)
+          Text(m.text).mta(.body1)
+          if !m.note.isEmpty { Text("You asked this offline; answered when you were back online.").mta(.body2).foregroundStyle(MTA.text2) }
+        case "waiting":
+          Label("Waiting for a connection", systemImage: "icloud.slash").mta(.body2).fontWeight(.semibold).foregroundStyle(MTA.obstacle)
+          Text(m.text).mta(.body1)
         default:
           Text(m.text).mta(.body1)
         }
@@ -191,7 +198,7 @@ struct AskView: View {
       if isLast {
         switch m.kind {
         case "vault": SuggestionList(list: suggestions(followUp: true), send: send)
-        case "notInVault", "other": SuggestionList(list: suggestions(followUp: false), send: send)
+        case "notInVault", "other", "waiting": SuggestionList(list: suggestions(followUp: false), send: send)
         default: EmptyView()
         }
       }
@@ -237,6 +244,8 @@ struct AskView: View {
   }
 
   private func captionColor(_ m: ChatMessage) -> Color {
+    if m.kind == "cloud" { return MTA.accent }
+    if m.kind == "waiting" { return MTA.obstacle }
     guard m.kind == "translation", let e = entry(for: m.link) else { return MTA.onTrack }
     if e.checkReason != nil { return MTA.urgent }
     if e.isDraft { return MTA.obstacle }
@@ -285,8 +294,18 @@ struct AskView: View {
       return m
     case let .other(meta):
       let m = ChatMessage(role: "blue", kind: "other",
-                          text: "Hi! I only answer trip questions from your bookings, so I won't guess. Try one of these, or tap あ to say something in \(language).")
+                          text: "Hi! Ask me about your bookings, your saved places, or anything about the trip. Tap あ to say something in \(language).")
       m.caption = caption(meta, nil)
+      return m
+    case let .cloudAnswer(answer, meta):
+      let m = ChatMessage(role: "blue", kind: "cloud", text: answer)
+      m.caption = caption(meta, "General advice, not from your bookings")
+      return m
+    case .waiting:
+      // The question is kept in `note`; the catch-up pass answers it when the connection is back.
+      let m = ChatMessage(role: "blue", kind: "waiting",
+                          text: "You're offline, so I'll answer this when you're back online. Meanwhile I can still answer from your bookings, show distances, or translate (あ).")
+      m.caption = "Offline · waiting for a connection"
       return m
     }
   }
@@ -334,6 +353,7 @@ struct AskView: View {
           ? try await ai.say(q, items: items, pack: pack)
           : try await ai.ask(q, items: items, pack: pack, places: places, here: here)
         reply = blueMessage(r)
+        if reply.kind == "waiting" { reply.note = q }   // the question, for the catch-up pass
       } catch {
         reply = ChatMessage(role: "blue", kind: "error", text: error.localizedDescription)
       }

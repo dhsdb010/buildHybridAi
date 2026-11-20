@@ -160,3 +160,38 @@ extension AskResolverTests {
     #expect(item.kind == "hotel" && a.value == "2026-12-03 15:00")
   }
 }
+
+struct OpenQuestionTests {
+  @Test func openQuestionsGoToTheCloudOrWait() {
+    let online = RoutingContext(isOnline: true, isExpensive: false, isConstrained: false, deviceModelAvailable: true)
+    guard case .run(.cloudOnly, _) = RoutingPolicy.decide(.open, online) else { Issue.record("online"); return }
+    var roaming = online; roaming.isExpensive = true
+    guard case .run(.cloudOnly, _) = RoutingPolicy.decide(.open, roaming) else { Issue.record("roaming"); return }
+    var offline = online; offline.isOnline = false
+    guard case .deferToWiFi = RoutingPolicy.decide(.open, offline) else { Issue.record("offline"); return }
+  }
+
+  @Test func smallTalkStaysLocal() {
+    for q in ["Hello", "hi blue", "Thanks!", "thank you so much", "I love this app", "Good morning"] {
+      #expect(AskGuard.isSmallTalk(q), "\(q)")
+    }
+    for q in ["Where can I eat nearby?", "What's the weather tomorrow?", "Tell me a joke", "Is tap water safe to drink?",
+              "hi, where can I buy a SIM card?"] {
+      #expect(!AskGuard.isSmallTalk(q), "\(q)")
+    }
+  }
+
+  @Test @MainActor func openPromptHasNoCodes() {
+    let h = VaultItem(kind: "hotel", title: "Hotel Hoshizora Shinjuku")
+    h.confirmationCode = "HSZ-48213"; h.address = "4-99-1 Nishi-Shinjuku"; h.phone = "+81 3-0000-0000"
+    let p = Prompts.open("Where can I eat nearby?", items: [h], pack: nil)
+    #expect(p.contains("Hotel Hoshizora Shinjuku") && p.contains("Nishi-Shinjuku"))
+    #expect(!p.contains("HSZ-48213") && !p.contains("+81"))
+  }
+}
+
+extension AskResolverTests {
+  @Test func nearbyWithoutANamedPlaceIsAnOpenQuestion() {
+    guard case .other = run("Where can I eat nearby?", "place", place: 0) else { Issue.record("nearby"); return }
+  }
+}

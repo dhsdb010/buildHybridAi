@@ -311,13 +311,13 @@ enum AskResolver {
       return .vault(answer, item: hotel, meta: meta)
     }
     // 3. Distance questions: the place is found by name in the question, not by the model's number.
+    //    Only a place the question names counts; "Where can I eat nearby?" is an open question (cloud).
     if intent.intent == "place" || AskGuard.fitsPlace(question) {
-      if AskGuard.fitsPlace(question),
-         let place = AskGuard.namedPlace(question, in: places) ?? places[safe: intent.placeIndex],
+      if AskGuard.fitsPlace(question), let place = AskGuard.namedPlace(question, in: places),
          let answer = PlaceAnswerBuilder.answer(place, places: places, here: here) {
         return .place(answer, place: place, meta: meta)
       }
-      if intent.intent == "place" { return AskGuard.fitsPlace(question) ? .notInVault(meta: meta) : .other(meta: meta) }
+      if intent.intent == "place" { return .other(meta: meta) }
     }
     guard intent.intent == "vault", var field = VaultField(rawValue: intent.field) else { return .other(meta: meta) }
     // The field decides the kind of booking: check-in is always the hotel, departure a flight or train.
@@ -343,7 +343,12 @@ enum AskOutcome {
   /// The question was about bookings, but no stored field answers it.
   case notInVault(meta: AIMeta)
   case translation(TranslationEntry, meta: AIMeta)
+  /// Small talk: the help reply (no AI answer needed).
   case other(meta: AIMeta)
+  /// An open question ("Where can I eat nearby?") answered by Gemini in the cloud, labeled as such.
+  case cloudAnswer(String, meta: AIMeta)
+  /// An open question asked offline: Blue answers it when the connection is back (catch-up pass).
+  case waiting(meta: AIMeta)
 }
 
 extension AIService {
@@ -351,7 +356,17 @@ extension AIService {
   func ask(_ question: String, items: [VaultItem], pack: DestinationPack?,
            places: [Place] = [], here: (lat: Double, lon: Double)? = nil) async throws -> AskOutcome {
     let (intent, meta) = try await classify(question, items: items, places: places)
-    return AskResolver.resolve(intent, question: question, items: items, places: places, here: here, meta: meta)
+    let outcome = AskResolver.resolve(intent, question: question, items: items, places: places, here: here, meta: meta)
+    // Not about a booking or a saved place, and not small talk: an open question for Gemini.
+    guard case .other = outcome, !AskGuard.isSmallTalk(question) else { return outcome }
+    do {
+      let (answer, cloud) = try await openAnswer(question, items: items, pack: pack)
+      return .cloudAnswer(answer, meta: cloud)
+    } catch AIServiceError.deferred {
+      return .waiting(meta: meta)
+    } catch {
+      return outcome
+    }
   }
 
   /// The model step only: which booking / field / place the question is about. Used by `ask` and the Blue test set.
