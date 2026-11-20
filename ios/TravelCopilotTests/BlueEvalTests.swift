@@ -102,6 +102,21 @@ struct BlueEvalTests {
     .init(q: "チェックアウトは何時？", expect: .field("hotel", [.checkOut]), group: "held out"),
   ]
 
+  /// Second held-out set, written on 20 Nov before the "time questions" rule existed (the first set
+  /// found the misses that rule fixes, so it's no longer a clean test). Includes traps for that rule.
+  static let heldOut2: [Case] = [
+    .init(q: "What time is my room ready?", expect: .field("hotel", [.checkIn]), group: "held out 2"),
+    .init(q: "How early can I check in?", expect: .field("hotel", [.checkIn]), group: "held out 2"),
+    .init(q: "How late can I stay at the hotel on the last day?", expect: .field("hotel", [.checkOut]), group: "held out 2"),
+    .init(q: "When does my plane take off?", expect: .field("flight", [.departure]), group: "held out 2"),
+    .init(q: "When will we touch down in Japan?", expect: .field("flight", [.arrival]), group: "held out 2"),
+    .init(q: "hotel booking number", expect: .field("hotel", [.confirmationCode]), group: "held out 2"),
+    .init(q: "What time is breakfast?", expect: .noValue, group: "held out 2"),
+    .init(q: "What time does the gate close?", expect: .noValue, group: "held out 2"),
+    .init(q: "What time is it in Tokyo now?", expect: .noValue, group: "held out 2"),
+    .init(q: "How long is the flight?", expect: .noValue, group: "held out 2"),
+  ]
+
   /// The sample Tokyo trip (same as the app's "Use a sample trip").
   static func sample(_ ctx: ModelContext) -> ([VaultItem], [Place]) {
     let flight = VaultItem(kind: "flight", title: "Flight EA 061 San Francisco (SFO) → Tokyo Haneda (HND)")
@@ -165,7 +180,7 @@ struct BlueEvalTests {
     var byGroup: [String: (Int, Int)] = [:]
     var totalMs = 0, onDevice = 0
     print("BLUE_EVAL|#|score|group|question|expected|got|model pick|ms|ran on")
-    let all = Self.cases + Self.heldOut
+    let all = Self.cases + Self.heldOut + Self.heldOut2
     for (n, c) in all.enumerated() {
       var line: [String]
       do {

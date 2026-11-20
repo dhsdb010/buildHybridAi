@@ -50,27 +50,29 @@ enum VaultAnswerBuilder {
       return s.isEmpty ? nil : s
     }
     let t = item.title
+    // The value is shown big right above the sentence in Blue's bubble, so the sentence names
+    // what it is instead of repeating it ("Check-in at Hotel Hoshizora Shinjuku.").
     switch field {
     case .confirmationCode:
-      return item.confirmationCode.map { .init(text: "Your confirmation code for \(t) is \($0).", value: $0, showTaxiCard: false) }
+      return item.confirmationCode.map { .init(text: "Booking reference for \(t).", value: $0, showTaxiCard: false) }
     case .checkIn:
-      return join(item.startDate, item.checkInTime).map { .init(text: "Check-in at \(t): \($0).", value: $0, showTaxiCard: false) }
+      return join(item.startDate, item.checkInTime).map { .init(text: "Check-in at \(t).", value: $0, showTaxiCard: false) }
     case .checkOut:
-      return join(item.endDate, item.checkOutTime).map { .init(text: "Check-out at \(t): \($0).", value: $0, showTaxiCard: false) }
+      return join(item.endDate, item.checkOutTime).map { .init(text: "Check-out from \(t).", value: $0, showTaxiCard: false) }
     case .departure:
-      return join(item.startDate, item.departureTime).map { .init(text: "\(t) departs \($0)\(item.origin.map { " from \($0)" } ?? "").", value: $0, showTaxiCard: false) }
+      return join(item.startDate, item.departureTime).map { .init(text: "\(t) departs\(item.origin.map { " from \($0)" } ?? "").", value: $0, showTaxiCard: false) }
     case .arrival:
-      return join(item.endDate ?? item.startDate, item.arrivalTime).map { .init(text: "\(t) arrives \($0)\(item.destination.map { " at \($0)" } ?? "").", value: $0, showTaxiCard: false) }
+      return join(item.endDate ?? item.startDate, item.arrivalTime).map { .init(text: "\(t) arrives\(item.destination.map { " at \($0)" } ?? "").", value: $0, showTaxiCard: false) }
     case .route:
       guard let o = item.origin, let d = item.destination else { return nil }
-      return .init(text: "\(t) flies \(o) → \(d).", value: "\(o) → \(d)", showTaxiCard: false)
+      return .init(text: "Route of \(t).", value: "\(o) → \(d)", showTaxiCard: false)
     case .address:
-      return item.address.map { .init(text: "\(t) is at \($0).", value: $0, showTaxiCard: item.addressLocal != nil) }
+      return item.address.map { .init(text: "Address of \(t).", value: $0, showTaxiCard: item.addressLocal != nil) }
     case .taxi:
       guard let local = item.addressLocal ?? item.address else { return nil }
       return .init(text: "Show this to the driver: \(t).", value: local, showTaxiCard: true)
     case .phone:
-      return item.phone.map { .init(text: "\(t) phone: \($0).", value: $0, showTaxiCard: false) }
+      return item.phone.map { .init(text: "Phone number of \(t).", value: $0, showTaxiCard: false) }
     case .none:
       return nil
     }
@@ -87,8 +89,8 @@ enum AskGuard {
     .confirmationCode: ["code", "confirmation", "booking", "reservation", "ref", "pnr", "reference", "予約番号", "確認番号"],
     .checkIn: ["check-in", "check in", "checkin", "arrive at the hotel", "get in", "room ready", "チェックイン"],
     .checkOut: ["check-out", "check out", "checkout", "leave the hotel", "チェックアウト"],
-    .departure: ["depart", "leave", "leaving", "board", "when", "time", "flight", "train", "出発"],
-    .arrival: ["arrive", "arrival", "land", "get there", "when", "time", "到着"],
+    .departure: ["depart", "leave", "leaving", "board", "take off", "takeoff", "出発"],
+    .arrival: ["arrive", "arrival", "land", "touch down", "get there", "到着"],
     .route: ["route", "from", "where", "fly", "going", "go to", "airport"],
     .address: ["address", "addr", "where", "location", "located", "staying", "住所"],
     .taxi: ["taxi", "driver", "cab", "uber", "show", "タクシー"],
@@ -103,7 +105,22 @@ enum AskGuard {
 
   static func fits(_ question: String, field: VaultField) -> Bool {
     let q = question.lowercased()
-    return fieldWords[field, default: []].contains { q.contains($0) }
+    return fieldWords[field, default: []].contains { q.contains($0) } || asksTime(q, field: field)
+  }
+
+  /// "What time / when / how late …" counts for a booking time only when the question also names
+  /// what it's about ("…does the hotel let me in", "…is my flight"). "What time is it in Tokyo now?" doesn't.
+  static let timeWords = ["what time", "when", "how early", "how late", "latest", "earliest", "what day", "何時"]
+  static let timeSubjects: [VaultField: [String]] = [
+    .checkIn: ["hotel", "room", "check", "ホテル", "部屋"],
+    .checkOut: ["hotel", "room", "check", "stay", "last day", "ホテル", "部屋"],
+    .departure: ["flight", "plane", "train", "fly", "flying", "depart", "leave", "board", "便"],
+    .arrival: ["flight", "plane", "train", "land", "arrive", "touch down", "get to", "reach", "便"],
+  ]
+
+  static func asksTime(_ q: String, field: VaultField) -> Bool {
+    guard let subjects = timeSubjects[field] else { return false }
+    return timeWords.contains { q.contains($0) } && subjects.contains { q.contains($0) }
   }
 
   static func fitsPlace(_ question: String) -> Bool {

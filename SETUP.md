@@ -69,7 +69,7 @@ Debug launch arguments (DEBUG builds only):
 
 ## Blue's question test set
 
-56 real questions about the sample Tokyo trip, run against the real on-device model and scored by what Blue would actually show: **correct**, **missed** (said "not in your bookings" when it was saved) or **wrong** (showed a value that doesn't answer the question). It needs Apple Intelligence, takes about a minute, and only runs when asked:
+67 real questions about the sample Tokyo trip, run against the real on-device model and scored by what Blue would actually show: **correct**, **missed** (said "not in your bookings" when it was saved) or **wrong** (showed a value that doesn't answer the question). It needs Apple Intelligence, takes about a minute, and only runs when asked:
 
 ```bash
 cd ios && TEST_RUNNER_BLUE_EVAL=1 xcodebuild test -project TravelCopilot.xcodeproj -scheme TravelCopilot -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TravelCopilotTests/BlueEvalTests 2>&1 | grep BLUE_EVAL
@@ -78,3 +78,4 @@ cd ios && TEST_RUNNER_BLUE_EVAL=1 xcodebuild test -project TravelCopilot.xcodepr
 - The first 40 questions were used to tune Blue's rules (`AskResolver`, `AskGuard`); the last 16 ("held out") were written afterwards and are never tuned on, so their score is the honest one.
 - The test fails if Blue shows a single wrong value; accuracy is reported, not enforced.
 - Baseline on 19 Nov 2026 (iPhone 17 simulator): before the fixes 28/40 with 6 wrong; after, 40/40 tuned and 14/16 held out, 0 wrong, all on-device, about 1.1 s per question.
+- 20 Nov 2026: a second held-out set (10 questions, including traps) was written before changing rules. It found one wrong value ("What time is it in Tokyo now?" got the departure time) and three misses; a general rule fixed them (a time question counts for a booking time only when it names what it's about). Result: 67/67, 0 wrong. Both held-out sets have now informed the rules, so write a fresh set before the next change.

@@ -16,7 +16,7 @@ struct VaultAnswerTests {
   @Test func checkInQuotesStoredValues() throws {
     let a = try #require(VaultAnswerBuilder.answer(hotel(), .checkIn))
     #expect(a.value == "2026-12-01 15:00")
-    #expect(a.text.contains("15:00"))
+    #expect(a.text == "Check-in at Hotel Hoshizora Shinjuku.")   // the value is shown big above; not repeated
     #expect(!a.showTaxiCard)
   }
 
@@ -193,5 +193,15 @@ struct OpenQuestionTests {
 extension AskResolverTests {
   @Test func nearbyWithoutANamedPlaceIsAnOpenQuestion() {
     guard case .other = run("Where can I eat nearby?", "place", place: 0) else { Issue.record("nearby"); return }
+  }
+}
+
+struct TimeQuestionTests {
+  @Test func timeQuestionsNeedASubject() {
+    #expect(AskGuard.fits("what time does the hotel let me in", field: .checkIn))
+    #expect(AskGuard.fits("How late can I stay at the hotel on the last day?", field: .checkOut))
+    #expect(AskGuard.fits("What time is my flight?", field: .departure))
+    #expect(!AskGuard.fits("What time is it in Tokyo now?", field: .departure))
+    #expect(!AskGuard.fits("When is lunch?", field: .arrival))
   }
 }
