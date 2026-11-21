@@ -74,12 +74,15 @@ struct TripView: View {
       MTALabel("\(pack.languageName) phrases").padding(.top, 8)
       VStack(spacing: 0) {
         ForEach(pack.phrases, id: \.self) { p in
-          VStack(alignment: .leading, spacing: 2) {
-            Text(p.local).mta(.subheadNormal).foregroundStyle(MTA.text)
-            if !p.romanization.isEmpty { Text(p.romanization).mta(.body2).foregroundStyle(MTA.text2) }
-            Text(p.english).mta(.body2).foregroundStyle(MTA.text)
+          HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(p.local).mta(.subheadNormal).foregroundStyle(MTA.text)
+              if !p.romanization.isEmpty { Text(p.romanization).mta(.body2).foregroundStyle(MTA.text2) }
+              Text(p.english).mta(.body2).foregroundStyle(MTA.text)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            SpeakButton(text: p.local, languageCode: pack.languageCode, id: "trip-\(p.local)", iconOnly: true)
           }
-          .frame(maxWidth: .infinity, alignment: .leading)
           .padding(.vertical, 10)
           .overlay(alignment: .bottom) { Rectangle().fill(MTA.subtle).frame(height: 1) }
         }

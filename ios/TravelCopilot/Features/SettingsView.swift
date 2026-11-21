@@ -4,10 +4,12 @@ import SwiftData
 /// Settings (pushed from Home's gear — not a tab).
 struct SettingsView: View {
   @Environment(AIService.self) private var ai
+  @Environment(AuthService.self) private var auth
   @Query private var packs: [DestinationPack]
+  @State private var confirmDelete = false
+  @State private var deleted = false
   @AppStorage("appearance") private var appearance = 0
   @AppStorage("waitForWiFi") private var waitForWiFi = true
-  @AppStorage("syncTravelLog") private var syncTravelLog = false
 
   var body: some View {
     @Bindable var ai = ai
@@ -30,7 +32,21 @@ struct SettingsView: View {
 
         section("Privacy")
         MTAValueRow(title: "Vault & plans", value: "This iPhone only")
-        MTAToggleRow(title: "Sync travel log", isOn: $syncTravelLog)
+        MTAValueRow(title: "Routing Log", value: "This iPhone only")
+
+        section("Account")
+        if let account = auth.account {
+          MTAValueRow(title: "Signed in with \(account.provider)", value: account.email.isEmpty ? account.name : account.email)
+          if let e = auth.error { Text(e).mta(.body2).foregroundStyle(MTA.urgent).fixedSize(horizontal: false, vertical: true) }
+          Button("Sign out") { auth.signOut() }
+            .buttonStyle(.mtaSecondary).padding(.top, 6)
+          Button("Delete account") { confirmDelete = true }
+            .mta(.button2).foregroundStyle(MTA.urgent).frame(maxWidth: .infinity, minHeight: 44)
+            .disabled(auth.busy)
+        } else {
+          MTAValueRow(title: "Not signed in", value: "Needed only to plan")
+          if deleted { Text("Your account is deleted.").mta(.body2).foregroundStyle(MTA.text2) }
+        }
 
         #if DEBUG
           section("Developer")
@@ -44,6 +60,12 @@ struct SettingsView: View {
     }
     .scrollIndicators(.hidden)
     .background(MTA.surface)
+    .overlay { if auth.busy { ProgressView() } }
+    .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
+      Button("Delete account", role: .destructive) { Task { deleted = await auth.deleteAccount() } }
+    } message: {
+      Text("You'll sign in once more to confirm. Your trip on this iPhone stays; only planning needs an account.")
+    }
     .navigationTitle("Settings")
     .navigationBarTitleDisplayMode(.inline)
   }

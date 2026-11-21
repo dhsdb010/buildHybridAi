@@ -28,6 +28,13 @@ struct EmergencyCardTests {
     #expect(EmergencyText.needsTranslation(c, language: "ja") == ["Ibuprofen 200 mg, twice a day"])
   }
 
+  @Test func healthMedicinesNeverGoToTranslation() {
+    let c = sample()
+    c.medicines += [EmergencyMedicine(name: "Metformin", schedule: "", fromHealth: true)]
+    #expect(!EmergencyText.needsTranslation(c, language: "ja").contains("Metformin"))
+    #expect(EmergencyText.needsTranslation(c, language: "ja").contains("Ibuprofen 200 mg, twice a day"))
+  }
+
   @Test func bloodTypeInJapanese() {
     #expect(EmergencyText.bloodType("A+", language: "ja") == "A型 Rh+")
     #expect(EmergencyText.bloodType("O−", language: "ja") == "O型 Rh−")

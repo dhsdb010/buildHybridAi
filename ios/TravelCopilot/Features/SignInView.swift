@@ -17,11 +17,11 @@ struct SignInView: View {
       BrandBadge(color: MTA.accent, size: 120).padding(.top, 8)
       Text(required ? "Sign in to plan with AI" : "Sign in to plan your trip")
         .mta(.displayLarge).foregroundStyle(MTA.text).fixedSize(horizontal: false, vertical: true)
-      Text("Your account unlocks planning with Gemini and keeps a backup of your trip. What you need on the road still works offline.")
+      Text("Your account unlocks planning with Gemini. Your trip stays on this iPhone, and what you need on the road works offline.")
         .mta(.body1).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
       VStack(alignment: .leading, spacing: 12) {
         perk("icloud", "Plan with Gemini and Google Maps")
-        perk("square.and.arrow.down", "Your trip backed up to your account")
+        perk("lock", "Delete your account any time in Settings")
         perk("iphone", "Ask, translate and the taxi card work offline, no account needed")
       }
       .padding(.top, 4)

@@ -43,7 +43,7 @@ struct RoutingLogView: View {
           GridRow4 {
             NumberBox(value: "\(t.device)", caption: "Device", style: .status(.onTrack))
             NumberBox(value: "\(t.cloud)", caption: "Cloud", style: .filled)
-            NumberBox(value: "\(t.improved)", caption: "Improved", style: .status(.accent))
+            NumberBox(value: "\(t.improved)", caption: "Better", style: .status(.accent))
             NumberBox(value: "\(t.failed)", caption: "Failed")
           }
           MTASegmented(options: ["All", "Catch-up"], selection: $filter)

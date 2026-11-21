@@ -38,11 +38,14 @@ struct HelpView: View {
             MTALabel("Say it")
             VStack(spacing: 0) {
               ForEach(phrases, id: \.self) { p in
-                VStack(alignment: .leading, spacing: 2) {
-                  Text(p.local).mta(.subheadMedium).foregroundStyle(MTA.text)
-                  Text(p.english).mta(.body2).foregroundStyle(MTA.text2)
+                HStack(spacing: 12) {
+                  VStack(alignment: .leading, spacing: 2) {
+                    Text(p.local).mta(.subheadMedium).foregroundStyle(MTA.text)
+                    Text(p.english).mta(.body2).foregroundStyle(MTA.text2)
+                  }
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  SpeakButton(text: p.local, languageCode: pack?.languageCode, id: "help-\(p.local)", iconOnly: true)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 10)
                 .overlay(alignment: .bottom) { Rectangle().fill(MTA.subtle).frame(height: 1) }
               }
@@ -54,6 +57,7 @@ struct HelpView: View {
       }
       .scrollIndicators(.hidden)
       .background(MTA.surface)
+      .onDisappear { Speaker.shared.stop() }
       .navigationTitle("Help")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close", systemImage: "xmark") { dismiss() } } }
@@ -61,15 +65,15 @@ struct HelpView: View {
     }
   }
 
-  /// "My emergency card": shows the card, or starts the 5-question setup.
+  /// "Medical info" (the emergency card): shows the card, or starts the 5-question setup.
   private var emergencyTile: some View {
     let card = cards.first
     return Button { emergency = card == nil ? .setup : .card } label: {
       HStack(spacing: 14) {
         Image("StarOfLife").resizable().scaledToFit().frame(width: 54, height: 52).accessibilityHidden(true)
         VStack(alignment: .leading, spacing: 4) {
-          MTALabel("Show a doctor or pharmacist")
-          Text("My emergency card").mta(.subheadMedium).foregroundStyle(MTA.text)
+          MTALabel("Show this card")
+          Text("Medical info").mta(.subheadMedium).foregroundStyle(MTA.text).lineLimit(1)
           Text(card == nil ? "Not set up yet · 5 quick questions" : "Allergies, medicines, blood type in \(pack?.languageName ?? "the local language")")
             .mta(.body2).foregroundStyle(MTA.text2)
           if card == nil {

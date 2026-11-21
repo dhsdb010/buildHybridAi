@@ -1,13 +1,13 @@
 import AuthenticationServices
 import CryptoKit
-import FirebaseAuth
+@preconcurrency import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
 import Observation
 import UIKit
 
 /// Sign in with Google or Apple through Firebase Auth. The account gives the user an identity for
-/// cloud planning (per-user limits) and a backup of the trip. Offline features never need it.
+/// cloud planning (per-user limits). Nothing from the trip is uploaded. Offline features never need it.
 /// Note: Gemini runs on the app's Firebase project, not on the user's own Google AI subscription.
 @MainActor
 @Observable
@@ -88,6 +88,51 @@ final class AuthService {
     try? Auth.auth().signOut()
   }
 
+  // MARK: Delete account
+
+  /// Deletes the Firebase account. Firebase needs a fresh sign-in first, so this shows the
+  /// Google or Apple sheet again. For Apple, the app's Sign in with Apple token is also revoked,
+  /// as Apple requires. The trip on this iPhone is not affected (it was never in the account).
+  /// Returns true when the account is gone.
+  @discardableResult
+  func deleteAccount() async -> Bool {
+    error = nil
+    guard let user = Auth.auth().currentUser else { return true }
+    busy = true; defer { busy = false }
+    do {
+      if user.providerData.contains(where: { $0.providerID == "apple.com" }) {
+        let apple = try await AppleReauth.run()
+        guard let codeData = apple.authorizationCode, let code = String(data: codeData, encoding: .utf8),
+              let tokenData = apple.identityToken, let token = String(data: tokenData, encoding: .utf8)
+        else { error = "Apple didn't return a sign-in token."; return false }
+        try await user.reauthenticate(with: OAuthProvider.appleCredential(
+          withIDToken: token, rawNonce: AppleReauth.lastNonce, fullName: nil))
+        try await Auth.auth().revokeToken(withAuthorizationCode: code)
+      } else {
+        guard let presenter = Self.topViewController() else { return false }
+        if let clientID = FirebaseApp.app()?.options.clientID {
+          GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+        }
+        let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter)
+        guard let idToken = result.user.idToken?.tokenString else { error = "Google didn't return a sign-in token."; return false }
+        try await user.reauthenticate(with: GoogleAuthProvider.credential(
+          withIDToken: idToken, accessToken: result.user.accessToken.tokenString))
+        try? await GIDSignIn.sharedInstance.disconnect()
+      }
+      try await user.delete()
+      GIDSignIn.sharedInstance.signOut()
+      try? Auth.auth().signOut()
+      return true
+    } catch let e as GIDSignInError where e.code == .canceled {
+      return false
+    } catch let e as ASAuthorizationError where e.code == .canceled {
+      return false
+    } catch {
+      self.error = error.localizedDescription
+      return false
+    }
+  }
+
   // MARK: Helpers
 
   private static func topViewController() -> UIViewController? {
@@ -97,14 +142,65 @@ final class AuthService {
     return top
   }
 
-  private static func randomNonce(length: Int = 32) -> String {
+  static func randomNonce(length: Int = 32) -> String {
     let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
     var bytes = [UInt8](repeating: 0, count: length)
     _ = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
     return String(bytes.map { charset[Int($0) % charset.count] })
   }
 
-  private static func sha256(_ input: String) -> String {
+  static func sha256(_ input: String) -> String {
     SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
+  }
+}
+
+/// Runs Sign in with Apple once more, outside SwiftUI, to get a fresh credential and
+/// authorization code for deleting the account.
+@MainActor
+private final class AppleReauth: NSObject, ASAuthorizationControllerDelegate,
+  ASAuthorizationControllerPresentationContextProviding {
+  private var continuation: CheckedContinuation<ASAuthorizationAppleIDCredential, any Error>?
+  private static var current: AppleReauth?
+  static var lastNonce = ""
+
+  static func run() async throws -> ASAuthorizationAppleIDCredential {
+    let nonce = AuthService.randomNonce()
+    lastNonce = nonce
+    let request = ASAuthorizationAppleIDProvider().createRequest()
+    request.nonce = AuthService.sha256(nonce)
+    let reauth = AppleReauth()
+    current = reauth
+    defer { current = nil }
+    return try await withCheckedThrowingContinuation { c in
+      reauth.continuation = c
+      let controller = ASAuthorizationController(authorizationRequests: [request])
+      controller.delegate = reauth
+      controller.presentationContextProvider = reauth
+      controller.performRequests()
+    }
+  }
+
+  nonisolated func authorizationController(controller: ASAuthorizationController,
+                                           didCompleteWithAuthorization authorization: ASAuthorization) {
+    let credential = authorization.credential as? ASAuthorizationAppleIDCredential
+    MainActor.assumeIsolated {
+      if let credential { continuation?.resume(returning: credential) }
+      else { continuation?.resume(throwing: ASAuthorizationError(.failed)) }
+      continuation = nil
+    }
+  }
+
+  nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: any Error) {
+    MainActor.assumeIsolated {
+      continuation?.resume(throwing: error)
+      continuation = nil
+    }
+  }
+
+  nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+    MainActor.assumeIsolated {
+      let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+      return scene?.keyWindow ?? ASPresentationAnchor()
+    }
   }
 }

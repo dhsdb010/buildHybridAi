@@ -49,10 +49,23 @@ struct SpeakButton: View {
   let id: String
   var label: String = "Play"
   var slow = false
+  /// Icon only, for list rows (phrases): the phone says the phrase for you.
+  var iconOnly = false
   @State private var speaker = Speaker.shared
 
   var body: some View {
     let playing = speaker.speakingID == id
+    if iconOnly {
+      Button { speaker.toggle(text, languageCode: languageCode, id: id, slow: slow) } label: {
+        Image(systemName: playing ? "stop.fill" : "speaker.wave.2.fill")
+          .font(.system(size: 17, weight: .semibold))
+          .frame(width: 44, height: 44)
+          .background(MTA.accent, in: .circle)
+          .foregroundStyle(MTA.onColor)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel(playing ? "Stop" : "Say it aloud")
+    } else {
     Button { speaker.toggle(text, languageCode: languageCode, id: id, slow: slow) } label: {
       HStack(spacing: 8) {
         Image(systemName: playing ? "stop.fill" : "speaker.wave.2.fill")
@@ -65,6 +78,7 @@ struct SpeakButton: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel(playing ? "Stop" : label)
+    }
   }
 }
 

@@ -94,9 +94,11 @@ enum EmergencyText {
   }
 
   /// Items whose translation still has to come from AI (the traveler's own words).
+  /// Medicines imported from Apple Health are left out: Health data never leaves the iPhone,
+  /// so those stay in English on the card (drug names are widely read in English).
   static func needsTranslation(_ card: EmergencyCard, language: String) -> [String] {
     let code = String(language.prefix(2))
-    let items = card.allergies + card.conditions + card.medicines.map(\.text)
+    let items = card.allergies + card.conditions + card.medicines.filter { !$0.fromHealth }.map(\.text)
     return items.filter { fixed[code]?[$0] == nil && (card.translationLanguage != code || card.translations[$0] == nil) }
   }
 }
