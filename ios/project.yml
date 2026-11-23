@@ -31,6 +31,10 @@ targets:
     postBuildScripts:
       - name: Copy GoogleService-Info.plist if present
         basedOnDependencyAnalysis: false
+        # Declaring the generated Info.plist as input makes Xcode run this after it's written;
+        # otherwise the Google URL scheme added below gets overwritten and Google sign-in can't return.
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
         script: |
           SRC="${SRCROOT}/TravelCopilot/Resources/GoogleService-Info.plist"
           if [ -f "$SRC" ]; then
@@ -71,6 +75,9 @@ targets:
         NSSupportsLiveActivities: true
         NSHealthShareUsageDescription: Fills your emergency card with your blood type and the medications you choose to share. Read only; stays on this iPhone.
         NSHealthUpdateUsageDescription: Travel Copilot doesn't write to Health.
+        NSMicrophoneUsageDescription: Lets you speak to Blue instead of typing, when you tap the mic or Talk.
+        NSSpeechRecognitionUsageDescription: Turns what you say to Blue into text, on this iPhone when it can.
+        NSCameraUsageDescription: Lets you take a photo to show Blue while you plan.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.buildhybridai.travelcopilot

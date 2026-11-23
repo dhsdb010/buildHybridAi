@@ -104,7 +104,7 @@ Measured in the iPhone 17 simulator on a Mac (not yet on a real iPhone):
 - **Blue question test set:** 67 real questions against the on-device model, scored by what Blue would show. **67/67 correct, 0 wrong values**, about 1.1 s per question, all on the device. Before the code rules it was 28/40 with 6 wrong values. Run it yourself: see [SETUP.md](SETUP.md#blues-question-test-set).
 - **Catch-up:** an offline draft improved in the cloud in 1.3–1.7 s; the safety check passed numbers and medicine names.
 - **Cloud fallback:** a translation too long for the on-device model failed on the device and Firebase answered with Gemini (hybrid route, ran in the cloud). On a phone without Apple Intelligence, every Survive request falls back this way.
-- **Unit tests:** 97 passing (`xcodebuild test`), covering routing, Blue's rules, the safety check, catch-up, reminders, the journey, the Log, the emergency card and its quick access, retrying busy Gemini calls, skipping bookings already saved, and keeping Health data off the cloud.
+- **Unit tests:** 107 passing (`xcodebuild test`), covering routing, Blue's rules, the safety check, catch-up, reminders, the journey, the Log, the emergency card and its quick access, retrying busy Gemini calls, skipping bookings already saved, keeping Health data off the cloud, the planner (dates, budget, photo taste, day stops) and reading files on the iPhone.
 
 ---
 

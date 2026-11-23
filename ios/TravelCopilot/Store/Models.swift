@@ -119,6 +119,12 @@ final class TripPlan {
   var source: String = "user"
   var remind: Bool = true
   var createdAt: Date = Date()
+  /// Planned stops: kind (Market · Food · See…), rough cost per person, the traveler's note, and where.
+  var kind: String?
+  var cost: Int?
+  var note: String = ""
+  var latitude: Double?
+  var longitude: Double?
 
   init(start: Date, title: String, detail: String = "", source: String = "user") {
     self.start = start

@@ -26,6 +26,13 @@ struct MapScreen: View {
   /// Dragged all the way down: only the handle stays, so the map gets the screen.
   @State private var collapsed = false
   @State private var sheetHeight: CGFloat = 0
+  /// nil = Places; otherwise the index into `planDays`.
+  @State private var dayIndex: Int?
+  /// The stop whose detail is open (only that place is shown on the map).
+  @State private var stop: TripPlan?
+  @State private var editing: TripPlan?
+  @State private var scene: MKLookAroundScene?
+  @Environment(\.openURL) private var openURL
 
   private var hotel: Place? { places.first { $0.kind == "hotel" } }
   private var offline: Bool { mode == 1 || !net.isOnline }
@@ -44,11 +51,38 @@ struct MapScreen: View {
       }
     }
     .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: destinationPacks.first) }
+    .sheet(item: $editing) { p in
+      StopDetailView(stop: Self.dayStop(p),
+                     onSave: { st in p.start = st.time; p.title = st.name; p.cost = st.cost; p.note = st.note; try? context.save() },
+                     onRemove: { if stop === p { stop = nil }; context.delete(p); try? context.save() })
+    }
+    .onChange(of: dayIndex) { stop = nil; fitDay() }
+    .task(id: stop?.persistentModelID) {
+      scene = nil
+      guard let s = stop, let lat = s.latitude, let lon = s.longitude, net.isOnline else { return }
+      scene = try? await MKLookAroundSceneRequest(coordinate: .init(latitude: lat, longitude: lon)).scene
+    }
     .onAppear {
       location.start()
       if !net.isOnline { mode = 1 }
       #if DEBUG
         if UserDefaults.standard.string(forKey: "mapMode") == "offline" { mode = 1 }
+        // `-seedDayPlan`: a sample day of stops in Shinjuku on Dec 4, for simulator checks.
+        if ProcessInfo.processInfo.arguments.contains("-seedDayPlan"), !plans.contains(where: { $0.latitude != nil }) {
+          let day = TripTimeline.date("2026-12-04", "00:00") ?? .now
+          let stops: [(String, String, String, Int, Double, Double, String)] = [
+            ("10:00", "Walk", "Shinjuku Gyoen", 4, 35.6852, 139.7101, "Wide gardens for a slow morning walk."),
+            ("12:30", "Food", "Omoide Yokocho", 15, 35.6930, 139.6995, "Tiny yakitori counters in old alleys."),
+            ("14:30", "Shop", "Isetan Shinjuku", 30, 35.6917, 139.7047, "Food hall and Japanese design floors."),
+            ("17:00", "See", "Tokyo Metropolitan Government Building", 0, 35.6896, 139.6921, "Free city view at sunset."),
+          ]
+          for st in stops {
+            let p = TripPlan(start: DayStops.at(st.0, on: day), title: st.2, detail: st.6, source: "suggested")
+            p.kind = st.1; p.cost = st.3; p.latitude = st.4; p.longitude = st.5
+            context.insert(p)
+          }
+          try? context.save()
+        }
       #endif
       expanded = mode == 1
       if let hotel { focus(hotel, meters: 3000, animated: false) }
@@ -63,12 +97,39 @@ struct MapScreen: View {
   private var mapLayer: some View {
     if !offline {
       Map(position: $camera, selection: $selected) {
-        ForEach(places) { p in
-          Annotation(p.name, coordinate: .init(latitude: p.latitude, longitude: p.longitude)) {
-            MapPin(place: p, selected: selected == p.name)
+        if let s = stop, let c = Self.coordinate(s) {
+          // Stop detail: only this place.
+          Annotation(s.title, coordinate: c) {
+            Text("\((dayStops.firstIndex(of: s) ?? 0) + 1)").mta(.button2).foregroundStyle(MTA.onColor)
+              .frame(width: 40, height: 40).background(MTA.accent, in: .circle)
+              .overlay { Circle().strokeBorder(.white, lineWidth: 3) }
           }
-          .annotationTitles(.hidden)
-          .tag(p.name)
+        } else if dayIndex != nil {
+          // Day plan: numbered pins and a dashed route.
+          let coords = dayStops.compactMap(Self.coordinate)
+          if coords.count > 1 {
+            MapPolyline(coordinates: coords).stroke(MTA.text2, style: StrokeStyle(lineWidth: 3, dash: [7, 6]))
+          }
+          ForEach(Array(dayStops.enumerated()), id: \.element.persistentModelID) { i, p in
+            if let c = Self.coordinate(p) {
+              Annotation(p.title, coordinate: c) {
+                Button { open(p) } label: {
+                  Text("\(i + 1)").mta(.label).foregroundStyle(MTA.onColor).frame(width: 30, height: 30)
+                    .background(MTA.accent, in: .circle).overlay { Circle().strokeBorder(.white, lineWidth: 2.5) }
+                }
+                .accessibilityLabel("Stop \(i + 1), \(p.title)")
+              }
+              .annotationTitles(.hidden)
+            }
+          }
+        } else {
+          ForEach(places) { p in
+            Annotation(p.name, coordinate: .init(latitude: p.latitude, longitude: p.longitude)) {
+              MapPin(place: p, selected: selected == p.name)
+            }
+            .annotationTitles(.hidden)
+            .tag(p.name)
+          }
         }
         UserAnnotation()
       }
@@ -123,6 +184,7 @@ struct MapScreen: View {
         .accessibilityAddTraits(.isButton)
 
       if !collapsed {
+      if dayIndex == nil && stop == nil {
       HStack(alignment: .center) {
         VStack(alignment: .leading, spacing: 2) {
           MTALabel(offline ? "Saved map · works with no signal" : "\(cityName)\(places.count) places")
@@ -131,7 +193,23 @@ struct MapScreen: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         statusChip
       }
+      }
 
+      if !planDays.isEmpty && stop == nil {
+        ScrollView(.horizontal) {
+          HStack(spacing: 8) {
+            QuickChip(text: "Places", selected: dayIndex == nil) { dayIndex = nil }
+            ForEach(planDays.indices, id: \.self) { i in QuickChip(text: "Day \(dayNumber(i))", selected: dayIndex == i) { dayIndex = i } }
+          }
+        }
+        .scrollIndicators(.hidden)
+      }
+
+      if let s = stop {
+        stopDetail(s)
+      } else if dayIndex != nil {
+        dayList
+      } else {
       if offline && packs.count > 1 {
         FlowLayout {
           ForEach(packs.indices, id: \.self) { i in QuickChip(text: packs[i].name, selected: i == area) { area = i } }
@@ -149,6 +227,7 @@ struct MapScreen: View {
           VStack(spacing: 0) { ForEach(shown) { placeRow($0) } }
         }
         if expanded { downloadActions }
+      }
       }
       if let error { Text(error).mta(.body2).foregroundStyle(MTA.urgent) }
 
@@ -242,6 +321,138 @@ struct MapScreen: View {
       .background(selected == p.name ? MTA.raised.opacity(0.6) : .clear, in: .rect(cornerRadius: 12))
     }
     .buttonStyle(.plain)
+  }
+
+  // MARK: - Day plans (saved TripPlans with a location)
+
+  /// Days that have planned stops with a place on the map, in order.
+  private var planDays: [Date] {
+    let cal = TripTimeline.calendar
+    return Array(Set(plans.filter { $0.latitude != nil }.map { cal.startOfDay(for: $0.start) })).sorted()
+  }
+
+  private var dayStops: [TripPlan] {
+    guard let i = dayIndex, let d = planDays[safe: i] else { return [] }
+    return plans.filter { $0.latitude != nil && TripTimeline.calendar.isDate($0.start, inSameDayAs: d) }
+  }
+
+  /// "Day 2" counts from the trip's first day (bookings included), not the first planned day.
+  private func dayNumber(_ i: Int) -> Int {
+    guard let d = planDays[safe: i] else { return i + 1 }
+    let first = TripTimeline.range(TripTimeline.events(items: items, plans: plans))?.lowerBound ?? planDays[0]
+    return (TripTimeline.calendar.dateComponents([.day], from: TripTimeline.calendar.startOfDay(for: first), to: d).day ?? i) + 1
+  }
+
+  static func coordinate(_ p: TripPlan) -> CLLocationCoordinate2D? {
+    guard let lat = p.latitude, let lon = p.longitude else { return nil }
+    return .init(latitude: lat, longitude: lon)
+  }
+
+  static func dayStop(_ p: TripPlan) -> DayStop {
+    DayStop(time: p.start, kind: p.kind ?? "Plan", name: p.title, why: p.detail, address: "",
+            latitude: p.latitude ?? 0, longitude: p.longitude ?? 0, cost: p.cost ?? 0, note: p.note)
+  }
+
+  private var dayList: some View {
+    let stops = dayStops
+    return VStack(alignment: .leading, spacing: 10) {
+      HStack {
+        MTALabel(stops.first.map { TripTimeline.dayTitle($0.start) } ?? "")
+        Spacer()
+        let total = stops.compactMap(\.cost).reduce(0, +)
+        if total > 0 { Text("~$\(total) est.").mta(.button2).foregroundStyle(MTA.accent) }
+      }
+      ScrollView {
+        VStack(alignment: .leading, spacing: 8) {
+          ForEach(Array(stops.enumerated()), id: \.element.persistentModelID) { i, p in
+            Button { open(p) } label: { StopRow(number: i + 1, stop: Self.dayStop(p)) }.buttonStyle(.plain)
+            if i + 1 < stops.count {
+              Text("⋮  " + DayStops.leg(Self.dayStop(p), Self.dayStop(stops[i + 1]))).mta(.body2).foregroundStyle(MTA.text2).padding(.leading, 9)
+            }
+          }
+        }
+      }
+      .scrollIndicators(.hidden).frame(maxHeight: expanded ? 380 : 230)
+    }
+  }
+
+  private func stopDetail(_ p: TripPlan) -> some View {
+    let stops = dayStops
+    let n = (stops.firstIndex(of: p) ?? 0) + 1
+    return VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Button { withAnimation(.snappy) { stop = nil; fitDay() } } label: {
+          Label("Day \(dayIndex.map(dayNumber) ?? 1)", systemImage: "chevron.left").mta(.button2).foregroundStyle(MTA.accent)
+        }
+        Spacer()
+        Text("Stop \(n) of \(stops.count)").mta(.body2).foregroundStyle(MTA.text2)
+      }
+      ScrollView {
+      VStack(alignment: .leading, spacing: 12) {
+      ZStack {
+        if let scene {
+          LookAroundPreview(initialScene: scene, allowsNavigation: true, badgePosition: .topTrailing)
+        } else {
+          Rectangle().fill(MTA.raised).overlay {
+            Label(net.isOnline ? "No street photo here yet" : "Photo needs internet", systemImage: "photo")
+              .mta(.body2).foregroundStyle(MTA.text2)
+          }
+        }
+      }
+      .frame(height: 130).clipShape(.rect(cornerRadius: 16))
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 6) {
+          KindTag(text: p.kind ?? "Plan")
+          Text(TripTimeline.time(p.start)).mta(.body2).foregroundStyle(MTA.text2)
+        }
+        Text(p.title).mta(.headline).foregroundStyle(MTA.text)
+        if !p.detail.isEmpty { Text(p.detail).mta(.body2).foregroundStyle(MTA.text2).lineLimit(3) }
+      }
+      OutlineCard(stroke: MTA.border) {
+        if let cost = p.cost { infoRow("Cost (est.)", cost == 0 ? "Free" : "~$\(cost)") }
+        if !p.note.isEmpty { infoRow("Note", p.note) }
+        if let h = hotel, let lat = p.latitude, let lon = p.longitude {
+          let m = PlaceFacts.meters(h.latitude, h.longitude, lat, lon)
+          infoRow("From hotel", "\(PlaceFacts.distance(m)) · \(PlaceFacts.estimate(m).replacingOccurrences(of: "about ", with: ""))")
+        }
+      }
+      HStack(spacing: 10) {
+        Button("Edit") { editing = p }.buttonStyle(.mtaSecondary)
+        Button("Directions") { if let url = directions(p) { openURL(url) } }.buttonStyle(.mtaPrimary)
+      }
+      }
+      }
+      .scrollIndicators(.hidden)
+      .frame(maxHeight: 330)
+    }
+  }
+
+  private func infoRow(_ k: String, _ v: String) -> some View {
+    HStack { Text(k).mta(.body2).foregroundStyle(MTA.text2); Spacer(); Text(v).mta(.body2).foregroundStyle(MTA.text).multilineTextAlignment(.trailing) }
+  }
+
+  private func directions(_ p: TripPlan) -> URL? {
+    guard let lat = p.latitude, let lon = p.longitude else { return nil }
+    var c = URLComponents(string: "https://maps.apple.com/")
+    c?.queryItems = [.init(name: "daddr", value: "\(lat),\(lon)"), .init(name: "dirflg", value: "w"), .init(name: "q", value: p.title)]
+    return c?.url
+  }
+
+  private func open(_ p: TripPlan) {
+    withAnimation(.snappy) { stop = p; expanded = true }
+    guard !offline, let c = Self.coordinate(p) else { return }
+    withAnimation { camera = .region(MKCoordinateRegion(center: c, latitudinalMeters: 700, longitudinalMeters: 700)) }
+  }
+
+  /// Fits the map to the day's stops (or back to the places).
+  private func fitDay() {
+    guard !offline else { return }
+    let coords = dayStops.compactMap(Self.coordinate)
+    guard !coords.isEmpty else { withAnimation { camera = .automatic }; return }
+    let lats = coords.map(\.latitude), lons = coords.map(\.longitude)
+    let center = CLLocationCoordinate2D(latitude: (lats.min()! + lats.max()!) / 2, longitude: (lons.min()! + lons.max()!) / 2)
+    let span = MKCoordinateSpan(latitudeDelta: max(0.01, (lats.max()! - lats.min()!) * 1.6), longitudeDelta: max(0.01, (lons.max()! - lons.min()!) * 1.6))
+    withAnimation { camera = .region(MKCoordinateRegion(center: center, span: span)) }
   }
 
   // MARK: - Actions

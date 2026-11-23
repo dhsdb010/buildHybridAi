@@ -33,12 +33,18 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Lets you take a photo to show Blue while you plan.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Fills your emergency card with your blood type and the medications you choose to share. Read only; stays on this iPhone.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Travel Copilot doesn't write to Health.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Shows where you are on your saved trip map, even offline (GPS needs no internet).</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Lets you speak to Blue instead of typing, when you tap the mic or Talk.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Turns what you say to Blue into text, on this iPhone when it can.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchScreen</key>

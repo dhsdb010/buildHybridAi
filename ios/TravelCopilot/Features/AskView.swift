@@ -1,5 +1,8 @@
+import PhotosUI
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
+import Vision
 
 /// Blue, the trip chat (Figma: App Screens → "Blue · Chat flow").
 /// Laid out like Messages: your questions on the right in blue, Blue's answers on the left with its logo.
@@ -26,6 +29,15 @@ struct AskView: View {
   @State private var taxiItem: VaultItem?
   @State private var translationCard: TranslationEntry?
   @FocusState private var focused: Bool
+  @State private var speech = SpeechInput()
+  @State private var showAdd = false
+  @State private var showCamera = false
+  @State private var showFiles = false
+  @State private var photoItems: [PhotosPickerItem] = []
+  @State private var talking = false
+  @State private var talkPhase: TalkSheet.Phase = .listening
+  @State private var heard = ""
+  @State private var spoken = ""
 
   private var pack: DestinationPack? { packs.first }
   private var language: String { pack?.languageName ?? "local language" }
@@ -83,6 +95,37 @@ struct AskView: View {
         Text("This removes the messages with Blue. Your bookings and saved phrases stay.")
       }
       .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: pack) }
+      .overlay(alignment: .bottom) {
+        if showAdd {
+          ZStack(alignment: .bottom) {
+            Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { showAdd = false }
+            AddToChatSheet(photos: $photoItems,
+                           onCamera: { showAdd = false; showCamera = true },
+                           onFiles: { showAdd = false; showFiles = true },
+                           onClose: { showAdd = false })
+              .transition(.move(edge: .bottom))
+          }
+          .ignoresSafeArea(edges: .bottom)
+        }
+      }
+      .animation(.snappy, value: showAdd)
+      .onChange(of: photoItems) {
+        let items = photoItems
+        guard let first = items.first else { return }
+        photoItems = []
+        Task {
+          if let data = try? await first.loadTransferable(type: Data.self), let img = UIImage(data: data) { await addImage(img) }
+        }
+      }
+      .fullScreenCover(isPresented: $showCamera) {
+        CameraPicker { img in Task { await addImage(img) } }.ignoresSafeArea()
+      }
+      .fileImporter(isPresented: $showFiles, allowedContentTypes: FileReader.types, allowsMultipleSelection: false) { result in
+        if case let .success(urls) = result, let url = urls.first { Task { await addFile(url) } }
+      }
+      .sheet(isPresented: $talking, onDismiss: { stopTalking() }) {
+        TalkSheet(phase: $talkPhase, heard: heard, reply: spoken) { talking = false }
+      }
       .fullScreenCover(item: $translationCard) { TranslationCardView(entry: $0, pack: pack) }
     }
     .task {
@@ -97,42 +140,110 @@ struct AskView: View {
       .mta(.label).foregroundStyle(MTA.text2).frame(maxWidth: .infinity)
   }
 
-  // MARK: - Input (like Messages: あ toggle · field · send)
+  // MARK: - Input: the same bar as the planner, with あ (Say in <language>) on its left
 
   private var inputBar: some View {
-    HStack(alignment: .bottom, spacing: 8) {
-      Button { withAnimation(.snappy) { sayMode.toggle() } } label: {
-        Text("あ").font(.system(size: 17, weight: .medium))
-          .foregroundStyle(sayMode ? MTA.onColor : MTA.text)
-          .frame(width: 40, height: 40)
-          .background(sayMode ? MTA.accent : MTA.raised, in: .circle)
-      }
-      .buttonStyle(.plain)
-      .accessibilityLabel(sayMode ? "Say in \(language) is on" : "Say in \(language)")
+    PlanComposer(text: $question, placeholder: sayMode ? "Say in \(language)" : "Message Blue",
+                 focused: $focused, canSend: !asking, speech: speech,
+                 onSend: { send(question) },
+                 onPlus: { focused = false; showAdd = true },
+                 onTalk: { startTalking() },
+                 leading: AnyView(sayButton))
+      .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
+      .background(MTA.surface)
+  }
 
-      HStack(alignment: .bottom, spacing: 6) {
-        TextField(sayMode ? "Say in \(language)" : "Message Blue", text: $question, axis: .vertical)
-          .mta(.body1).lineLimit(1...5).focused($focused).submitLabel(.send)
-          .padding(.vertical, 9)
-          .onChange(of: question) { _, new in
-            if new.hasSuffix("\n") { question = String(new.dropLast()); send(question) }
-          }
-        Button { send(question) } label: {
-          Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(MTA.onColor)
-            .frame(width: 30, height: 30).background(MTA.accent, in: .circle)
-        }
-        .buttonStyle(.plain)
-        .opacity(question.nilIfEmpty == nil || asking ? 0.35 : 1)
-        .disabled(question.nilIfEmpty == nil || asking)
-        .padding(.bottom, 5)
-        .accessibilityLabel(sayMode ? "Translate" : "Send")
-      }
-      .padding(.leading, 14).padding(.trailing, 5)
-      .frame(minHeight: 40)
-      .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(MTA.subtle.opacity(0.5), lineWidth: 1) }
+  private var sayButton: some View {
+    Button { withAnimation(.snappy) { sayMode.toggle() } } label: {
+      Text("あ").font(.system(size: 19, weight: .medium))
+        .foregroundStyle(sayMode ? MTA.onColor : MTA.text)
+        .frame(width: 50, height: 50)
+        .background(sayMode ? MTA.accent : MTA.raised, in: .circle)
     }
-    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
-    .background(MTA.surface)
+    .buttonStyle(.plain)
+    .accessibilityLabel(sayMode ? "Say in \(language) is on" : "Say in \(language)")
+  }
+
+  // MARK: - + : photos (text read on this iPhone), camera, files
+
+  private func addImage(_ image: UIImage) async {
+    guard let cg = (image.preparingThumbnail(of: CGSize(width: 1600, height: 1600)) ?? image).cgImage else { return }
+    let lines = await Task.detached(priority: .userInitiated) { TextInImage.read(cg) }.value
+    if lines.isEmpty {
+      question = "What can you tell me about this photo?"
+    } else {
+      question = "What does this say? " + lines.prefix(6).joined(separator: " ")
+    }
+    focused = true
+  }
+
+  private func addFile(_ url: URL) async {
+    if let type = UTType(filenameExtension: url.pathExtension), type.conforms(to: .image) {
+      let scoped = url.startAccessingSecurityScopedResource()
+      defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+      if let data = try? Data(contentsOf: url), let img = UIImage(data: data) { await addImage(img) }
+      return
+    }
+    guard let (text, _) = FileReader.read(url), !text.isEmpty else {
+      context.insert(ChatMessage(role: "blue", kind: "other", text: "I couldn't read any text in that file. Try a PDF or a text document."))
+      return
+    }
+    context.insert(ChatMessage(role: "you", kind: "text", text: "📄 " + url.lastPathComponent))
+    if FileReader.looksLikeBooking(text) {
+      asking = true
+      defer { asking = false }
+      do {
+        let (found, added) = try await PrepareService.saveBookings(from: text, ai: ai)
+        context.insert(ChatMessage(role: "blue", kind: "other", text: found.isEmpty ? "I couldn't find a booking in it."
+          : added == 0 ? "Those bookings are already saved. Ask me anything about them."
+          : "Saved \(added) booking\(added == 1 ? "" : "s"). Ask me anything about \(added == 1 ? "it" : "them"), even offline."))
+      } catch {
+        context.insert(ChatMessage(role: "blue", kind: "error", text: error.localizedDescription))
+      }
+    } else {
+      question = "About this file: " + String(text.prefix(400))
+      focused = true
+    }
+    try? context.save()
+  }
+
+  // MARK: - Talk: you speak, Blue answers out loud, and listens again
+
+  private func startTalking() {
+    focused = false; heard = ""; spoken = ""
+    talking = true
+    Task { await talkLoop() }
+  }
+
+  private func stopTalking() {
+    talking = false
+    speech.stop()
+    Speaker.shared.stop()
+  }
+
+  private func talkLoop() async {
+    while talking {
+      talkPhase = .listening; heard = ""
+      let said: String = await withCheckedContinuation { c in
+        Task { await speech.listenOnce(onText: { heard = $0 }, onDone: { c.resume(returning: $0) }) }
+      }
+      guard talking else { return }
+      if speech.error != nil { talking = false; return }
+      let text = said.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !text.isEmpty else { continue }
+      talkPhase = .thinking
+      let before = messages.count
+      send(text)
+      try? await Task.sleep(for: .milliseconds(300))
+      while (asking || messages.count <= before) && talking { try? await Task.sleep(for: .milliseconds(200)) }
+      guard talking, let reply = messages.last(where: { $0.role == "blue" }) else { return }
+      // Say mode: speak the translation in the local language; otherwise Blue's answer in English.
+      let local = reply.kind == "translation" && !reply.value.isEmpty
+      spoken = local ? reply.value : [reply.value, reply.text].filter { !$0.isEmpty }.joined(separator: ". ")
+      talkPhase = .speaking
+      Speaker.shared.toggle(spoken, languageCode: local ? pack?.languageCode : "en", id: "talk")
+      while Speaker.shared.speakingID == "talk" && talking { try? await Task.sleep(for: .milliseconds(200)) }
+    }
   }
 
   // MARK: - Messages (drawn from what was saved)
@@ -460,8 +571,25 @@ private struct SuggestionList: View {
   }
 }
 
+/// Blue is working: the avatar and a typing bubble, with an optional caption under it.
+/// Used wherever the app waits on AI (the plan chat, a day's stops), instead of a spinner.
+struct BlueTyping: View {
+  var caption: String? = nil
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack(alignment: .bottom, spacing: 8) {
+        BlueAvatar()
+        TypingDots().padding(.horizontal, 14).padding(.vertical, 10).background(MTA.raised, in: .rect(cornerRadius: 20))
+      }
+      if let caption { Text(caption).mta(.body2).foregroundStyle(MTA.text2).padding(.leading, 36) }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(caption ?? "Blue is working on it")
+  }
+}
+
 /// Blue is "typing": three dots that pulse in turn.
-private struct TypingDots: View {
+struct TypingDots: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   var body: some View {
     TimelineView(.animation(paused: reduceMotion)) { tl in
@@ -475,5 +603,17 @@ private struct TypingDots: View {
       .padding(.vertical, 6)
     }
     .accessibilityLabel("Blue is answering")
+  }
+}
+
+/// Text in a photo (a sign, a menu), read on this iPhone with Vision. Nothing is uploaded.
+enum TextInImage {
+  static func read(_ image: CGImage) -> [String] {
+    let request = VNRecognizeTextRequest()
+    request.recognitionLevel = .accurate
+    request.recognitionLanguages = ["ja-JP", "ko-KR", "zh-Hans", "en-US", "fr-FR", "es-ES", "de-DE", "it-IT", "pt-BR"]
+    request.usesLanguageCorrection = true
+    try? VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+    return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
   }
 }

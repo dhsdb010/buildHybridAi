@@ -30,8 +30,9 @@ Travel Copilot uses Firebase AI Logic, a Google service, to send requests to Goo
 | Blue (open questions) | Your question, with only the trip's country, hotel name and address, and dates. No confirmation codes or personal details. |
 | Say (translation) | The text you ask the app to translate. |
 | Catch-up | Answers and translations that were made offline, so they can be checked and improved once you are back online. |
+| Files you add to the planner | A short summary request with the file's text, when your iPhone can't summarize it on the device (Apple Intelligence is used first). A booking confirmation you choose to add is read the same way as in Prepare. |
 | Emergency card | The allergies, conditions and medicines you typed on your card that are not in the app's built-in list, so they can be translated once into the destination's language. Medicines imported from Apple Health are never sent; they stay in English on the card. |
-| Trip planner | What you tell the planner, and the destination city and area. Place suggestions use Grounding with Google Maps, which receives the city's map location, not your own location. |
+| Trip planner | What you tell the planner, the taste words read from your photos (never the photos), dates, number of travelers and budget, and the destination city and area. Place suggestions use Grounding with Google Maps, which receives the city's map location, not your own location. |
 
 Google processes these requests under the [Gemini API terms](https://ai.google.dev/gemini-api/terms) and the [Firebase terms](https://firebase.google.com/terms). Under those terms, Google may use content sent to free-of-charge Gemini services to improve its products. Don't put information in the app that you don't want sent to Google for these features.
 
@@ -39,12 +40,15 @@ Google processes these requests under the [Gemini API terms](https://ai.google.d
 
 - **Firebase App Check (Google and Apple).** It checks that requests come from the real app, using Apple's App Attest. It doesn't send your trip data.
 - **Sign in with Google or Apple.** Only the trip planner needs an account. If you sign in, Firebase Authentication stores your name, email address and an account ID. The app uses the account only to identify you for cloud planning. Nothing from your trip is stored in the account. Everything else, including all offline features, works without an account. You can sign out or delete your account in Settings; deleting it removes it from Firebase Authentication and, for Sign in with Apple, revokes the app's access to your Apple ID.
-- **Apple Maps.** Searching for places and saving offline maps sends those searches and map areas to Apple, under [Apple's privacy policy](https://www.apple.com/legal/privacy/).
+- **Apple Maps.** Searching for places, finding the planner's stops, showing Look Around photos and saving offline maps send those searches, places and map areas to Apple, under [Apple's privacy policy](https://www.apple.com/legal/privacy/).
+- **Wikipedia.** The planner shows a photo of each suggested destination from Wikipedia. Only the city's name is sent.
 
 ## Permissions
 
 - **Location (while using the app).** It shows where you are on your saved trip map. Your location is used on the iPhone only and is not sent to Gemini.
 - **Apple Health (read only, optional).** It can fill your emergency card with your blood type and the medicines you choose. Health data stays on your iPhone: it is never sent to Gemini or any other service, used for advertising, or sold. The app never writes to Health.
+- **Microphone and speech recognition (optional).** Used only when you tap the mic or Talk in the planner. Apple's speech recognizer turns your voice into text on the iPhone when the iPhone supports it; otherwise Apple's speech service does, under [Apple's privacy policy](https://www.apple.com/legal/privacy/). Recordings are not kept by Travel Copilot.
+- **Camera and photos (optional).** A photo you take or pick in the planner is read on the iPhone with Apple Vision; only the words it finds are used for planning. Travel Copilot can only see the photos you choose.
 - **Notifications.** Trip reminders are scheduled on the iPhone. No push server is involved.
 
 ## Children

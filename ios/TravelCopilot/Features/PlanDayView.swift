@@ -10,6 +10,7 @@ struct PlanDayView: View {
   @Query private var packs: [DestinationPack]
   @AppStorage("planReminders") private var reminders = true
   @State private var adding = false
+  @State private var editing: TripPlan?
 
   var body: some View {
     let all = TripTimeline.events(items: items, plans: plans)
@@ -20,14 +21,24 @@ struct PlanDayView: View {
     let nextID = all.first { $0.date > now }?.id
     ScrollView {
       VStack(alignment: .leading, spacing: 16) {
-        MTALabel(dayLine(range))
+        HStack {
+          MTALabel(dayLine(range))
+          Spacer()
+          let total = dayPlans.compactMap(\.cost).reduce(0, +)
+          if total > 0 { Text("~$\(total) est.").mta(.button2).foregroundStyle(MTA.accent) }
+        }
         Text("Plan your day").mta(.displayMedium).foregroundStyle(MTA.text)
         if dayEvents.isEmpty {
           Text("Nothing on this day yet. Add a place, a meal or a ticket.").mta(.body1).foregroundStyle(MTA.text2)
         }
         ForEach(Array(dayEvents.enumerated()), id: \.element.id) { i, e in
           let end = dayEvents.indices.contains(i + 1) ? dayEvents[i + 1].date : nil
+          let plan = e.kind == .plan ? plans.first(where: { "plan-\($0.createdAt.timeIntervalSince1970)" == e.id }) : nil
           PlanCard(event: e, progress: TripProgress.of(start: e.date, end: end, now: now, isNext: e.id == nextID), now: now)
+            .contentShape(.rect)
+            .onTapGesture { if let plan { editing = plan } }
+            .accessibilityAddTraits(plan == nil ? [] : .isButton)
+            .accessibilityHint(plan == nil ? "" : "Shows the stop and lets you change it")
             .contextMenu {
               if e.kind == .plan, let p = plans.first(where: { "plan-\($0.createdAt.timeIntervalSince1970)" == e.id }) {
                 Button("Delete", systemImage: "trash", role: .destructive) { context.delete(p) }
@@ -51,6 +62,19 @@ struct PlanDayView: View {
       ToolbarItem(placement: .topBarTrailing) { Button("Add") { adding = true } }
     }
     .sheet(isPresented: $adding) { AddPlanSheet(day: day).presentationDetents([.medium]) }
+    .sheet(item: $editing) { p in
+      StopDetailView(stop: DayStop(time: p.start, kind: p.kind ?? "Plan", name: p.title, why: p.detail, address: "",
+                                   latitude: p.latitude ?? 0, longitude: p.longitude ?? 0, cost: p.cost ?? 0, note: p.note),
+                     onSave: { st in
+                       p.start = st.time; p.title = st.name; p.cost = st.cost; p.note = st.note
+                       try? context.save()
+                     },
+                     onRemove: { context.delete(p); try? context.save() })
+    }
+  }
+
+  private var dayPlans: [TripPlan] {
+    plans.filter { TripTimeline.calendar.isDate($0.start, inSameDayAs: day) }
   }
 
   private func dayLine(_ range: ClosedRange<Date>?) -> String {

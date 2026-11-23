@@ -29,6 +29,13 @@ Page 05 now starts with **0 · Sign in**: Continue with Google, Sign in with App
 - **Facts vs. words:** the name, address, scores and link come from the data source. The model writes only the "Why" line. Source labels stay visible.
 - **Suggestions aren't bookings:** booking happens on the airline or hotel site, and only pasted confirmations become Vault items.
 
+### Plan chat v2 (page "06 · Plan Flow", section "Plan flow v2 · Smarter chat")
+1. **Memories · photos:** the traveller adds trip photos. Apple Vision reads them on the iPhone and shows taste words ("Street food · Market"); only the words go to the cloud, never the photos. Then: "What do you want this time?"
+2. **Avoid:** dislikes are suggested from that taste (on-device model first), plus "+ Something else".
+3. **When:** a month calendar; tap the first and last day. "My dates are flexible" is a chip.
+4. **Budget & ideas:** budget chips, then each idea gets a rough cost per person (flight, stay, eat, see, total). Always labelled as an estimate, never a live fare.
+5. **Book & summary:** each item shows Estimated with an Open link (Google Flights, Booking.com), or Booked with the confirmation reference once a pasted confirmation for that city is in the Vault. Totals and a within/over budget line.
+
 ## App screens (page "04 · App Screens")
 Day is the main look, following the MTA-style reference (white base, big bold numbers, outlined boxes). There's a Night copy too. Screens are 402 × 874 on the 4·30·15 grid, built only from these components: Nav Bar, Tab Bar, Button, Number Box, Milestone, Card (Notice/Feature), Segmented, Settings Row, Ask Bar.
 

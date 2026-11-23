@@ -83,26 +83,39 @@ struct ChatAI: View {
   let text: String
   init(_ text: String) { self.text = text }
   var body: some View {
-    HStack(alignment: .top, spacing: 10) {
-      Image(systemName: "asterisk").font(.system(size: 18, weight: .semibold)).foregroundStyle(MTA.accent)
-        .padding(.top, 3).accessibilityHidden(true)
-      Text(text).mta(.body1).foregroundStyle(MTA.text).frame(maxWidth: .infinity, alignment: .leading)
+    HStack(alignment: .bottom, spacing: 8) {
+      BlueAvatar()
+      Text(text).mta(.body1).foregroundStyle(MTA.text)
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(MTA.raised, in: .rect(cornerRadius: 20))
+      Spacer(minLength: 40)
     }
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Blue: \(text)")
   }
 }
 
-/// The user's turn: raised pill, right-aligned.
-struct ChatYou: View {
+/// The user's turn: blue bubble on the right, as in Ask.
+struct ChatYou<Extra: View>: View {
   let text: String
-  init(_ text: String) { self.text = text }
+  let extra: Extra
+  init(_ text: String, @ViewBuilder extra: () -> Extra) { self.text = text; self.extra = extra() }
   var body: some View {
     HStack {
       Spacer(minLength: 52)
-      Text(text).mta(.body1).foregroundStyle(MTA.text)
-        .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(MTA.raised, in: .rect(cornerRadius: 20))
+      VStack(alignment: .leading, spacing: 8) {
+        extra
+        if !text.isEmpty { Text(text).mta(.body1).foregroundStyle(MTA.onColor) }
+      }
+      .padding(.horizontal, 14).padding(.vertical, 10)
+      .background(MTA.accent, in: .rect(cornerRadius: 20))
     }
+    .accessibilityElement(children: .combine)
   }
+}
+
+extension ChatYou where Extra == EmptyView {
+  init(_ text: String) { self.text = text; self.extra = EmptyView() }
 }
 
 /// "Plan so far": Where · When · Stay · Eat · See · Book.
@@ -247,15 +260,21 @@ struct BookRow: View {
   let title: String
   let detail: String
   let url: URL?
+  /// A pasted confirmation for this item is in the Vault: show "Booked" instead of the link.
+  var booked = false
   var body: some View {
     HStack(spacing: 14) {
-      TripBullet(systemName: systemImage, status: .accent, size: 40)
+      TripBullet(systemName: systemImage, status: booked ? .onTrack : .accent, size: 40)
       VStack(alignment: .leading, spacing: 2) {
-        Text(title).mta(.body1).foregroundStyle(MTA.text)
-        Text(detail).mta(.body2).foregroundStyle(MTA.text2)
+        Text(title).mta(.body1).foregroundStyle(MTA.text).lineLimit(1)
+        Text(detail).mta(.body2).foregroundStyle(MTA.text2).lineLimit(2)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      if let url {
+      if booked {
+        Text("Booked").mta(.button2).foregroundStyle(MTA.text)
+          .padding(.horizontal, 14).padding(.vertical, 6)
+          .overlay { Capsule().strokeBorder(MTA.border, lineWidth: 2) }
+      } else if let url {
         Link(destination: url) {
           Text("Open").mta(.button2).foregroundStyle(MTA.onColor)
             .padding(.horizontal, 16).padding(.vertical, 8).background(MTA.accent, in: .capsule)
@@ -263,5 +282,207 @@ struct BookRow: View {
       }
     }
     .padding(.vertical, 8)
+  }
+}
+
+/// "Flight · SFO ⇄ HND      ~$950–1,200" rows, and a bold total. Estimates only, labelled as such.
+struct CostLine: View {
+  let label: String
+  let value: String
+  var total = false
+  var body: some View {
+    HStack {
+      Text(label).mta(total ? .subheadNormal : .body1).foregroundStyle(total ? MTA.text : MTA.text2)
+      Spacer(minLength: 8)
+      Text(value).mta(total ? .subheadNormal : .body1).foregroundStyle(total ? MTA.accent : MTA.text).monospacedDigit()
+    }
+  }
+}
+
+/// Month calendar for picking the trip: tap the first day, then the last day.
+struct RangeCalendar: View {
+  @Binding var start: Date
+  @Binding var end: Date
+  /// Earliest day you can pick (today).
+  var from: Date
+  @State private var month: Date
+  @State private var pickingEnd = false
+
+  init(start: Binding<Date>, end: Binding<Date>, from: Date) {
+    _start = start; _end = end; self.from = from
+    _month = State(initialValue: TripTimeline.calendar.dateInterval(of: .month, for: start.wrappedValue)?.start ?? start.wrappedValue)
+  }
+
+  private var cal: Calendar { TripTimeline.calendar }
+
+  var body: some View {
+    VStack(spacing: 6) {
+      HStack {
+        Text(month.formatted(.dateTime.month(.wide).year())).mta(.subheadNormal).foregroundStyle(MTA.text)
+        Spacer()
+        Button { shift(-1) } label: { Image(systemName: "chevron.left").frame(width: 36, height: 36) }
+          .disabled(month <= (cal.dateInterval(of: .month, for: from)?.start ?? from))
+          .accessibilityLabel("Previous month")
+        Button { shift(1) } label: { Image(systemName: "chevron.right").frame(width: 36, height: 36) }
+          .accessibilityLabel("Next month")
+      }
+      .foregroundStyle(MTA.accent)
+      HStack(spacing: 0) {
+        ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, d in
+          Text(d).mta(.label).foregroundStyle(MTA.text2).frame(maxWidth: .infinity)
+        }
+      }
+      ForEach(weeks, id: \.self) { week in
+        HStack(spacing: 0) {
+          ForEach(Array(week.enumerated()), id: \.offset) { _, day in cell(day) }
+        }
+      }
+    }
+    .padding(14)
+    .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(MTA.border, lineWidth: 2) }
+  }
+
+  /// Weeks of the shown month, Sunday first; nil = blank cell.
+  private var weeks: [[Date?]] {
+    guard let range = cal.range(of: .day, in: .month, for: month) else { return [] }
+    let lead = cal.component(.weekday, from: month) - 1
+    var days: [Date?] = Array(repeating: nil, count: lead)
+    days += range.map { cal.date(byAdding: .day, value: $0 - 1, to: month) }
+    while days.count % 7 != 0 { days.append(nil) }
+    return stride(from: 0, to: days.count, by: 7).map { Array(days[$0..<$0 + 7]) }
+  }
+
+  @ViewBuilder private func cell(_ day: Date?) -> some View {
+    if let day {
+      let d = cal.startOfDay(for: day)
+      let s = cal.startOfDay(for: start), e = cal.startOfDay(for: end)
+      let isStart = d == s, isEnd = d == e && !pickingEnd
+      let inside = !pickingEnd && d > s && d < e
+      let past = d < cal.startOfDay(for: from)
+      Button { tap(d) } label: {
+        ZStack {
+          if inside || ((isStart || isEnd) && !pickingEnd && s != e) {
+            Rectangle().fill(MTA.raised)
+              .padding(.leading, isStart ? 22 : 0).padding(.trailing, isEnd ? 22 : 0)
+          }
+          if isStart || isEnd { Circle().fill(MTA.accent).frame(width: 38, height: 38) }
+          Text("\(cal.component(.day, from: d))").mta(isStart || isEnd ? .button2 : .body1)
+            .foregroundStyle(isStart || isEnd ? MTA.onColor : (past ? MTA.subtle : MTA.text))
+        }
+        .frame(maxWidth: .infinity).frame(height: 40).contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .disabled(past)
+      .accessibilityLabel(d.formatted(date: .complete, time: .omitted))
+      .accessibilityAddTraits(isStart || isEnd ? .isSelected : [])
+    } else {
+      Color.clear.frame(maxWidth: .infinity).frame(height: 40)
+    }
+  }
+
+  private func tap(_ d: Date) {
+    if pickingEnd && d >= cal.startOfDay(for: start) {
+      end = d; pickingEnd = false
+    } else {
+      start = d; end = d; pickingEnd = true
+    }
+  }
+
+  private func shift(_ n: Int) { if let m = cal.date(byAdding: .month, value: n, to: month) { month = m } }
+}
+
+/// Budget slider: the value in a bubble above the thumb, a New Blue fill, min and max under the track.
+struct BudgetSlider: View {
+  @Binding var value: Double
+  let range: ClosedRange<Double>
+  let step: Double
+
+  private let thumb: CGFloat = 28
+
+  var body: some View {
+    VStack(spacing: 6) {
+      GeometryReader { geo in
+        let width = geo.size.width - thumb
+        let frac = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
+        let x = width * frac
+        ZStack(alignment: .topLeading) {
+          Text(PlanBudget.label(Int(value)) + (value >= range.upperBound ? "+" : ""))
+            .mta(.button2).foregroundStyle(MTA.onColor).monospacedDigit()
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(MTA.accent, in: .capsule)
+            .fixedSize()
+            .frame(width: 120)
+            .offset(x: min(max(x + thumb / 2 - 60, -10), geo.size.width - 110), y: 0)
+          Capsule().fill(MTA.raised).frame(height: 8).offset(y: 44)
+          Capsule().fill(MTA.accent).frame(width: x + thumb / 2, height: 8).offset(y: 44)
+          Circle().fill(MTA.surface)
+            .overlay { Circle().strokeBorder(MTA.accent, lineWidth: 3) }
+            .shadow(color: .black.opacity(0.18), radius: 3, y: 2)
+            .frame(width: thumb, height: thumb)
+            .offset(x: x, y: 34)
+        }
+        // The whole 64pt-tall area takes the drag (offsets don't grow the hit area), and it wins over the scroll view.
+        .frame(width: geo.size.width, height: 64, alignment: .topLeading)
+        .contentShape(.rect)
+        .highPriorityGesture(DragGesture(minimumDistance: 0).onChanged { g in
+          let f = min(max((g.location.x - thumb / 2) / width, 0), 1)
+          let raw = range.lowerBound + f * (range.upperBound - range.lowerBound)
+          let snapped = (raw / step).rounded() * step
+          if snapped != value { value = snapped; UISelectionFeedbackGenerator().selectionChanged() }
+        })
+      }
+      .frame(height: 64)
+      HStack {
+        Text(PlanBudget.label(Int(range.lowerBound))).mta(.body2).foregroundStyle(MTA.text2)
+        Spacer()
+        Text(PlanBudget.label(Int(range.upperBound)) + "+").mta(.body2).foregroundStyle(MTA.text2)
+      }
+    }
+    .accessibilityElement()
+    .accessibilityLabel("Budget per person")
+    .accessibilityValue(PlanBudget.label(Int(value)))
+    .accessibilityAdjustableAction { dir in
+      switch dir {
+      case .increment: value = min(range.upperBound, value + step * 5)
+      case .decrement: value = max(range.lowerBound, value - step * 5)
+      @unknown default: break
+      }
+    }
+  }
+}
+
+/// "−  2  +" stepper in an outlined capsule (travelers).
+struct CountStepper: View {
+  @Binding var value: Int
+  let range: ClosedRange<Int>
+  let label: String
+
+  var body: some View {
+    HStack(spacing: 0) {
+      Button { if value > range.lowerBound { value -= 1 } } label: {
+        Image(systemName: "minus").frame(width: 44, height: 40)
+      }
+      .disabled(value <= range.lowerBound)
+      .accessibilityLabel("Fewer")
+      Text("\(value)").mta(.subheadNormal).foregroundStyle(MTA.text).monospacedDigit().frame(minWidth: 28)
+      Button { if value < range.upperBound { value += 1 } } label: {
+        Image(systemName: "plus").frame(width: 44, height: 40)
+      }
+      .disabled(value >= range.upperBound)
+      .accessibilityLabel("More")
+    }
+    .font(.system(size: 17, weight: .semibold))
+    .foregroundStyle(MTA.accent)
+    .overlay { Capsule().strokeBorder(MTA.border, lineWidth: 2) }
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(label)
+    .accessibilityValue("\(value)")
+    .accessibilityAdjustableAction { dir in
+      switch dir {
+      case .increment: if value < range.upperBound { value += 1 }
+      case .decrement: if value > range.lowerBound { value -= 1 }
+      @unknown default: break
+      }
+    }
   }
 }

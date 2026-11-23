@@ -96,6 +96,8 @@ struct PrepareView: View {
       .task {
         #if DEBUG
           // `-autoPrepareSample`: load the sample and run Prepare, for automated checks.
+          // `-planAuto` with `-tab prepare`: open the plan chat when a trip already exists (simulator checks).
+          if ProcessInfo.processInfo.arguments.contains("-planAuto"), !items.isEmpty { showPlan = true }
           if ProcessInfo.processInfo.arguments.contains("-autoPrepareSample"), items.isEmpty {
             text = PrepareService.sampleEmail
             Task { await run() } // unstructured, so switching tabs doesn't cancel the cloud calls

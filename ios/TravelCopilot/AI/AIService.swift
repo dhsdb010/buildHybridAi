@@ -139,6 +139,15 @@ final class AIService {
   private var inserted = 0
 
   /// A Log row that isn't an AI call (e.g. "Catch-up · start: back online → 3 drafts").
+  /// Log row for on-device work that isn't a language model call (e.g. Vision reading photos),
+  /// so the Log shows it ran on this iPhone.
+  func logOnDevice(_ task: String, _ kind: TaskKind, reason: String, latencyMs: Int, note: String? = nil) {
+    log(task, kind, reason: reason, outcome: "ok",
+        meta: AIMeta(route: .deviceOnly, source: .onDevice, latencyMs: latencyMs))
+    lastEntry?.note = note
+    try? context.save()
+  }
+
   func note(_ task: String, _ kind: TaskKind, reason: String, outcome: String, note: String? = nil) {
     log(task, kind, reason: reason, outcome: outcome)
     lastEntry?.note = note

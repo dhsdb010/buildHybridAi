@@ -56,11 +56,35 @@ struct PlanBrief: Sendable {
   var country: PlanCountry?          // nil = "Suggest for me"
   var typed: String = ""             // free text ("somewhere warm", a city…)
   var start: Date
-  var whenLabel: String
-  var days: Int = 5
+  /// Last day of the trip (the day you fly home). Picked on the calendar.
+  var end: Date
+  /// "My dates are flexible": the dates are a rough window, not fixed.
+  var flexible = false
+  /// How many people are going (1–9). Costs stay per person; the group total is shown too.
+  var travelers = 1
   var memory: String = ""
+  /// Taste words read from trip photos on this iPhone (Vision); the photos themselves never leave it.
+  var photoLabels: [String] = []
+  /// What the traveller wants this time ("More of that", "Something new"…).
+  var want: String?
+  /// What the traveler's own files say about their taste (a short gist, made from a file they added).
+  var notes: [String] = []
   var dislikes: [String] = []
   var tags: MemoryTags?
+  /// Most the traveller wants to spend per person for the whole trip, in US dollars. nil = no limit.
+  var budget: Int?
+
+  /// Trip length in days, counting arrival and departure days (Dec 3 → Dec 8 = 6).
+  var days: Int { max(1, (TripTimeline.calendar.dateComponents([.day], from: start, to: end).day ?? 0) + 1) }
+  var nights: Int { max(0, days - 1) }
+
+  /// "Dec 3 – Dec 8" or "around early Jan, flexible".
+  var whenLabel: String {
+    let f = Date.FormatStyle().month(.abbreviated).day()
+    return flexible
+      ? "around \(start.formatted(.dateTime.month(.wide))), flexible"
+      : "\(start.formatted(f)) – \(end.formatted(f))"
+  }
 
   var tasteLine: String {
     var parts: [String] = []
@@ -68,11 +92,28 @@ struct PlanBrief: Sendable {
       if !t.loves.isEmpty { parts.append("Loves: " + t.loves.joined(separator: ", ")) }
       if !t.avoid.isEmpty { parts.append("Avoid: " + t.avoid.joined(separator: ", ")) }
       parts.append("Pace: " + t.pace)
-    } else if !dislikes.isEmpty {
-      parts.append("Avoid: " + dislikes.joined(separator: ", "))
+    } else {
+      if !photoLabels.isEmpty { parts.append("Their trip photos show: " + photoLabels.joined(separator: ", ")) }
+      if !dislikes.isEmpty { parts.append("Avoid: " + dislikes.joined(separator: ", ")) }
     }
+    if let want { parts.append("This time they want: \(want)") }
+    if !notes.isEmpty { parts.append("From their own notes: " + notes.joined(separator: "; ")) }
     return parts.joined(separator: ". ")
   }
+}
+
+/// Budget slider range, per person for the whole trip, in US dollars.
+enum PlanBudget {
+  static let range: ClosedRange<Double> = 500...6000
+  static let step: Double = 100
+  /// "$2,500"
+  static func label(_ dollars: Int) -> String { "$" + dollars.formatted() }
+}
+
+@Generable
+struct AvoidIdeas: Sendable {
+  @Guide(description: "Exactly 5 situations this traveller would probably not enjoy on a trip, each 1 to 4 words, e.g. 'Packed tourist spots'", .count(5))
+  var items: [String]
 }
 
 @Generable
@@ -99,6 +140,18 @@ struct DestinationIdea: Sendable, Equatable {
   var base: String
   @Guide(description: "Typical daytime temperature range for the travel month, like '7–14 °C'")
   var weather: String
+  @Guide(description: "Rough round-trip economy flight cost per person in US dollars from the traveller's home country, as a range like '~$950–1,200'")
+  var flightCost: String
+  @Guide(description: "Rough cost per person of a mid-range hotel for all nights, sharing a room when there are 2 or more travelers, in US dollars, like '~$700'")
+  var stayCost: String
+  @Guide(description: "Rough cost of food for the whole trip per person in US dollars, like '~$300'")
+  var foodCost: String
+  @Guide(description: "Rough cost of sights and local transport for the whole trip in US dollars, like '~$250'")
+  var seeCost: String
+  @Guide(description: "Sum of the four per-person estimates as a range in US dollars, like '~$2,200–2,450'")
+  var totalCost: String
+  @Guide(description: "Upper end of totalCost as a whole number of US dollars, e.g. 2450")
+  var totalHigh: Int
 }
 
 @Generable
@@ -232,19 +285,36 @@ enum LocalReviews {
 @MainActor
 enum PlanService {
   static let instructions = """
-    You are a travel planner. Be concise and practical. Never invent prices, opening hours or ratings.
+    You are a travel planner. Be concise and practical. Never invent exact prices, opening hours or ratings.
+    When asked for costs, give rough typical ranges, always written with "~".
     """
 
   /// On-device first (private): turns a memory into Loves / Avoid / Pace tags.
   static func remember(_ brief: PlanBrief, ai: AIService) async throws -> (MemoryTags, AIMeta) {
     let prompt = """
-      A traveller described a trip they loved: "\(brief.memory)"
+      A traveller described a trip they loved: "\(brief.memory.isEmpty ? "(no words, only photos)" : brief.memory)"
+      Their trip photos show: \(brief.photoLabels.isEmpty ? "no photos given" : brief.photoLabels.joined(separator: ", ")).
       Things they did not enjoy: \(brief.dislikes.isEmpty ? "none given" : brief.dislikes.joined(separator: ", ")).
       Summarize their taste.
       """
     return try await ai.generate("Plan · remember a trip", kind: .survive, prompt: prompt,
-                                 instructions: "Extract travel preferences. Use only what the traveller said.",
+                                 instructions: "Extract travel preferences. Use only what the traveller said and what their photos show.",
                                  as: MemoryTags.self)
+  }
+
+  /// Things this traveller would probably not enjoy, guessed from what they love (on-device first).
+  /// They are only suggestions: the traveller picks, and can add their own.
+  static func suggestAvoid(_ brief: PlanBrief, ai: AIService) async throws -> [String] {
+    let loves = ([brief.memory] + brief.photoLabels).filter { !$0.isEmpty }.joined(separator: ", ")
+    let prompt = """
+      A traveller loves: \(loves.isEmpty ? "relaxed city trips" : loves).
+      Suggest 5 common trip annoyances that clash with this taste, like "Packed tourist spots",
+      "Long queues", "Big chains", "Early starts" or "Too much walking". Plain, everyday phrases.
+      """
+    let (ideas, _) = try await ai.generate("Plan · suggest dislikes", kind: .survive, prompt: prompt,
+                                           instructions: "Suggest likely dislikes from someone's travel taste. Short phrases only.",
+                                           as: AvoidIdeas.self)
+    return ideas.items.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
   }
 
   static func destinations(_ brief: PlanBrief, avoid: [String] = [], ai: AIService) async throws -> [DestinationIdea] {
@@ -260,7 +330,10 @@ enum PlanService {
     }
     let prompt = """
       \(scope)
-      Trip: \(brief.days) days, \(brief.whenLabel). \(brief.tasteLine)
+      Trip: \(brief.days) days (\(brief.nights) nights), \(brief.whenLabel), \(brief.travelers) \(brief.travelers == 1 ? "traveler" : "travelers"). \(brief.tasteLine)
+      Flying from: \(homeCountry). Budget per person for the whole trip: \(brief.budget.map(PlanBudget.label) ?? "no limit").
+      \(brief.budget.map { "Only suggest places whose rough total fits under $\($0)." } ?? "")
+      Estimate rough typical costs for each idea (flight, hotel, food, sights and transport).
       \(avoid.isEmpty ? "" : "Not these: \(avoid.joined(separator: ", ")).")
       """
     let (ideas, _) = try await ai.generate("Plan · destination ideas", kind: .prepare, prompt: prompt,
@@ -426,23 +499,49 @@ enum PlanService {
 
   // MARK: Hand-off
 
-  static func flightsURL(city: String, start: Date) -> URL? {
+  /// The traveller's home country, from the iPhone's region (for flight estimates).
+  static var homeCountry: String {
+    let code = Locale.current.region?.identifier ?? "US"
+    return Locale(identifier: "en").localizedString(forRegionCode: code) ?? code
+  }
+
+  /// Booking.com search for a hotel and the trip dates; the traveller books there.
+  static func hotelURL(name: String, city: String, start: Date, end: Date, adults: Int = 1) -> URL? {
+    var c = URLComponents(string: "https://www.booking.com/searchresults.html")
+    let day = Date.ISO8601FormatStyle().year().month().day()
+    c?.queryItems = [.init(name: "ss", value: "\(name), \(city)"),
+                     .init(name: "checkin", value: start.formatted(day)), .init(name: "checkout", value: end.formatted(day)),
+                     .init(name: "group_adults", value: "\(adults)"), .init(name: "no_rooms", value: "1")]
+    return c?.url
+  }
+
+  static func flightsURL(city: String, start: Date, adults: Int = 1) -> URL? {
     let day = start.formatted(.iso8601.year().month().day())
-    let q = "Flights to \(city) on \(day)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+    let q = "Flights to \(city) on \(day) for \(adults) adult\(adults == 1 ? "" : "s")".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
     return URL(string: "https://www.google.com/travel/flights?q=\(q)")
   }
 
   /// Saves the kept plan as suggested calendar items and map places. Suggestions never become
   /// Vault bookings; only pasted confirmations do.
-  static func save(brief: PlanBrief, idea: DestinationIdea, outline: [DayIdea], hotel: PlanPlace?,
-                   kept: [PlanPlace], context: ModelContext) async {
+  static func save(brief: PlanBrief, idea: DestinationIdea, outline: [DayIdea], stops: [Int: [DayStop]] = [:],
+                   hotel: PlanPlace?, kept: [PlanPlace], context: ModelContext) async {
     let cal = TripTimeline.calendar
     func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
       let d = cal.date(byAdding: .day, value: day, to: cal.startOfDay(for: brief.start)) ?? brief.start
       return cal.date(bySettingHour: hour, minute: minute, second: 0, of: d) ?? d
     }
     for (i, d) in outline.enumerated() {
-      context.insert(TripPlan(start: at(i, 9), title: d.title, detail: d.area, source: "suggested"))
+      // A day with timed stops saves each stop; otherwise its theme at 9:00.
+      guard let dayStops = stops[i], !dayStops.isEmpty else {
+        context.insert(TripPlan(start: at(i, 9), title: d.title, detail: d.area, source: "suggested"))
+        continue
+      }
+      for st in dayStops {
+        let p = TripPlan(start: st.time, title: st.name, detail: st.why, source: "suggested")
+        p.kind = st.kind; p.cost = st.cost; p.note = st.note; p.latitude = st.latitude; p.longitude = st.longitude
+        context.insert(p)
+        context.insert(Place(name: st.name, kind: "plan", latitude: st.latitude, longitude: st.longitude, address: st.address, source: "suggested"))
+      }
     }
     var foodSlot: [Int: Int] = [:]
     for p in kept {
