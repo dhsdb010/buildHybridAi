@@ -47,6 +47,8 @@ struct TripActivityAttributes: ActivityAttributes {
     var goalGlyph: String = "bed.double.fill"
     /// Id of the step the Done button finishes.
     var stepID: String = ""
+    /// Time zone the moment's clock time is written in (e.g. "Asia/Tokyo"); nil = the phone's.
+    var zone: String? = nil
   }
 
   /// Stable id of the trip moment, so the app updates the same activity instead of adding another.

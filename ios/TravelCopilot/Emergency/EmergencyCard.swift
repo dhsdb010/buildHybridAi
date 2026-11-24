@@ -14,6 +14,21 @@ final class EmergencyCard {
   var contactPhone: String = ""
   var contactRelation: String = ""  // Partner · Parent · Child · Friend · Other
   var speaks: String = "English"
+  /// The traveler's name, shown big on the Apple Wallet pass.
+  var ownerName: String = ""
+  // The rest of a paper ICE card. All optional; on the Wallet pass these go on the back only.
+  var birthDate: Date?
+  var ownPhone: String = ""
+  var homeAddress: String = ""
+  var surgeries: [String] = []
+  var contact2Name: String = ""
+  var contact2Phone: String = ""
+  var contact2Relation: String = ""
+  var doctorName: String = ""
+  var doctorPhone: String = ""
+  var insuranceProvider: String = ""
+  var insurancePolicy: String = ""
+  var insurancePhone: String = ""
   /// English text → its translation, for the card's language (only the traveler's own words).
   var translations: [String: String] = [:]
   var translationLanguage: String = ""
@@ -98,7 +113,7 @@ enum EmergencyText {
   /// so those stay in English on the card (drug names are widely read in English).
   static func needsTranslation(_ card: EmergencyCard, language: String) -> [String] {
     let code = String(language.prefix(2))
-    let items = card.allergies + card.conditions + card.medicines.filter { !$0.fromHealth }.map(\.text)
+    let items = card.allergies + card.conditions + card.surgeries + card.medicines.filter { !$0.fromHealth }.map(\.text)
     return items.filter { fixed[code]?[$0] == nil && (card.translationLanguage != code || card.translations[$0] == nil) }
   }
 }

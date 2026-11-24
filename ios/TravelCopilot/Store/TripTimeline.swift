@@ -12,6 +12,24 @@ struct TripEvent: Identifiable, Hashable {
   let planSource: String?
   /// Booking kind for flights and trains ("flight" · "train"), so a journey knows what you ride.
   var vehicle: String? = nil
+  /// Where the time is local (IANA id), e.g. "Asia/Tokyo" for a Haneda arrival. nil = the phone's zone.
+  var timeZone: String? = nil
+  /// The clock time as written on the booking, when `date` has been moved to the real moment.
+  var wall: Date? = nil
+
+  /// The time to show: as written on the booking.
+  var clock: Date { wall ?? date }
+
+  /// A copy whose `date` is the real moment (for reminders and the Live Activity countdown);
+  /// `clock` keeps the written time for display.
+  var atInstant: TripEvent {
+    let real = TripTimeZones.instant(date, in: timeZone)
+    guard real != date else { return self }
+    var e = TripEvent(id: id, date: real, kind: kind, title: title, detail: detail, itemID: itemID,
+                      planSource: planSource, vehicle: vehicle, timeZone: timeZone)
+    e.wall = date
+    return e
+  }
 
   var symbol: String {
     switch kind {
@@ -64,20 +82,23 @@ enum TripTimeline {
         if let d = date(item.startDate, item.departureTime) {
           out.append(.init(id: "\(item.title)-dep", date: d, kind: .depart, title: route.isEmpty ? item.title : route,
                            detail: [item.title, item.confirmationCode].compactMap { $0 }.joined(separator: " · "), itemID: box, planSource: nil,
-                           vehicle: item.kind))
+                           vehicle: item.kind, timeZone: TripTimeZones.airport(item.origin)))
         }
         if let d = date(item.endDate ?? item.startDate, item.arrivalTime) {
           out.append(.init(id: "\(item.title)-arr", date: d, kind: .arrive, title: "Land at \(item.destination ?? "destination")",
-                           detail: item.title, itemID: box, planSource: nil, vehicle: item.kind))
+                           detail: item.title, itemID: box, planSource: nil, vehicle: item.kind,
+                           timeZone: TripTimeZones.airport(item.destination) ?? TripTimeZones.country(item.countryCode)))
         }
       case "hotel":
         if let d = date(item.startDate, item.checkInTime, defaultTime: "15:00") {
           out.append(.init(id: "\(item.title)-in", date: d, kind: .checkIn, title: "Check in · \(item.title)",
-                           detail: item.confirmationCode.map { "Ref \($0)" } ?? "", itemID: box, planSource: nil))
+                           detail: item.confirmationCode.map { "Ref \($0)" } ?? "", itemID: box, planSource: nil,
+                           timeZone: TripTimeZones.country(item.countryCode)))
         }
         if let d = date(item.endDate, item.checkOutTime, defaultTime: "11:00") {
           out.append(.init(id: "\(item.title)-out", date: d, kind: .checkOut, title: "Check out · \(item.title)",
-                           detail: item.confirmationCode.map { "Ref \($0)" } ?? "", itemID: box, planSource: nil))
+                           detail: item.confirmationCode.map { "Ref \($0)" } ?? "", itemID: box, planSource: nil,
+                           timeZone: TripTimeZones.country(item.countryCode)))
         }
       default: break
       }

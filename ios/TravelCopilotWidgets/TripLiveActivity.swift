@@ -88,6 +88,14 @@ private let shortDay: DateFormatter = {
   let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "EEE"; return f
 }()
 
+/// Shows a clock time in the moment's own zone (Tokyo 15:55 stays 15:55 while the phone is on home time).
+private func inZone(_ f: DateFormatter, _ zone: String?) -> DateFormatter {
+  guard let zone, let tz = TimeZone(identifier: zone), tz != f.timeZone else { return f }
+  let c = f.copy() as! DateFormatter
+  c.timeZone = tz
+  return c
+}
+
 /// Countdown only inside the hour; otherwise the clock time (with the day above it when it isn't today).
 private enum WhenRule {
   static func isCountdown(_ s: TripState) -> Bool {
@@ -101,7 +109,7 @@ private enum WhenRule {
     let cal = Calendar.current
     if cal.isDateInToday(s.start) { return ("TODAY", .white.opacity(0.6)) }
     if cal.isDateInTomorrow(s.start) { return ("TOMORROW", .white.opacity(0.6)) }
-    return (dayMonth.string(from: s.start).uppercased(), .white.opacity(0.6))
+    return (inZone(dayMonth, s.zone).string(from: s.start).uppercased(), .white.opacity(0.6))
   }
 }
 
@@ -114,10 +122,10 @@ private struct BigTime: View {
       Text(timerInterval: Date.now...state.start, countsDown: true)
         .monospacedDigit().multilineTextAlignment(.trailing).foregroundStyle(.white)
     } else if !state.arrived && !Calendar.current.isDateInToday(state.start) {
-      Text("\(shortDay.string(from: state.start)) \(hhmm.string(from: state.start))").foregroundStyle(.white)
+      Text("\(inZone(shortDay, state.zone).string(from: state.start)) \(inZone(hhmm, state.zone).string(from: state.start))").foregroundStyle(.white)
         .monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
     } else {
-      Text(hhmm.string(from: state.start)).monospacedDigit().foregroundStyle(.white)
+      Text(inZone(hhmm, state.zone).string(from: state.start)).monospacedDigit().foregroundStyle(.white)
     }
   }
 }
@@ -135,7 +143,7 @@ private struct When: View {
         if WhenRule.isCountdown(state) || state.arrived || Calendar.current.isDateInToday(state.start) || state.start <= .now {
           BigTime(state: state)
         } else {
-          Text(hhmm.string(from: state.start)).monospacedDigit().foregroundStyle(.white)
+          Text(inZone(hhmm, state.zone).string(from: state.start)).monospacedDigit().foregroundStyle(.white)
         }
       }
       .font(.custom("HelveticaNeue-Bold", size: big)).lineLimit(1).minimumScaleFactor(0.6)

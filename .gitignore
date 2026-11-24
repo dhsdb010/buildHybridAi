@@ -22,3 +22,10 @@ xcuserdata/
 .build-dd/
 .build-dd-rel/
 .build-dd-dev/
+.build-dd-sim/
+
+# Apple Wallet pass certificate, key and its password: never commit
+ios/TravelCopilot/Resources/Wallet/
+*.p12
+*.certSigningRequest
+*.cer

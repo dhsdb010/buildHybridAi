@@ -20,7 +20,9 @@ enum TripReminders {
   /// Reads the trip from storage when Done arrives before the app has synced (woken in the background).
   static var reload: (@MainActor () -> (events: [TripEvent], place: String, enabled: Bool))?
 
-  static func sync(events: [TripEvent], place: String, enabled: Bool, now: Date = AppClock.now) async {
+  static func sync(events written: [TripEvent], place: String, enabled: Bool, now: Date = AppClock.now) async {
+    // Fire at the real moment: a 15:55 Haneda arrival is 15:55 Tokyo time, even if the phone is still on home time.
+    let events = written.map(\.atInstant).sorted { $0.date < $1.date }
     last = (events, place, enabled)
     // Live Activity first: the notification permission prompt waits for the user.
     await updateActivity(events, place: place, enabled: enabled, now: now)
@@ -68,13 +70,18 @@ enum TripReminders {
       content.interruptionLevel = e.kind == .depart || e.kind == .checkOut ? .timeSensitive : .active
       if let category = r.category { content.categoryIdentifier = category }
       content.userInfo = r.userInfo
-      let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fire)
+      // With a known time zone, pin the trigger to that absolute moment (components in UTC with the
+      // zone set); otherwise keep the phone's own clock, as before.
+      var cal = Calendar(identifier: .gregorian)
+      if e.timeZone != nil { cal.timeZone = TimeZone(identifier: "UTC")! }
+      var comps = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fire)
+      if e.timeZone != nil { comps.timeZone = cal.timeZone }
       var trigger: UNNotificationTrigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
       #if DEBUG
         // `-notifyIn 8`: the next reminder fires in 8 s instead of at its real time (to check it on a device).
         let soon = UserDefaults.standard.double(forKey: "notifyIn")
         if soon > 0, !firedSoon { trigger = UNTimeIntervalNotificationTrigger(timeInterval: soon, repeats: false); firedSoon = true }
-        NSLog("Reminder scheduled: %@", "\(e.id) at \(fire) · \(content.title) · \(content.body) · \(content.categoryIdentifier)")
+        NSLog("Reminder scheduled: %@", "\(e.id) at \(fire) [\(e.timeZone ?? "phone time")] · \(content.title) · \(content.body) · \(content.categoryIdentifier)")
       #endif
       let request = UNNotificationRequest(identifier: "trip-\(e.id)", content: content, trigger: trigger)
       try? await center.add(request)
@@ -93,7 +100,7 @@ enum TripReminders {
   /// What a reminder says. Journey steps read like a station sign: "Step 2 of 3 · Bus 61 at 02:51",
   /// sent 10 min before (so the next step's alert doesn't arrive while you're still on this one).
   static func reminder(_ e: TripEvent, journey: (Journey, Int, Int)?) -> Reminder {
-    let time = TripTimeline.time(e.date)
+    let time = TripTimeline.time(e.clock)
     if let (j, i, n) = journey {
       let mode = JourneyMode.of(e)
       let info = ["stepID": e.id, "card": mode.card.link, "ask": "About \(stepName(e)): "]
@@ -199,7 +206,7 @@ enum TripReminders {
     let state = TripActivityAttributes.ContentState(
       title: title(e), label: label(e, place: place), detail: detail(e),
       glyph: glyph(e), progress: progress, start: e.date, since: min(now, e.date.addingTimeInterval(-window)),
-      ref: ref(e), from: ends(e).from, to: ends(e).to, action: action(e))
+      ref: ref(e), from: ends(e).from, to: ends(e).to, action: action(e), zone: e.timeZone)
     // Stale after the moment ends, so the system dims it if the app can't update it.
     let content = ActivityContent(state: state, staleDate: e.date.addingTimeInterval(3600),
                                   relevanceScore: progress == .soon || progress == .now ? 100 : 50)
@@ -228,7 +235,7 @@ enum TripReminders {
       // Arrived: the booking details right on the Lock Screen.
       let checkOut = events.first { $0.kind == .checkOut && $0.itemID == j.goal.itemID }
       // Ref is already top-right; this line is the hotel and when you leave.
-      let out = checkOut.map { "Out \($0.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))) \(TripTimeline.time($0.date))" } ?? ""
+      let out = checkOut.map { "Out \($0.clock.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))) \(TripTimeline.time($0.clock))" } ?? ""
       return .init(title: j.goal.kind == .checkIn ? "You're checked in" : "At the airport", label: label(j.goal, place: place),
                    detail: detail(j.goal), glyph: JourneyMode.of(j.goal).glyph, progress: .done, start: j.goal.date, since: j.goal.date,
                    ref: goalRef, from: j.stops.first ?? "", to: j.stops.last ?? "", action: "Room info",
@@ -236,7 +243,7 @@ enum TripReminders {
                    arrived: true, info: out.isEmpty ? detail(j.goal) : "\(detail(j.goal)) · \(out)",
                    cardLabel: j.goal.kind == .checkIn ? "Room info" : "Boarding info",
                    cardGlyph: j.goal.kind == .checkIn ? "key.fill" : "airplane", cardLink: "travelcopilot://trip",
-                   goalGlyph: JourneyMode.of(j.goal).glyph, stepID: j.goal.id)
+                   goalGlyph: JourneyMode.of(j.goal).glyph, stepID: j.goal.id, zone: j.goal.timeZone)
     }
     let n = j.steps.count
     let arriving = i == n
@@ -256,7 +263,7 @@ enum TripReminders {
                  start: s.event.date, since: begin, ref: goalRef, from: j.stops[seg], to: j.stops[seg + 1], action: card.label,
                  stops: j.stops, segment: seg, along: along, step: min(i + 1, n), steps: n,
                  cardLabel: card.label, cardGlyph: card.glyph, cardLink: card.link,
-                 goalGlyph: JourneyMode.of(j.goal).glyph, stepID: s.event.id)
+                 goalGlyph: JourneyMode.of(j.goal).glyph, stepID: s.event.id, zone: s.event.timeZone)
   }
 
   /// One line under the step title, without repeating it ("Platform 1 · Car 8", or "Narita → Shinjuku").
@@ -276,7 +283,7 @@ enum TripReminders {
   // MARK: Station-sign copy (noun + time)
 
   static func title(_ e: TripEvent) -> String {
-    let time = TripTimeline.time(e.date)
+    let time = TripTimeline.time(e.clock)
     switch e.kind {
     case .depart: return "Depart \(time)"
     case .arrive: return "Land \(time)"
@@ -311,7 +318,7 @@ enum TripReminders {
   static func ends(_ e: TripEvent) -> (from: String, to: String) {
     let parts = e.title.components(separatedBy: " → ")
     if e.kind == .depart, parts.count == 2 { return (parts[0], parts[1]) }
-    return ("Now", TripTimeline.time(e.date))
+    return ("Now", TripTimeline.time(e.clock))
   }
 
   static func action(_ e: TripEvent) -> String {

@@ -87,3 +87,20 @@ cd ios && TEST_RUNNER_BLUE_EVAL=1 xcodebuild test -project TravelCopilot.xcodepr
 - The test fails if Blue shows a single wrong value; accuracy is reported, not enforced.
 - Baseline on 19 Nov 2026 (iPhone 17 simulator): before the fixes 28/40 with 6 wrong; after, 40/40 tuned and 14/16 held out, 0 wrong, all on-device, about 1.1 s per question.
 - 20 Nov 2026: a second held-out set (10 questions, including traps) was written before changing rules. It found one wrong value ("What time is it in Tokyo now?" got the departure time) and three misses; a general rule fixed them (a time question counts for a booking time only when it names what it's about). Result: 67/67, 0 wrong. Both held-out sets have now informed the rules, so write a fresh set before the next change.
+
+## Emergency card in Apple Wallet (optional)
+
+The pass is made and signed on the iPhone, so it needs a Pass Type ID certificate inside the app.
+For a public release, move signing to a server: a key inside an app can be extracted.
+
+1. In [Certificates, IDs & Profiles](https://developer.apple.com/account/resources/identifiers/list/passTypeId),
+   add a **Pass Type ID**: `pass.dev.buildhybridai.emergency`.
+2. Select it and create a certificate. Keychain Access → Certificate Assistant → *Request a Certificate
+   From a Certificate Authority…* → saved to disk makes the CSR it asks for. Download the `.cer` and
+   double-click it.
+3. In Keychain Access (My Certificates), right-click **Pass Type ID: pass.dev.buildhybridai…** →
+   *Export…* as `PassCertificate.p12` with a password.
+4. Download Apple's intermediate certificate
+   [AppleWWDRCAG4.cer](https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer).
+5. Put both files in `ios/TravelCopilot/Resources/Wallet/`, plus a text file `PassCertificate.password`
+   holding the password. Git ignores this folder. Build again.

@@ -13,10 +13,14 @@ struct EmergencySetupView: View {
   @Query private var cards: [EmergencyCard]
   @Query private var packs: [DestinationPack]
 
-  enum Step: Int, CaseIterable { case health, blood, medicines, allergies, conditions, contact, review }
+  enum Step: Int, CaseIterable { case health, blood, medicines, allergies, conditions, contact, details, review }
   @State private var step: Step = EmergencyHealth.isAvailable ? .health : .blood
+  @State private var readingHealth = false
   @State private var bloodType: String?
   @State private var bloodFromHealth = false
+  /// Tried Health but it gave no blood type (not set there, or the toggle was left off).
+  @State private var healthGaveNoBlood = false
+  @Environment(\.openURL) private var openHealthURL
   @State private var medicines: [EmergencyMedicine] = []
   @State private var medicineOn: Set<String> = []
   @State private var allergies: Set<String> = []
@@ -31,6 +35,22 @@ struct EmergencySetupView: View {
   @State private var newSchedule = ""
   @State private var pickingContact = false
   @State private var saving = false
+  // "More details" (the rest of a paper ICE card), all optional.
+  @State private var ownerName = ""
+  @State private var birthDate: Date?
+  @State private var ownPhone = ""
+  @State private var homeAddress = ""
+  @State private var surgeries: [String] = []
+  @State private var newSurgery = ""
+  @State private var contact2Name = ""
+  @State private var contact2Phone = ""
+  @State private var contact2Relation = "Parent"
+  @State private var pickingContact2 = false
+  @State private var doctorName = ""
+  @State private var doctorPhone = ""
+  @State private var insuranceProvider = ""
+  @State private var insurancePolicy = ""
+  @State private var insurancePhone = ""
   @State private var loaded = false
 
   private var pack: DestinationPack? { packs.first }
@@ -52,6 +72,9 @@ struct EmergencySetupView: View {
     .tint(MTA.emergency)
     .sheet(isPresented: $pickingContact) {
       ContactPicker { name, phone in contactName = name; contactPhone = phone }.ignoresSafeArea()
+    }
+    .sheet(isPresented: $pickingContact2) {
+      ContactPicker { name, phone in contact2Name = name; contact2Phone = phone }.ignoresSafeArea()
     }
     .task {
       if !loaded { loadExisting(); loaded = true }
@@ -76,7 +99,10 @@ struct EmergencySetupView: View {
           .frame(width: 44, height: 44).background(MTA.raised, in: .circle)
       }
       .accessibilityLabel("Back")
-      if step != .review {
+      if step == .details {
+        Text("Optional").mta(.subheadNormal).foregroundStyle(MTA.text).frame(maxWidth: .infinity)
+        Button("Skip") { next() }.font(.system(size: 17, weight: .medium)).foregroundStyle(MTA.emergency)
+      } else if step != .review {
         HStack(spacing: 6) {
           ForEach(1...5, id: \.self) { i in
             Capsule().fill(i <= step.rawValue ? MTA.emergency : Color.gray.opacity(0.3)).frame(height: 6)
@@ -101,6 +127,7 @@ struct EmergencySetupView: View {
     case .allergies: allergiesStep
     case .conditions: conditionsStep
     case .contact: contactStep
+    case .details: detailsStep
     case .review: reviewStep
     }
   }
@@ -118,10 +145,15 @@ struct EmergencySetupView: View {
     VStack(spacing: 10) {
       switch step {
       case .health:
-        Button("Use Health data") { Task { await useHealth() } }.buttonStyle(EmergencyButton(primary: true))
+        Button { Task { await useHealth() } } label: {
+          HStack(spacing: 8) { if readingHealth { ProgressView().tint(.white) }; Text(readingHealth ? "Reading Health…" : "Use Health data") }
+        }
+        .buttonStyle(EmergencyButton(primary: true)).disabled(readingHealth)
         Button("Answer myself") { step = .blood }.buttonStyle(EmergencyButton(primary: false))
         Button("Not now") { dismiss() }.font(.system(size: 15, weight: .medium)).foregroundStyle(MTA.text2)
       case .contact:
+        Button("Next") { next() }.buttonStyle(EmergencyButton(primary: true))
+      case .details:
         Button("Review my card") { step = .review }.buttonStyle(EmergencyButton(primary: true))
       case .review:
         Button { Task { await save() } } label: {
@@ -168,6 +200,17 @@ struct EmergencySetupView: View {
   private var bloodStep: some View {
     VStack(alignment: .leading, spacing: 14) {
       question(1, "What's your blood type?", bloodFromHealth ? "Filled in from Health. Change it if it's wrong." : nil)
+      if healthGaveNoBlood {
+        VStack(alignment: .leading, spacing: 8) {
+          Text("Health didn't share a blood type. Either it isn't in Health → Health Details, or Blood Type was left off when you allowed access.")
+            .mta(.body2).foregroundStyle(MTA.text2)
+          Text("To fix: Settings → Health → Data Access & Devices → Travel Copilot → turn on Blood Type. Or just tap yours below.")
+            .mta(.body2).foregroundStyle(MTA.text2)
+          Button("Open Health") { if let u = URL(string: "x-apple-health://") { openHealthURL(u) } }
+            .font(.system(size: 15, weight: .semibold)).foregroundStyle(MTA.emergency)
+        }
+        .padding(12).background(MTA.raised, in: .rect(cornerRadius: 12))
+      }
       LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
         ForEach(["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−"], id: \.self) { t in
           Button { bloodType = t } label: {
@@ -247,6 +290,87 @@ struct EmergencySetupView: View {
     }
   }
 
+  private var detailsStep: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      VStack(alignment: .leading, spacing: 8) {
+        MTALabel("Emergency card · optional", color: MTA.emergency)
+        Text("A few more details?").font(.system(size: 30, weight: .bold)).foregroundStyle(MTA.text)
+        Text("Like a paper ICE card. All optional and kept on this iPhone. On the Wallet pass these go on the back only.")
+          .mta(.body2).foregroundStyle(MTA.text2)
+      }
+      detailGroup("About you") {
+        field("Your name", $ownerName, .name)
+        if let b = birthDate {
+          HStack {
+            DatePicker("Date of birth", selection: Binding(get: { b }, set: { birthDate = $0 }), in: ...Date.now, displayedComponents: .date)
+            Button { birthDate = nil } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(MTA.text2) }
+              .accessibilityLabel("Remove date of birth")
+          }
+          .padding(.horizontal, 16).padding(.vertical, 8).background(MTA.raised, in: .rect(cornerRadius: 12))
+        } else {
+          Button { birthDate = Calendar.current.date(byAdding: .year, value: -30, to: .now) } label: {
+            Label("Add date of birth", systemImage: "plus").frame(maxWidth: .infinity, alignment: .leading)
+              .padding(.horizontal, 16).padding(.vertical, 14).background(MTA.raised, in: .rect(cornerRadius: 12))
+          }
+          .buttonStyle(.plain).foregroundStyle(MTA.emergency)
+        }
+        field("Your phone", $ownPhone, .telephoneNumber, keyboard: .phonePad)
+        field("Home address", $homeAddress, .fullStreetAddress)
+      }
+      detailGroup("Recent surgeries") {
+        ForEach(surgeries, id: \.self) { sgy in
+          HStack { Text(sgy).mta(.body1); Spacer()
+            Button { surgeries.removeAll { $0 == sgy } } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(MTA.text2) }
+              .accessibilityLabel("Remove \(sgy)") }
+            .padding(.horizontal, 16).padding(.vertical, 12).background(MTA.raised, in: .rect(cornerRadius: 12))
+        }
+        TextField("e.g. Appendectomy (2021)", text: $newSurgery).submitLabel(.done)
+          .onSubmit { let t = newSurgery.trimmingCharacters(in: .whitespaces); if !t.isEmpty { surgeries.append(t); newSurgery = "" } }
+          .padding(.horizontal, 16).padding(.vertical, 14).background(MTA.raised, in: .rect(cornerRadius: 12))
+      }
+      detailGroup("Second emergency contact") {
+        if contact2Name.isEmpty {
+          option("Pick from Contacts", selected: false) { pickingContact2 = true }
+        } else {
+          field("Name", $contact2Name, .name)
+          field("Phone", $contact2Phone, .telephoneNumber, keyboard: .phonePad)
+          FlowLayout(spacing: 8) {
+            ForEach(EmergencyText.relations, id: \.self) { r in pill(r, selected: contact2Relation == r) { contact2Relation = r } }
+          }
+        }
+      }
+      detailGroup("Primary doctor") {
+        field("Name and clinic", $doctorName, nil)
+        field("Phone", $doctorPhone, .telephoneNumber, keyboard: .phonePad)
+      }
+      detailGroup("Travel insurance") {
+        field("Provider", $insuranceProvider, .organizationName)
+        field("Policy number", $insurancePolicy, nil)
+        field("Emergency assistance phone", $insurancePhone, .telephoneNumber, keyboard: .phonePad)
+      }
+    }
+  }
+
+  private func detailGroup<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+    VStack(alignment: .leading, spacing: 8) { MTALabel(title); content() }
+  }
+
+  private func field(_ prompt: String, _ text: Binding<String>, _ type: UITextContentType?, keyboard: UIKeyboardType = .default) -> some View {
+    TextField(prompt, text: text).textContentType(type).keyboardType(keyboard)
+      .padding(.horizontal, 16).padding(.vertical, 14).background(MTA.raised, in: .rect(cornerRadius: 12))
+  }
+
+  private var detailsSummary: String {
+    var parts: [String] = []
+    if !ownerName.isEmpty { parts.append(ownerName) }
+    if let b = birthDate { parts.append("Born \(b.formatted(date: .abbreviated, time: .omitted))") }
+    if !surgeries.isEmpty { parts.append("\(surgeries.count) surger\(surgeries.count == 1 ? "y" : "ies")") }
+    if !contact2Name.isEmpty { parts.append("2nd contact: \(contact2Name)") }
+    if !doctorName.isEmpty { parts.append("Doctor: \(doctorName)") }
+    if !insuranceProvider.isEmpty { parts.append("Insurance: \(insuranceProvider)") }
+    return parts.isEmpty ? "None" : parts.joined(separator: "\n")
+  }
+
   private var reviewStep: some View {
     VStack(alignment: .leading, spacing: 10) {
       Text("Check your card").font(.system(size: 30, weight: .bold)).foregroundStyle(MTA.text)
@@ -255,6 +379,7 @@ struct EmergencySetupView: View {
       reviewRow("Allergies", allergies.isEmpty ? "None" : allergies.sorted().joined(separator: ", "), .allergies)
       reviewRow("Conditions", conditions.isEmpty ? "None" : conditions.sorted().joined(separator: ", "), .conditions)
       reviewRow("Emergency contact", contactName.isEmpty ? "None" : "\(contactName) · \(relation.lowercased()) · \(contactPhone)", .contact)
+      reviewRow("More details", detailsSummary, .details)
       VStack(alignment: .leading, spacing: 4) {
         MTALabel("\(languageName) on save", color: MTA.onTrack)
         Text("Labels and common items are pre-translated. Anything you typed is translated once while online; medicine names and numbers are checked by code.")
@@ -343,8 +468,10 @@ struct EmergencySetupView: View {
   }
 
   private func useHealth() async {
+    readingHealth = true
+    defer { readingHealth = false }
     let found = await EmergencyHealth.read()
-    if let t = found.bloodType { bloodType = t; bloodFromHealth = true }
+    if let t = found.bloodType { bloodType = t; bloodFromHealth = true } else { healthGaveNoBlood = true }
     for m in found.medicines where !medicines.contains(where: { $0.name == m.name }) {
       medicines.append(m); medicineOn.insert(m.text)
     }
@@ -358,6 +485,12 @@ struct EmergencySetupView: View {
     allergies = Set(c.allergies); conditions = Set(c.conditions)
     contactName = c.contactName; contactPhone = c.contactPhone
     relation = c.contactRelation.isEmpty ? "Partner" : c.contactRelation
+    ownerName = c.ownerName; birthDate = c.birthDate; ownPhone = c.ownPhone; homeAddress = c.homeAddress
+    surgeries = c.surgeries
+    contact2Name = c.contact2Name; contact2Phone = c.contact2Phone
+    contact2Relation = c.contact2Relation.isEmpty ? "Parent" : c.contact2Relation
+    doctorName = c.doctorName; doctorPhone = c.doctorPhone
+    insuranceProvider = c.insuranceProvider; insurancePolicy = c.insurancePolicy; insurancePhone = c.insurancePhone
   }
 
   private func save() async {
@@ -370,6 +503,15 @@ struct EmergencySetupView: View {
     card.conditions = EmergencyText.commonConditions.filter(conditions.contains) + conditions.filter { !EmergencyText.commonConditions.contains($0) }.sorted()
     card.contactName = contactName; card.contactPhone = contactPhone
     card.contactRelation = contactName.isEmpty ? "" : relation
+    let trim = { (t: String) in t.trimmingCharacters(in: .whitespacesAndNewlines) }
+    card.ownerName = trim(ownerName); card.birthDate = birthDate
+    card.ownPhone = trim(ownPhone); card.homeAddress = trim(homeAddress)
+    card.surgeries = surgeries
+    card.contact2Name = trim(contact2Name); card.contact2Phone = trim(contact2Phone)
+    card.contact2Relation = card.contact2Name.isEmpty ? "" : contact2Relation
+    card.doctorName = trim(doctorName); card.doctorPhone = trim(doctorPhone)
+    card.insuranceProvider = trim(insuranceProvider); card.insurancePolicy = trim(insurancePolicy)
+    card.insurancePhone = trim(insurancePhone)
     card.updatedAt = .now
     try? context.save()
     _ = await EmergencyTranslator.translate(card, to: language, languageName: languageName, ai: ai)

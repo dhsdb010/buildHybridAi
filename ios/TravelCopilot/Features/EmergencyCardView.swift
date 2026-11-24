@@ -1,3 +1,4 @@
+import PassKit
 import SwiftData
 import SwiftUI
 
@@ -11,6 +12,7 @@ struct EmergencyCardView: View {
   @Environment(\.openURL) private var openURL
   @State private var localFirst: Bool
   @State private var drag: CGFloat = 0
+  @State private var addToWallet = false
 
   init(card: EmergencyCard, pack: DestinationPack?, english: Bool = false) {
     self.card = card
@@ -31,9 +33,12 @@ struct EmergencyCardView: View {
       header
       ScrollView {
         VStack(spacing: 0) {
-          ForEach(Array(card.rows(language: language, localFirst: showLocal).enumerated()), id: \.offset) { _, r in row(r) }
+          ForEach(card.iceSections(language: language, localFirst: showLocal)) { section in
+            sectionBar(section)
+            ForEach(Array(section.rows.enumerated()), id: \.offset) { _, r in row(r, alert: section.alert) }
+          }
         }
-        .padding(.horizontal, 16).padding(.top, 8)
+        .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
       }
       .scrollIndicators(.hidden)
       buttons
@@ -51,6 +56,7 @@ struct EmergencyCardView: View {
     )
     .statusBarHidden(false)
     .accessibilityAction(.escape) { dismiss() }
+    .sheet(isPresented: $addToWallet) { WalletPassSheet(card: card, language: language, ambulance: ambulance) }
   }
 
   // MARK: - Pieces
@@ -61,26 +67,31 @@ struct EmergencyCardView: View {
     return VStack(spacing: 0) {
       Capsule().fill(.white.opacity(0.6)).frame(width: 40, height: 5).padding(.top, 8)
         .accessibilityLabel("Swipe down to close")
-      HStack(spacing: 16) {
-        Image("StarOfLifeOnColor").resizable().scaledToFit().frame(width: 80, height: 78)
+      // One short line: the Star of Life and the title, so the card itself starts higher up.
+      HStack(spacing: 10) {
+        Image("StarOfLifeOnColor").resizable().scaledToFit().frame(width: 34, height: 33)
           .accessibilityHidden(true)
-        VStack(alignment: .leading, spacing: 2) {
-          Text(showLocal ? loc!.title : en.title)
-            .font(.system(size: showLocal ? 26 : 21, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.7)
-          if let loc { Text(showLocal ? en.title : loc.title).font(.system(size: 16, weight: .semibold)) }
-          Text("Speaks \(card.speaks)").font(.system(size: 13))
-        }
-        .foregroundStyle(.white)
-        Spacer(minLength: 0)
+        Text(loc.map { showLocal ? "\($0.title) · Medical info" : "Medical info · \($0.title)" } ?? "Medical info")
+          .font(.system(size: 20, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7)
       }
-      .padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 22)
+      .foregroundStyle(.white)
+      .frame(maxWidth: .infinity)
+      .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 14)
     }
     .frame(maxWidth: .infinity)
     .background(MTA.emergency.ignoresSafeArea(edges: .top))
     .accessibilityElement(children: .combine)
   }
 
-  private func row(_ r: EmergencyRow) -> some View {
+  /// Blue bar with the section name in both languages, like a paper ICE card.
+  private func sectionBar(_ s: ICESection) -> some View {
+    Text("\(s.title) · \(s.titleOther)").font(.system(size: 12, weight: .bold)).tracking(0.4)
+      .foregroundStyle(.white).frame(maxWidth: .infinity).padding(.vertical, 5)
+      .background(MTA.emergency).padding(.top, 10).padding(.bottom, 2)
+      .accessibilityAddTraits(.isHeader)
+  }
+
+  private func row(_ r: EmergencyRow, alert: Bool = false) -> some View {
     HStack(alignment: .top, spacing: 0) {
       VStack(alignment: .leading, spacing: 1) {
         Text(r.label).font(.system(size: 13, weight: .bold)).foregroundStyle(.black)
@@ -88,7 +99,7 @@ struct EmergencyCardView: View {
       }
       .frame(width: 100, alignment: .leading).padding(.trailing, 8)
       VStack(alignment: .leading, spacing: 2) {
-        Text(r.value).font(.system(size: 18, weight: .bold)).foregroundStyle(.black)
+        Text(r.value).font(.system(size: 18, weight: .bold)).foregroundStyle(alert ? Color(red: 0.82, green: 0.08, blue: 0.1) : .black)
           .fixedSize(horizontal: false, vertical: true)
         if let o = r.valueOther {
           Text(o).font(.system(size: 13)).foregroundStyle(Color(white: 0.37)).fixedSize(horizontal: false, vertical: true)
@@ -105,6 +116,10 @@ struct EmergencyCardView: View {
 
   private var buttons: some View {
     VStack(spacing: 10) {
+      if PKAddPassesViewController.canAddPasses() {
+        AddPassButton { addToWallet = true }.frame(height: 48)
+          .accessibilityLabel("Add to Apple Wallet")
+      }
       HStack(spacing: 10) {
         Button { if let u = URL(string: "tel:\(ambulance)") { openURL(u) } } label: {
           Text("Call \(ambulance)").font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)

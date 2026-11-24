@@ -50,6 +50,11 @@ targets:
           else
             echo "warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)"
           fi
+          # Apple Wallet pass certificate (never in git): copied in when present. See SETUP.md.
+          WALLET="${SRCROOT}/TravelCopilot/Resources/Wallet"
+          for f in PassCertificate.p12 PassCertificate.password AppleWWDRCAG4.cer; do
+            if [ -f "$WALLET/$f" ]; then cp "$WALLET/$f" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/"; fi
+          done
     entitlements:
       path: TravelCopilot/TravelCopilot.entitlements
       properties:

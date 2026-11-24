@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0702F99C137A564745A48C3F /* WalletPassSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AA496609E50964250A9257 /* WalletPassSheet.swift */; };
 		0CA359B8DCF267EEF45FF095 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836881F86764F2101174C04F /* TripView.swift */; };
 		0E31CD5EFFB88BEE0AE1A487 /* SpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */; };
 		0EB0CA84789ED29D6B2BD897 /* AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6A81683B7BACE878B25814 /* AskService.swift */; };
@@ -15,6 +16,9 @@
 		177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E61DA002322A92847F3F1B /* RoutingLogView.swift */; };
 		1F463F14CEEEA373C4118480 /* EmergencyCardWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291992C06439F851FB34CCE /* EmergencyCardWidgets.swift */; };
 		20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C7BA93EA70257ECCAE299C /* CatchUpService.swift */; };
+		215022EF9C17A53E593FDCA2 /* TripTimeZones.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206CD8F0DF7FB8EA5DB50074 /* TripTimeZones.swift */; };
+		23D81E4E732F2C70DE97A14E /* TripTimeZoneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1884381D2E5A99055D0C670 /* TripTimeZoneTests.swift */; };
+		2C98E1229B9071CEBF37C156 /* PassCertificate.password in Resources */ = {isa = PBXBuildFile; fileRef = 663B01CCE6BFFEBE50E10F32 /* PassCertificate.password */; };
 		2CA10D403969CCFB0126BF36 /* PrepareDedupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD503B45A8210BB16CBE4DF8 /* PrepareDedupTests.swift */; };
 		2FAF49E7597FADABE9CF054A /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 5A72C650EB0633D1444CE7E7 /* FirebaseRemoteConfig */; };
 		37418EBFDE1ABA9DCBB0310D /* PlanChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = F78EE745724CF7139C52C6A1 /* PlanChat.swift */; };
@@ -26,6 +30,7 @@
 		46D39048C94145FCB45D601C /* EmergencyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */; };
 		493D05B2779F2214EE824150 /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */; };
 		4ACB0C7D633ED0601046DD86 /* FloatingAsk.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0D68D3DBF952B3805C9D32 /* FloatingAsk.swift */; };
+		4C718D92E03B2BDF84BF1F2A /* WalletPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4123B7895DFC98EC04DA53C4 /* WalletPass.swift */; };
 		4F3CCBC386A596D1DC65E69A /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */; };
 		4F4CC24018A6BC22ECCD6C41 /* CardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */; };
 		4FFC75FE7FF3C448A76355FA /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 95AAFA502E2AC7582C1402ED /* FirebaseAuth */; };
@@ -39,6 +44,7 @@
 		60E045A5EFE6DBEBFA95DB83 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD65BD2D80277E815A4BCCA /* Models.swift */; };
 		621677DB4EF444551C07879A /* PlanDayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F3D1DC5B07860C1E7DD453D /* PlanDayView.swift */; };
 		622FC6E0748A92A3918E17A5 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33BC2EA6361EE2BB55A585F /* AuthService.swift */; };
+		64A0A69ADB3B060A2C293A22 /* PassCertificate.p12 in Resources */ = {isa = PBXBuildFile; fileRef = FB56A121F1595748E80E9683 /* PassCertificate.p12 */; };
 		6F54D7FAE810AD8474488BEA /* TripProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C97D2FA8F438F9E591D53E /* TripProgress.swift */; };
 		6FE7B1242B09BDD4FB4E16DA /* TravelCopilotShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DE0758D6330D4582B09973 /* TravelCopilotShortcuts.swift */; };
 		720DF963539AFC0FB1DB9546 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9947A0ADC3385A1F1317EB /* Components.swift */; };
@@ -63,8 +69,10 @@
 		A569B663C6231D599C587EDE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811A9F16C58C5478C0F5FE7D /* AIService.swift */; };
 		A5ECDE61815292E24596CFF5 /* RoutingLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */; };
 		A601F3A7AB2DBA660776B769 /* EmergencyTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */; };
+		A933F4D97B70519B8DE624A7 /* EmergencyICE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66FA11F403615263A0F7192B /* EmergencyICE.swift */; };
 		AAA32FEF0B263583EE635B39 /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
 		ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */; };
+		AE135EEB7559B192FD6AF9AD /* EmergencyICETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCDA5A2E5C1EA08340974EC /* EmergencyICETests.swift */; };
 		B31D3E089E8171FF2BC87535 /* EmergencyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6672923C69095FC3E0869FDD /* EmergencyIntent.swift */; };
 		B435BA07790A14ED3FE72B29 /* CloudRetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71CCCCE568347800DA7B543 /* CloudRetry.swift */; };
 		B58D944999E7043D7BF0834F /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
@@ -74,12 +82,14 @@
 		BDFE5620E4B4196E6E7DFBF9 /* TripProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C97D2FA8F438F9E591D53E /* TripProgress.swift */; };
 		BFB008F7F55B47546A9E1AE3 /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB23245D5263C04F74A21BDD /* AskView.swift */; };
 		C1B99D6524D42BA6942D7553 /* BlueEvalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */; };
+		C1DCC1705B09DB0BB0908048 /* WalletPassTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A13877DB6FF882A3A10C3D5 /* WalletPassTests.swift */; };
 		C26E01045651C5F4FD59BD48 /* PrepareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */; };
 		C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 650C8F1632B44DFCBC5B981D /* SettingsView.swift */; };
 		C46745ED851A2D4595271D5D /* PlanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4BDD73B7D0C33DB3181838 /* PlanService.swift */; };
 		C6C342E5081EFB32E09111CC /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1459BFFDE05E2EE32F3BB1E5 /* LocationService.swift */; };
 		C6E27337324372E40C98F972 /* MapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96719AC94683792A5682336E /* MapService.swift */; };
 		C7A674ABCF03F400FE506BD4 /* BlueOpenQuestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6F879C3B29864AFC832C8B /* BlueOpenQuestions.swift */; };
+		CD8111B35C422F3ABBD94440 /* AppleWWDRCAG4.cer in Resources */ = {isa = PBXBuildFile; fileRef = 41919414C3C76F971C0AF5DD /* AppleWWDRCAG4.cer */; };
 		CE98C72D27FF3A0099C28A20 /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 613C423B335623E6820F3919 /* Journey.swift */; };
 		D7F91A2AFB71D01596FF420F /* EmergencyCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF50028C4639B474A47F989F /* EmergencyCardTests.swift */; };
 		E40AC5FD4F2EDABFA5F9672E /* JourneyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985D06F52FFB9D2128C266F2 /* JourneyIntent.swift */; };
@@ -137,27 +147,35 @@
 		1B41CFA2BDA491BC2463B14F /* ModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRouter.swift; sourceTree = "<group>"; };
 		1D6F879C3B29864AFC832C8B /* BlueOpenQuestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueOpenQuestions.swift; sourceTree = "<group>"; };
 		1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationTests.swift; sourceTree = "<group>"; };
+		206CD8F0DF7FB8EA5DB50074 /* TripTimeZones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimeZones.swift; sourceTree = "<group>"; };
 		2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicyTests.swift; sourceTree = "<group>"; };
 		24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = EmergencyNumbers.json; sourceTree = "<group>"; };
 		251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyCardView.swift; sourceTree = "<group>"; };
 		2694CBA496E8FCF219CB2722 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		28AA496609E50964250A9257 /* WalletPassSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPassSheet.swift; sourceTree = "<group>"; };
 		2E4084E2D51493C65A6D5C74 /* EmergencyHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyHealth.swift; sourceTree = "<group>"; };
 		2E77E1D276180137848AD1DF /* TripActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripActivity.swift; sourceTree = "<group>"; };
 		37D35FAE9B201F8E428C351A /* DayPlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlanSheet.swift; sourceTree = "<group>"; };
 		3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicy.swift; sourceTree = "<group>"; };
 		4025F623B2B9D63B80F160A5 /* PhotoTaste.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTaste.swift; sourceTree = "<group>"; };
+		4123B7895DFC98EC04DA53C4 /* WalletPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPass.swift; sourceTree = "<group>"; };
+		41919414C3C76F971C0AF5DD /* AppleWWDRCAG4.cer */ = {isa = PBXFileReference; path = AppleWWDRCAG4.cer; sourceTree = "<group>"; };
 		4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TravelCopilotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchUpTests.swift; sourceTree = "<group>"; };
 		4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyNumbers.swift; sourceTree = "<group>"; };
+		5A13877DB6FF882A3A10C3D5 /* WalletPassTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPassTests.swift; sourceTree = "<group>"; };
 		5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyTranslator.swift; sourceTree = "<group>"; };
 		5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		5FCDA5A2E5C1EA08340974EC /* EmergencyICETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyICETests.swift; sourceTree = "<group>"; };
 		613C423B335623E6820F3919 /* Journey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Journey.swift; sourceTree = "<group>"; };
 		627FEBE76477A33961C8483D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		650C8F1632B44DFCBC5B981D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		654802749BC3529758083461 /* PrepareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareService.swift; sourceTree = "<group>"; };
 		657B71922D12DD14BBCF2B72 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingLog.swift; sourceTree = "<group>"; };
+		663B01CCE6BFFEBE50E10F32 /* PassCertificate.password */ = {isa = PBXFileReference; path = PassCertificate.password; sourceTree = "<group>"; };
 		6672923C69095FC3E0869FDD /* EmergencyIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyIntent.swift; sourceTree = "<group>"; };
+		66FA11F403615263A0F7192B /* EmergencyICE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyICE.swift; sourceTree = "<group>"; };
 		68DE0758D6330D4582B09973 /* TravelCopilotShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelCopilotShortcuts.swift; sourceTree = "<group>"; };
 		6E02FC1AF031F047E940AC9C /* TravelCopilotWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TravelCopilotWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6F5800C063D8BE20AB2C4E /* MapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTests.swift; sourceTree = "<group>"; };
@@ -189,6 +207,7 @@
 		B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueEvalTests.swift; sourceTree = "<group>"; };
 		BB23245D5263C04F74A21BDD /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 		BE0D68D3DBF952B3805C9D32 /* FloatingAsk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingAsk.swift; sourceTree = "<group>"; };
+		C1884381D2E5A99055D0C670 /* TripTimeZoneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimeZoneTests.swift; sourceTree = "<group>"; };
 		C33BC2EA6361EE2BB55A585F /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencySetupView.swift; sourceTree = "<group>"; };
 		CA5492B0747E7054BCBA3908 /* TripLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripLiveActivity.swift; sourceTree = "<group>"; };
@@ -202,6 +221,7 @@
 		F2E61DA002322A92847F3F1B /* RoutingLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingLogView.swift; sourceTree = "<group>"; };
 		F78EE745724CF7139C52C6A1 /* PlanChat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChat.swift; sourceTree = "<group>"; };
 		FAE0344074B989FEB2BBE0ED /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		FB56A121F1595748E80E9683 /* PassCertificate.p12 */ = {isa = PBXFileReference; path = PassCertificate.p12; sourceTree = "<group>"; };
 		FC4BDD73B7D0C33DB3181838 /* PlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanService.swift; sourceTree = "<group>"; };
 		FD0A5B99648BA70E434E2030 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
 		FD503B45A8210BB16CBE4DF8 /* PrepareDedupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareDedupTests.swift; sourceTree = "<group>"; };
@@ -232,6 +252,7 @@
 				4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */,
 				0647A85941D4FADB2C42C415 /* CloudRetryTests.swift */,
 				FF50028C4639B474A47F989F /* EmergencyCardTests.swift */,
+				5FCDA5A2E5C1EA08340974EC /* EmergencyICETests.swift */,
 				B514C832175BEB0434DF2179 /* FallbackProbeTests.swift */,
 				01C34D22991E29E8B5D2CBE5 /* JourneyTests.swift */,
 				6E6F5800C063D8BE20AB2C4E /* MapTests.swift */,
@@ -243,7 +264,9 @@
 				2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */,
 				8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */,
 				9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */,
+				C1884381D2E5A99055D0C670 /* TripTimeZoneTests.swift */,
 				7B06F6982614516D2FD6073E /* VaultAnswerTests.swift */,
+				5A13877DB6FF882A3A10C3D5 /* WalletPassTests.swift */,
 			);
 			path = TravelCopilotTests;
 			sourceTree = "<group>";
@@ -302,10 +325,22 @@
 			children = (
 				03D09794BD64245A7C0D7F10 /* EmergencyCard.swift */,
 				2E4084E2D51493C65A6D5C74 /* EmergencyHealth.swift */,
+				66FA11F403615263A0F7192B /* EmergencyICE.swift */,
 				4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */,
 				5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */,
+				4123B7895DFC98EC04DA53C4 /* WalletPass.swift */,
 			);
 			path = Emergency;
+			sourceTree = "<group>";
+		};
+		A844EF10CD5D6A6F7B94D4D0 /* Wallet */ = {
+			isa = PBXGroup;
+			children = (
+				41919414C3C76F971C0AF5DD /* AppleWWDRCAG4.cer */,
+				FB56A121F1595748E80E9683 /* PassCertificate.p12 */,
+				663B01CCE6BFFEBE50E10F32 /* PassCertificate.password */,
+			);
+			path = Wallet;
 			sourceTree = "<group>";
 		};
 		AAA291C16B159B76C67848B8 /* Map */ = {
@@ -336,6 +371,7 @@
 				650C8F1632B44DFCBC5B981D /* SettingsView.swift */,
 				73B01E54B5BE66127232A220 /* SignInView.swift */,
 				836881F86764F2101174C04F /* TripView.swift */,
+				28AA496609E50964250A9257 /* WalletPassSheet.swift */,
 				5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */,
 			);
 			path = Features;
@@ -360,6 +396,7 @@
 				65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */,
 				9D486C5664E573DD226E81A5 /* TripReminders.swift */,
 				E4D66E5FD9612F31C08F4DBF /* TripTimeline.swift */,
+				206CD8F0DF7FB8EA5DB50074 /* TripTimeZones.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -427,6 +464,7 @@
 			children = (
 				73FC01A36D34395EAEE3ED2C /* Assets.xcassets */,
 				24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */,
+				A844EF10CD5D6A6F7B94D4D0 /* Wallet */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -558,8 +596,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD8111B35C422F3ABBD94440 /* AppleWWDRCAG4.cer in Resources */,
 				E55B5D7A60BAEE6091257919 /* Assets.xcassets in Resources */,
 				BB3036D7C2D751C550086F58 /* EmergencyNumbers.json in Resources */,
+				64A0A69ADB3B060A2C293A22 /* PassCertificate.p12 in Resources */,
+				2C98E1229B9071CEBF37C156 /* PassCertificate.password in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -584,7 +625,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "SRC=\"${SRCROOT}/TravelCopilot/Resources/GoogleService-Info.plist\"\nif [ -f \"$SRC\" ]; then\n  cp \"$SRC\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\"\n  # Google Sign-In returns to the app through the REVERSED_CLIENT_ID URL scheme.\n  REV=$(/usr/libexec/PlistBuddy -c \"Print :REVERSED_CLIENT_ID\" \"$SRC\" 2>/dev/null || true)\n  PL=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n  if [ -n \"$REV\" ] && [ -f \"$PL\" ]; then\n    # Keep the app's own travelcopilot:// scheme (entry 0); Google's goes in entry 1.\n    /usr/libexec/PlistBuddy -c \"Delete :CFBundleURLTypes:1\" \"$PL\" 2>/dev/null || true\n    /usr/libexec/PlistBuddy -c \"Add :CFBundleURLTypes:1 dict\" -c \"Add :CFBundleURLTypes:1:CFBundleURLSchemes array\" -c \"Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string $REV\" \"$PL\"\n  fi\nelse\n  echo \"warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)\"\nfi\n";
+			shellScript = "SRC=\"${SRCROOT}/TravelCopilot/Resources/GoogleService-Info.plist\"\nif [ -f \"$SRC\" ]; then\n  cp \"$SRC\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\"\n  # Google Sign-In returns to the app through the REVERSED_CLIENT_ID URL scheme.\n  REV=$(/usr/libexec/PlistBuddy -c \"Print :REVERSED_CLIENT_ID\" \"$SRC\" 2>/dev/null || true)\n  PL=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n  if [ -n \"$REV\" ] && [ -f \"$PL\" ]; then\n    # Keep the app's own travelcopilot:// scheme (entry 0); Google's goes in entry 1.\n    /usr/libexec/PlistBuddy -c \"Delete :CFBundleURLTypes:1\" \"$PL\" 2>/dev/null || true\n    /usr/libexec/PlistBuddy -c \"Add :CFBundleURLTypes:1 dict\" -c \"Add :CFBundleURLTypes:1:CFBundleURLSchemes array\" -c \"Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string $REV\" \"$PL\"\n  fi\nelse\n  echo \"warning: GoogleService-Info.plist missing - Firebase disabled (see SETUP.md)\"\nfi\n# Apple Wallet pass certificate (never in git): copied in when present. See SETUP.md.\nWALLET=\"${SRCROOT}/TravelCopilot/Resources/Wallet\"\nfor f in PassCertificate.p12 PassCertificate.password AppleWWDRCAG4.cer; do\n  if [ -f \"$WALLET/$f\" ]; then cp \"$WALLET/$f\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/\"; fi\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -608,6 +649,7 @@
 				7E14881422F56284192FE1F3 /* EmergencyCard.swift in Sources */,
 				46D39048C94145FCB45D601C /* EmergencyCardView.swift in Sources */,
 				412986252DAEE02E80FF847A /* EmergencyHealth.swift in Sources */,
+				A933F4D97B70519B8DE624A7 /* EmergencyICE.swift in Sources */,
 				7CBB28B65FC5A1B91079A6F5 /* EmergencyIntent.swift in Sources */,
 				934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */,
 				8488FF24EB3313796D9A1829 /* EmergencySetupView.swift in Sources */,
@@ -644,8 +686,11 @@
 				AAA32FEF0B263583EE635B39 /* TripActivity.swift in Sources */,
 				6F54D7FAE810AD8474488BEA /* TripProgress.swift in Sources */,
 				EE012B5BFE59439EC3E36385 /* TripReminders.swift in Sources */,
+				215022EF9C17A53E593FDCA2 /* TripTimeZones.swift in Sources */,
 				FB93B8197DD2CE5FC964FD81 /* TripTimeline.swift in Sources */,
 				0CA359B8DCF267EEF45FF095 /* TripView.swift in Sources */,
+				4C718D92E03B2BDF84BF1F2A /* WalletPass.swift in Sources */,
+				0702F99C137A564745A48C3F /* WalletPassSheet.swift in Sources */,
 				4F3CCBC386A596D1DC65E69A /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -671,6 +716,7 @@
 				ED57198397D6C96D94C269AD /* CatchUpTests.swift in Sources */,
 				965C2406382DBB98B59BAAE3 /* CloudRetryTests.swift in Sources */,
 				D7F91A2AFB71D01596FF420F /* EmergencyCardTests.swift in Sources */,
+				AE135EEB7559B192FD6AF9AD /* EmergencyICETests.swift in Sources */,
 				95D5CAFBC13DB52BA423ADE0 /* FallbackProbeTests.swift in Sources */,
 				4501A06F0BF84DE076647786 /* JourneyTests.swift in Sources */,
 				8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */,
@@ -681,8 +727,10 @@
 				2CA10D403969CCFB0126BF36 /* PrepareDedupTests.swift in Sources */,
 				512A06FAC332DB7B31704621 /* RoutingPolicyTests.swift in Sources */,
 				A11D6D3F100F44A910823B5F /* TripProgressTests.swift in Sources */,
+				23D81E4E732F2C70DE97A14E /* TripTimeZoneTests.swift in Sources */,
 				493D05B2779F2214EE824150 /* TripTimelineTests.swift in Sources */,
 				546FB6F017947FCF8242A02D /* VaultAnswerTests.swift in Sources */,
+				C1DCC1705B09DB0BB0908048 /* WalletPassTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
