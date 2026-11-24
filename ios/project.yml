@@ -14,8 +14,9 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.0"
+    # Raise for every TestFlight upload.
+    CURRENT_PROJECT_VERSION: "2"
     # Apple Developer team (Team IDs aren't secret). Xcode signs automatically.
     DEVELOPMENT_TEAM: WGAA2WP5T4
     CODE_SIGN_STYLE: Automatic
@@ -68,6 +69,8 @@ targets:
       path: TravelCopilot/Info.plist
       properties:
         CFBundleDisplayName: Travel Copilot
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # Only standard HTTPS encryption, so App Store Connect doesn't ask on every upload.
         ITSAppUsesNonExemptEncryption: false
         # Live Activity and notification buttons open the app here (travelcopilot://ask, ://trip, ://taxi, ://map).
@@ -115,6 +118,9 @@ targets:
       path: TravelCopilotWidgets/Info.plist
       properties:
         CFBundleDisplayName: Travel Copilot
+        # Must match the app's version and build, or App Store Connect warns.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
