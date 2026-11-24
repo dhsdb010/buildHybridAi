@@ -184,16 +184,3 @@ enum Steps {
     return n > 0 ? n : nil
   }
 }
-
-/// The traveler's name for Home ("Welcome back, Alex"): the profile name, else the account's first name.
-enum Profile {
-  static var name: String? {
-    if let n = UserDefaults.standard.string(forKey: "profileName"), !n.isEmpty { return n }
-    return nil
-  }
-  static func firstName(account: String?) -> String? {
-    if let name { return name }
-    guard let a = account?.split(separator: " ").first, !a.isEmpty else { return nil }
-    return String(a)
-  }
-}

@@ -106,6 +106,8 @@ final class AppRouter {
   var ask: AskRequest?
   var showHelp = false
   var showSettings = false
+  var showProfile = false
+  var showChats = false
   /// Opens the taxi card on Home (from a Live Activity or notification button).
   var showTaxi = false
   /// Opens Trip on a view: 0 List · 1 Spend · 2 Calendar (Home's Spend card).
@@ -137,7 +139,7 @@ final class AppRouter {
       switch d.string(forKey: "tab") { case "trip": tab = .trip; case "map": tab = .map; case "prepare": tab = .prepare; case "log": tab = .log; default: break }
       if let q = d.string(forKey: "askQuestion") { ask = AskRequest(mode: 0, text: q, autoSubmit: true) }
       if let q = d.string(forKey: "sayText") { ask = AskRequest(mode: 1, text: q, autoSubmit: true) }
-      switch d.string(forKey: "screen") { case "help": showHelp = true; case "settings": showSettings = true; case "ask": ask = AskRequest(); default: break }
+      switch d.string(forKey: "screen") { case "help": showHelp = true; case "settings": showSettings = true; case "profile": showProfile = true; case "chats": showChats = true; case "ask": ask = AskRequest(); default: break }
       // `-emergency setup|card|english`: open the emergency card flow (simulator checks).
       if let e = d.string(forKey: "emergency") { emergency = EmergencyScreen(rawValue: e) }
     #endif

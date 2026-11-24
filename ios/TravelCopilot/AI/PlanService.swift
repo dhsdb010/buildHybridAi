@@ -98,6 +98,8 @@ struct PlanBrief: Sendable {
     }
     if let want { parts.append("This time they want: \(want)") }
     if !notes.isEmpty { parts.append("From their own notes: " + notes.joined(separator: "; ")) }
+    let profile = Profile.tasteLine
+    if !profile.isEmpty { parts.append("From their profile: " + profile) }
     return parts.joined(separator: ". ")
   }
 }

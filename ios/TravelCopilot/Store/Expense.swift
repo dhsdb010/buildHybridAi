@@ -105,8 +105,8 @@ enum Spend {
     return Locale(identifier: "und_\(country)").currency?.identifier
   }
 
-  /// The traveler's home currency, from the iPhone's region.
-  static var homeCurrency: String { Locale.current.currency?.identifier ?? "USD" }
+  /// The traveler's home currency: the one in Profile, else the iPhone's region.
+  static var homeCurrency: String { Profile.currency ?? Locale.current.currency?.identifier ?? "USD" }
 
   /// Home-currency value: the settled amount, else today's estimate at `rate`.
   static func home(_ e: ExpenseItem, rate: FXRate?) -> Double? {

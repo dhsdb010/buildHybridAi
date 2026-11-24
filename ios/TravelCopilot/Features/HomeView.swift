@@ -40,19 +40,21 @@ struct HomeView: View {
       .navigationTitle("Today")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
+        // You on the left, the people you travel with on the right (Figma 12 · option B).
+        // Settings is inside Profile.
         ToolbarItem(placement: .topBarLeading) {
-          Image(systemName: "asterisk")
-            .font(.system(size: 20, weight: .semibold))
-            .foregroundStyle(MTA.accent)
-            .accessibilityLabel("Travel Copilot")
+          Button { router.showProfile = true } label: { ProfileAvatar(size: 32) }
+            .accessibilityLabel("Profile")
         }
         .sharedBackgroundVisibility(.hidden)
         ToolbarItem(placement: .topBarTrailing) {
-          Button { router.showSettings = true } label: { Image(systemName: "gearshape") }
-            .accessibilityLabel("Settings")
+          Button { router.showChats = true } label: { Image(systemName: "bubble.left.and.bubble.right") }
+            .accessibilityLabel("Chats")
         }
       }
       .navigationDestination(isPresented: $router.showSettings) { SettingsView() }
+      .navigationDestination(isPresented: $router.showProfile) { ProfileView() }
+      .navigationDestination(isPresented: $router.showChats) { ChatsView() }
       .fullScreenCover(item: $taxiItem) { BigCardView(item: $0, pack: pack) }
       .onChange(of: router.showTaxi, initial: true) { _, show in
         guard show else { return }

@@ -179,10 +179,6 @@ struct TripSummaryTests {
     #expect(TripSummary.city(destination: nil) == nil)
   }
 
-  @Test func welcomeUsesTheFirstName() {
-    #expect(Profile.firstName(account: "Alex Kim") == "Alex" || Profile.name != nil)
-    #expect(Profile.firstName(account: nil) == Profile.name)
-  }
 }
 
 struct TripIconTests {
@@ -198,5 +194,38 @@ struct TripIconTests {
     #expect(UpNext.symbol(plan: "Bus to Hakone") == "bus")
     #expect(UpNext.symbol(plan: "Ginza metro") == "tram.fill.tunnel")
     #expect(UpNext.symbol(plan: "Senso-ji") == "building.columns")
+  }
+}
+
+@Suite(.serialized)
+struct ProfileTests {
+  static let keys = [Profile.Key.name, Profile.Key.likes, Profile.Key.pace, Profile.Key.skip, Profile.Key.currency]
+  func reset() { for k in Self.keys { UserDefaults.standard.removeObject(forKey: k) } }
+
+  @Test func welcomeUsesTheProfileNameThenTheAccount() {
+    reset(); defer { reset() }
+    #expect(Profile.firstName(account: "Alex Kim") == "Alex")
+    #expect(Profile.firstName(account: nil) == nil)
+    UserDefaults.standard.set("Sam", forKey: Profile.Key.name)
+    #expect(Profile.firstName(account: "Alex Kim") == "Sam")
+  }
+
+  @Test func tasteLineHasOnlyHowYouTravel() {
+    reset(); defer { reset() }
+    #expect(Profile.tasteLine.isEmpty)
+    UserDefaults.standard.set("Sam", forKey: Profile.Key.name)
+    UserDefaults.standard.set("Food, Night markets", forKey: Profile.Key.likes)
+    UserDefaults.standard.set("Relaxed", forKey: Profile.Key.pace)
+    UserDefaults.standard.set("Long queues", forKey: Profile.Key.skip)
+    #expect(Profile.tasteLine == "They like: Food, Night markets. Preferred pace: Relaxed. Skip: Long queues")
+    #expect(!Profile.tasteLine.contains("Sam"))
+  }
+
+  @Test func homeCurrencyFromProfile() {
+    reset(); defer { reset() }
+    UserDefaults.standard.set("eur", forKey: Profile.Key.currency)
+    #expect(Spend.homeCurrency == "EUR")
+    UserDefaults.standard.set("euro", forKey: Profile.Key.currency)
+    #expect(Profile.currency == nil)
   }
 }

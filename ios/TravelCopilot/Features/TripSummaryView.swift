@@ -146,7 +146,11 @@ struct TripSummaryView: View {
         ShareLink(item: summary.shareText(place: place, steps: steps)) { Text("Share") }
       }
     }
-    .task { steps = Steps.saved(summary.range) }
+    .task {
+      steps = Steps.saved(summary.range)
+      // Profile › Count steps on trips: count without asking each time (Health still asks once).
+      if steps == nil, UserDefaults.standard.bool(forKey: Profile.Key.countSteps) { steps = await Steps.count(summary.range) }
+    }
   }
 
   // MARK: Map days
