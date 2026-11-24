@@ -31,7 +31,8 @@ struct MTALabel: View {
 // MARK: - Number box (78×78 → one per grid column)
 
 struct NumberBox: View {
-  enum Style { case outline, filled, status(MTAStatus) }
+  /// `tinted`: outline and text in a status color (e.g. "2 to settle" in orange).
+  enum Style { case outline, filled, status(MTAStatus), tinted(MTAStatus) }
   let value: String
   let caption: String
   var style: Style = .outline
@@ -46,15 +47,21 @@ struct NumberBox: View {
     .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 8)
     .frame(maxWidth: .infinity, minHeight: 78, maxHeight: 78, alignment: .leading)
     .background(background, in: .rect(cornerRadius: 12))
-    .overlay { if case .outline = style { RoundedRectangle(cornerRadius: 12).strokeBorder(MTA.border, lineWidth: 2) } }
+    .overlay {
+      switch style {
+      case .outline: RoundedRectangle(cornerRadius: 12).strokeBorder(MTA.border, lineWidth: 2)
+      case let .tinted(s): RoundedRectangle(cornerRadius: 12).strokeBorder(s.color, lineWidth: 2)
+      default: EmptyView()
+      }
+    }
     .accessibilityElement(children: .combine)
   }
 
   private var foreground: Color {
-    switch style { case .outline: MTA.text; case .filled: MTA.textInverse; case let .status(s): s.foreground }
+    switch style { case .outline: MTA.text; case .filled: MTA.textInverse; case let .status(s): s.foreground; case let .tinted(s): s.color }
   }
   private var background: Color {
-    switch style { case .outline: .clear; case .filled: MTA.inverse; case let .status(s): s.color }
+    switch style { case .outline, .tinted: .clear; case .filled: MTA.inverse; case let .status(s): s.color }
   }
 }
 
@@ -152,6 +159,10 @@ struct FeatureCard: View {
   let title: String
   let detail: String
   let systemImage: String
+  /// nil = the black card; a status fills it in the status color (Spend: green, orange near the budget).
+  var status: MTAStatus? = nil
+  /// Fixed height so cards in a swipe deck line up.
+  var height: CGFloat? = nil
   var action: () -> Void
 
   var body: some View {
@@ -159,22 +170,29 @@ struct FeatureCard: View {
       HStack(spacing: 12) {
         VStack(alignment: .leading, spacing: 4) {
           Text(label).mta(.label)
-          Text(title).mta(.headline)
-          Text(detail).mta(.body2).opacity(0.7).multilineTextAlignment(.leading)
+          Text(title).mta(.headline).lineLimit(1).minimumScaleFactor(0.8)
+          Text(detail).mta(.body2).opacity(0.8).multilineTextAlignment(.leading).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         Image(systemName: systemImage)
           .font(.system(size: 18, weight: .semibold))
-          .foregroundStyle(MTA.onColor)
+          .foregroundStyle(badgeGlyph)
           .frame(width: 44, height: 44)
-          .background(MTA.accent, in: .circle)
+          .background(badge, in: .circle)
       }
-      .foregroundStyle(MTA.textInverse)
+      .foregroundStyle(status?.foreground ?? MTA.textInverse)
       .padding(.horizontal, 15).padding(.vertical, 18)
-      .background(MTA.inverse, in: .rect(cornerRadius: 20))
+      .frame(height: height)
+      .background(status?.color ?? MTA.inverse, in: .rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
   }
+
+  private var badge: Color {
+    guard let status else { return MTA.accent }
+    return status.foreground == MTA.onNotice ? .black : .white.opacity(0.22)
+  }
+  private var badgeGlyph: Color { status?.foreground == MTA.onNotice ? .white : MTA.onColor }
 }
 
 /// 2pt outline card (MTA kiosk card).
@@ -381,4 +399,38 @@ struct BrandBadge: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Travel Copilot")
   }
+}
+
+// MARK: - Category icon (SF Symbol by default; Settings › Icons can switch to emoji)
+
+/// A stop or expense icon by category. SF Symbols are the default; the traveler can pick emoji
+/// in Settings › Icons. Same meaning either way: one icon per category.
+struct TripIcon: View {
+  let symbol: String
+  var size: CGFloat = 32
+  @AppStorage(TripIcon.styleKey) private var style = TripIcon.Style.symbol.rawValue
+
+  enum Style: String, CaseIterable { case symbol, emoji }
+  static let styleKey = "iconStyle"
+
+  var body: some View {
+    Group {
+      if style == Style.emoji.rawValue, let e = Self.emoji[symbol] {
+        Text(e).font(.system(size: size * 0.48))
+      } else {
+        Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(MTA.text)
+      }
+    }
+    .frame(width: size, height: size)
+    .background(MTA.raised, in: .circle)
+    .accessibilityHidden(true)
+  }
+
+  /// SF Symbol → emoji, for the emoji style.
+  static let emoji: [String: String] = [
+    "fork.knife": "🍴", "bag": "🛍️", "cart": "🛒", "building.columns": "🏛️", "bed.double": "🛏️",
+    "tram": "🚆", "tram.fill.tunnel": "🚇", "bus": "🚌", "ferry": "⛴️", "bicycle": "🚲", "car": "🚕",
+    "airplane.departure": "🛫", "airplane.arrival": "🛬", "airplane": "✈️", "figure.walk": "🚶",
+    "mappin.and.ellipse": "📍", "ellipsis": "🧾", "staroflife": "🚑", "creditcard": "💳",
+  ]
 }

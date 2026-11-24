@@ -54,6 +54,8 @@ final class Connectivity {
 
   #if DEBUG
     private static let fakeOfflineUntil: Date? = {
+      // `-offline YES`: stay offline for this launch (screenshots of the offline states).
+      if UserDefaults.standard.bool(forKey: "offline") { return .distantFuture }
       let s = UserDefaults.standard.double(forKey: "offlineFor")
       return s > 0 ? Date().addingTimeInterval(s) : nil
     }()

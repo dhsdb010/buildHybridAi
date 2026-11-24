@@ -23,6 +23,10 @@ The app follows a trip through three stages:
 - **Say in the local language**: context-aware translation (situation, politeness, medicine names), a full-screen card to show someone, and a reply screen for them.
 - **Catch-up pass**: offline drafts reviewed in the cloud, with what changed shown in the chat and the Log.
 - **Emergency info card**: a 5-question setup (blood type and medications can come from the Health app, with permission), shown full screen in the local language with English underneath, and the local emergency number one tap away.
+- **Emergency card in Apple Wallet**: the card as a Wallet pass, signed on the phone. The front shows your name, birth date, blood type, allergies, medicines and contact, with the trip dates in the corner; the QR code holds the whole card in the standard ICE format, and the back has it in English and the local language. It opens from the Lock Screen with no app and no signal.
+- **Home**: the next moment, Offline ready at a glance, Emergency help always on top, a swipeable Up next deck that follows the clock and what you've done, and a spending card (green, orange near the budget).
+- **Spend**: scan a receipt on the iPhone (works offline), see it in your currency at the saved rate, and the catch-up pass settles it at the live rate when you're back online. Trip report with a CSV export.
+- **After the trip**: "Welcome back" with your trip at a glance, and a trip summary built only from bookings, day plans and receipts: the route on a map, day by day, what you did, and your steps from Health if you allow it.
 - **Journey Live Activity and reminders**: step by step from landing to hotel check-in (train → bus → walk), with Done and Ask Blue buttons.
 - **Routing Log**: every AI request with where it actually ran, how long it took and why, exportable as CSV.
 
@@ -93,7 +97,9 @@ The models are wrapped in code that decides what they may do and checks what the
 - **Everything is logged.** Every call becomes a `RoutingEntry` (route requested, where it ran, latency, reason, result); the Log tab shows it, compacts older days into daily totals, and exports CSV.
 
 ### Privacy
-Bookings, chats, the emergency card and the Routing Log are stored on the phone (SwiftData) and never synced. Open questions send Gemini only the trip's country, hotel name, area and dates, never booking codes or phone numbers. The Health app is read-only and only for blood type and the medications you choose to share.
+Bookings, chats, the emergency card and the Routing Log are stored on the phone (SwiftData) and never synced. Open questions send Gemini only the trip's country, hotel name, area and dates, never booking codes or phone numbers. The Health app is read-only and only for blood type and the medications you choose to share, and medicines from Health are never sent for translation.
+
+Before any prompt leaves [`AIService`](ios/TravelCopilot/AI/AIService.swift), [`Redact`](ios/TravelCopilot/AI/Redact.swift) hides card numbers (Luhn-checked), security codes, passport numbers and passport code lines, on both routes, since a hybrid call can fall back to the cloud. Booking references, flight numbers and phone numbers stay. The Routing Log notes when something was hidden ("hid 1 card number").
 
 ---
 
@@ -104,7 +110,7 @@ Measured in the iPhone 17 simulator on a Mac (not yet on a real iPhone):
 - **Blue question test set:** 67 real questions against the on-device model, scored by what Blue would show. **67/67 correct, 0 wrong values**, about 1.1 s per question, all on the device. Before the code rules it was 28/40 with 6 wrong values. Run it yourself: see [SETUP.md](SETUP.md#blues-question-test-set).
 - **Catch-up:** an offline draft improved in the cloud in 1.3–1.7 s; the safety check passed numbers and medicine names.
 - **Cloud fallback:** a translation too long for the on-device model failed on the device and Firebase answered with Gemini (hybrid route, ran in the cloud). On a phone without Apple Intelligence, every Survive request falls back this way.
-- **Unit tests:** 107 passing (`xcodebuild test`), covering routing, Blue's rules, the safety check, catch-up, reminders, the journey, the Log, the emergency card and its quick access, retrying busy Gemini calls, skipping bookings already saved, keeping Health data off the cloud, the planner (dates, budget, photo taste, day stops) and reading files on the iPhone.
+- **Unit tests:** 146 passing (`xcodebuild test`), covering routing, Blue's rules, the safety check, catch-up, reminders, the journey, the Log, the emergency card and its quick access, retrying busy Gemini calls, skipping bookings already saved, keeping Health data off the cloud, the planner (dates, budget, photo taste, day stops), reading files on the iPhone, the Wallet pass (layout, QR code, signing), hiding card and passport numbers, spending (budget, rates, receipt totals), the Up next deck and the trip summary.
 
 ---
 
@@ -117,6 +123,8 @@ cd ios && xcodegen generate && open TravelCopilot.xcodeproj
 ```
 
 Add your own `GoogleService-Info.plist` and register the App Check debug token printed on first launch; [SETUP.md](SETUP.md) has every step, plus debug launch switches for each screen.
+
+**TestFlight:** `ios/scripts/testflight.sh` archives and uploads a build (version 1.0, a new build number each time). The TestFlight form text is in [docs/TESTFLIGHT.md](docs/TESTFLIGHT.md).
 
 ## Project layout
 
@@ -133,6 +141,6 @@ ios/
 
 ## Status
 
-Built and checked in the simulator: everything above. Quick access to the emergency card (Siri, Spotlight, Action Button, Control Center, Lock Screen widget) is built but needs a real iPhone to try. Not done yet: testing on a real iPhone, TestFlight, an Apple Wallet pass.
+Built and checked in the simulator: everything above. On a real iPhone (iPhone SE, 3rd generation): the app runs and the Wallet pass was added and checked. That iPhone has no Apple Intelligence, so its AI requests use the cloud fallback. Version 1.0 is uploaded to TestFlight. Not done yet: on-device AI on a real iPhone with Apple Intelligence, and public TestFlight testing (waiting for Beta App Review).
 
 Privacy policy: [PRIVACY.md](PRIVACY.md)

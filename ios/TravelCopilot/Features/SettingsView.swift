@@ -10,6 +10,7 @@ struct SettingsView: View {
   @State private var deleted = false
   @AppStorage("appearance") private var appearance = 0
   @AppStorage("waitForWiFi") private var waitForWiFi = true
+  @AppStorage(TripIcon.styleKey) private var iconStyle = TripIcon.Style.symbol.rawValue
 
   var body: some View {
     @Bindable var ai = ai
@@ -25,6 +26,16 @@ struct SettingsView: View {
 
         section("Appearance")
         MTASegmented(options: ["Auto", "Day", "Night"], selection: $appearance).padding(.vertical, 6)
+        Text("Icons").mta(.body1).foregroundStyle(MTA.text).padding(.top, 6)
+        MTASegmented(options: ["Symbols", "Emoji"], selection: Binding(
+          get: { iconStyle == TripIcon.Style.emoji.rawValue ? 1 : 0 },
+          set: { iconStyle = $0 == 1 ? TripIcon.Style.emoji.rawValue : TripIcon.Style.symbol.rawValue })
+        ).padding(.vertical, 6)
+        HStack(spacing: 8) {
+          ForEach(["fork.knife", "bag", "building.columns", "bed.double", "tram", "airplane.departure", "staroflife"], id: \.self) {
+            TripIcon(symbol: $0, size: 30)
+          }
+        }
 
         section("Trip")
         MTAValueRow(title: "Home language", value: "English")

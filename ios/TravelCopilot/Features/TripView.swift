@@ -10,13 +10,15 @@ struct TripView: View {
   @Query(sort: \TripPlan.start) private var plans: [TripPlan]
   @State private var mode: Int = {
     #if DEBUG
-      if UserDefaults.standard.string(forKey: "tripMode") == "calendar" { return 1 }
+      switch UserDefaults.standard.string(forKey: "tripMode") { case "spend": return 1; case "calendar": return 2; default: break }
     #endif
     return 0
   }()
   @State private var selectedDay: Date?
   @State private var planDay: Date?
   @State private var taxiItem: VaultItem?
+  @State private var editingBudget = false
+  @State private var budgetText = ""
 
   private var pack: DestinationPack? { packs.first }
   private var place: String { pack?.countryName ?? "Your" }
@@ -27,8 +29,10 @@ struct TripView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-          MTASegmented(options: ["List", "Calendar"], selection: $mode)
-          if items.isEmpty {
+          MTASegmented(options: ["List", "Spend", "Calendar"], selection: $mode)
+          if mode == 1 {
+            SpendContent(dayLine: dayLine(range))
+          } else if items.isEmpty {
             emptyState
           } else if mode == 0 {
             listContent(events: events, range: range)
@@ -43,6 +47,19 @@ struct TripView: View {
       .safeAreaInset(edge: .bottom) { if !items.isEmpty { FloatingAsk() } }
       .navigationTitle("Trip")
       .navigationBarTitleDisplayMode(.inline)
+      .onChange(of: router.tripMode, initial: true) { _, m in if let m { mode = m; router.tripMode = nil } }
+      .toolbar {
+        if mode == 1 {
+          ToolbarItem(placement: .topBarTrailing) {
+            Button("Budget") { budgetText = String(Int(ExpenseService.budget)); editingBudget = true }
+          }
+        }
+      }
+      .alert("Trip budget (\(Spend.homeCurrency))", isPresented: $editingBudget) {
+        TextField("1000", text: $budgetText).keyboardType(.numberPad)
+        Button("Save") { if let v = Double(budgetText), v > 0 { ExpenseService.budget = v } }
+        Button("Cancel", role: .cancel) {}
+      } message: { Text("The Spend card turns orange at 80% of it.") }
       .navigationDestination(item: $planDay) { PlanDayView(day: $0) }
       #if DEBUG
       .task {
@@ -54,6 +71,16 @@ struct TripView: View {
         BigCardView(item: item, pack: packs.first { $0.countryCode == item.countryCode } ?? pack)
       }
     }
+  }
+
+  /// "Japan · Day 3 of 6" for Spend.
+  private func dayLine(_ range: ClosedRange<Date>?) -> String {
+    let name = packs.first?.countryName ?? "Your trip"
+    guard let range else { return name }
+    let today = TripTimeline.calendar.startOfDay(for: AppClock.now)
+    guard range.contains(today) else { return name }
+    let day = (TripTimeline.calendar.dateComponents([.day], from: range.lowerBound, to: today).day ?? 0) + 1
+    return "\(name) · Day \(day) of \(TripTimeline.days(in: range).count)"
   }
 
   // MARK: - List

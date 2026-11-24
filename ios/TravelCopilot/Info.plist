@@ -36,7 +36,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Lets you take a photo to show Blue while you plan.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Fills your emergency card with your blood type and the medications you choose to share. Read only; stays on this iPhone.</string>
+	<string>Fills your emergency card with your blood type and the medications you choose to share, and counts your steps for your trip summary when you ask. Read only; stays on this iPhone.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Travel Copilot doesn't write to Health.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

@@ -39,7 +39,7 @@ struct TravelCopilotApp: App {
 
   init() {
     _ = Self.firebaseConfigured
-    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self, RoutingSummary.self, EmergencyCard.self)
+    let container = try! ModelContainer(for: VaultItem.self, DestinationPack.self, RoutingEntry.self, TranslationEntry.self, TripPlan.self, Place.self, MapPack.self, ChatMessage.self, RoutingSummary.self, EmergencyCard.self, ExpenseItem.self)
     let connectivity = Connectivity()
     self.container = container
     IDRepair.run(container.mainContext)
@@ -48,6 +48,10 @@ struct TravelCopilotApp: App {
       // `-logKeep 10`: compact all but the latest 10 rows now (to see the Log's "Earlier" section).
       let keep = UserDefaults.standard.integer(forKey: "logKeep")
       if keep > 0 { RoutingLog.compact(container.mainContext, keep: keep) }
+      // `-seedSpend`: sample expenses for the Spend screens (simulator screenshots).
+      if ProcessInfo.processInfo.arguments.contains("-seedSpend") { SpendSample.seed(container.mainContext) }
+      // `-seedTrip`: day-plan stops with places, for the trip summary map.
+      if ProcessInfo.processInfo.arguments.contains("-seedTrip") { SpendSample.seedPlans(container.mainContext) }
     #endif
     _connectivity = State(initialValue: connectivity)
     _ai = State(initialValue: AIService(connectivity: connectivity, context: container.mainContext))
@@ -104,6 +108,8 @@ final class AppRouter {
   var showSettings = false
   /// Opens the taxi card on Home (from a Live Activity or notification button).
   var showTaxi = false
+  /// Opens Trip on a view: 0 List · 1 Spend · 2 Calendar (Home's Spend card).
+  var tripMode: Int?
   /// The emergency card or its setup quiz, over everything (travelcopilot://emergency, Siri, debug).
   var emergency: EmergencyScreen?
 
@@ -219,6 +225,8 @@ struct RootView: View {
       try? await Task.sleep(for: .seconds(2))   // let the connection settle
       guard !Task.isCancelled else { return }
       await CatchUpService.run(ai: ai, pack: packs.first)
+      // Spending made offline: convert it at today's live rate.
+      await ExpenseService.settle(ai: ai)
     }
     .onAppear {
       // First launch with an empty Vault → Welcome / set up your trip.
@@ -277,3 +285,58 @@ extension NotificationActions {
     }
   }
 }
+
+#if DEBUG
+  /// Sample spending for the simulator: the first evening settled at the Nov 28 rate, today's
+  /// last two made offline and still waiting for the live rate.
+  @MainActor
+  enum SpendSample {
+    static func seed(_ context: ModelContext) {
+      guard ((try? context.fetchCount(FetchDescriptor<ExpenseItem>())) ?? 0) == 0 else { return }
+      let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd HH:mm"
+      let rows: [(String, String, String?, Double, ExpenseCategory, String, Bool)] = [
+        ("2026-12-03 16:30", "Keikyu Line", "京急線", 2020, .transport, "IC card", true),
+        ("2026-12-03 19:00", "Omoide Yokocho", "思い出横丁", 4200, .food, "Cash", true),
+        ("2026-12-03 21:10", "Lawson", "ローソン", 840, .food, "Cash", true),
+        ("2026-12-04 10:05", "Toei Subway", "都営地下鉄", 220, .transport, "IC card", true),
+        ("2026-12-04 11:20", "Senso-ji", "浅草寺", 1000, .sights, "Cash", true),
+        ("2026-12-04 13:00", "Tokyo National Museum", "東京国立博物館", 1000, .sights, "Card", true),
+        ("2026-12-04 15:30", "Don Quijote", "ドン・キホーテ", 3960, .shopping, "Card", false),
+        ("2026-12-04 18:10", "Ichiran Shinjuku", "一蘭 新宿中央東口店", 1180, .food, "Cash", false),
+      ]
+      for (d, name, local, amount, cat, paid, settled) in rows {
+        let e = ExpenseItem(spentAt: f.date(from: d)!, merchant: name, merchantLocal: local, amount: amount, currency: "JPY",
+                            category: cat, paidWith: paid, source: "scan")
+        if settled { e.rate = 149.6; e.homeAmount = (amount / 149.6 * 100).rounded() / 100; e.rateDate = f.date(from: "2026-11-28 12:00"); e.settled = true }
+        context.insert(e)
+      }
+      if ExpenseService.savedRate == nil {
+        ExpenseService.savedRate = FXRate(local: "JPY", home: "USD", localPerHome: 149.6, date: f.date(from: "2026-11-28 12:00")!)
+      }
+      try? context.save()
+    }
+
+    static func seedPlans(_ context: ModelContext) {
+      let plans = (try? context.fetch(FetchDescriptor<TripPlan>())) ?? []
+      guard !plans.contains(where: { $0.latitude != nil }) else { return }
+      let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd HH:mm"
+      let rows: [(String, String, String, Double, Double)] = [
+        ("2026-12-03 19:00", "Omoide Yokocho", "Dinner", 35.6933, 139.6995),
+        ("2026-12-04 11:20", "Senso-ji", "Asakusa", 35.7148, 139.7967),
+        ("2026-12-04 13:00", "Tokyo National Museum", "Ueno", 35.7188, 139.7765),
+        ("2026-12-04 15:30", "Don Quijote", "Shinjuku", 35.6938, 139.7034),
+        ("2026-12-04 18:10", "Ichiran Shinjuku", "Ramen", 35.6909, 139.7016),
+        ("2026-12-05 10:00", "Meiji Jingu", "Harajuku", 35.6764, 139.6993),
+        ("2026-12-05 14:00", "Shibuya Crossing", "Shibuya", 35.6595, 139.7005),
+        ("2026-12-06 09:30", "Tsukiji Outer Market", "Breakfast", 35.6655, 139.7707),
+        ("2026-12-06 13:00", "teamLab Planets", "Toyosu", 35.6491, 139.7898),
+      ]
+      for (d, title, kind, la, lo) in rows {
+        let p = TripPlan(start: f.date(from: d)!, title: title)
+        p.kind = kind; p.latitude = la; p.longitude = lo; p.remind = false
+        context.insert(p)
+      }
+      try? context.save()
+    }
+  }
+#endif

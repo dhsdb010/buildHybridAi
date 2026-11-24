@@ -44,6 +44,8 @@ enum PrepareService {
     } catch {
       summary.packError = error.localizedDescription
     }
+    // Today's exchange rate, so spending shows in your currency offline too (best effort).
+    await ExpenseService.refreshRate(country: summary.country.flatMap { _ in (try? ai.context.fetch(FetchDescriptor<DestinationPack>()))?.first?.countryCode } ?? items.first?.countryCode)
     progress(.places)
     let plans = (try? ai.context.fetch(FetchDescriptor<TripPlan>())) ?? []
     await MapService.locate(items: allItems, plans: plans, context: ai.context)

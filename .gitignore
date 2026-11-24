@@ -30,3 +30,4 @@ ios/TravelCopilot/Resources/Wallet/
 *.certSigningRequest
 *.cer
 .build-archive/
+appstore-assets/
