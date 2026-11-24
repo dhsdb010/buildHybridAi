@@ -14,7 +14,7 @@ struct ICESection: Identifiable, Equatable {
 enum ICEText {
   /// Section and field labels in English, and per card language. Fixed, never generated.
   static let english: [String: String] = [
-    "personal": "PERSONAL INFORMATION", "name": "Name", "birth": "Date of birth", "blood": "Blood type",
+    "trip": "Trip", "personal": "PERSONAL INFORMATION", "name": "Name", "birth": "Date of birth", "blood": "Blood type",
     "speaks": "Speaks", "phone": "Phone", "address": "Home address",
     "allergies": "ALLERGIES", "drug": "Drug", "food": "Food", "insect": "Insect", "otherAllergy": "Other",
     "medicines": "MEDICATIONS", "conditions": "CONDITIONS", "surgeries": "RECENT SURGERIES",
@@ -23,17 +23,17 @@ enum ICEText {
     "none": "None",
   ]
   static let local: [String: [String: String]] = [
-    "ja": ["personal": "個人情報", "name": "氏名", "birth": "生年月日", "blood": "血液型", "speaks": "話せる言語",
+    "ja": ["trip": "旅行", "personal": "個人情報", "name": "氏名", "birth": "生年月日", "blood": "血液型", "speaks": "話せる言語",
            "phone": "電話番号", "address": "住所", "allergies": "アレルギー", "drug": "薬", "food": "食べ物",
            "insect": "虫", "otherAllergy": "その他", "medicines": "服用中の薬", "conditions": "持病",
            "surgeries": "手術歴", "contacts": "緊急連絡先", "doctor": "主治医", "doctorRow": "医師",
            "insurance": "旅行保険", "provider": "保険会社", "policy": "証券番号", "assist": "緊急サポート", "none": "なし"],
-    "ko": ["personal": "개인 정보", "name": "이름", "birth": "생년월일", "blood": "혈액형", "speaks": "사용 언어",
+    "ko": ["trip": "여행", "personal": "개인 정보", "name": "이름", "birth": "생년월일", "blood": "혈액형", "speaks": "사용 언어",
            "phone": "전화번호", "address": "주소", "allergies": "알레르기", "drug": "약물", "food": "음식",
            "insect": "곤충", "otherAllergy": "기타", "medicines": "복용 중인 약", "conditions": "지병",
            "surgeries": "수술 이력", "contacts": "비상 연락처", "doctor": "주치의", "doctorRow": "의사",
            "insurance": "여행자 보험", "provider": "보험사", "policy": "증권 번호", "assist": "긴급 지원", "none": "없음"],
-    "zh": ["personal": "个人信息", "name": "姓名", "birth": "出生日期", "blood": "血型", "speaks": "使用语言",
+    "zh": ["trip": "旅行", "personal": "个人信息", "name": "姓名", "birth": "出生日期", "blood": "血型", "speaks": "使用语言",
            "phone": "电话", "address": "住址", "allergies": "过敏", "drug": "药物", "food": "食物",
            "insect": "昆虫", "otherAllergy": "其他", "medicines": "正在服用的药物", "conditions": "既往病史",
            "surgeries": "手术史", "contacts": "紧急联系人", "doctor": "主治医生", "doctorRow": "医生",

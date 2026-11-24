@@ -46,9 +46,10 @@ enum WalletPass {
 
   /// The signed .pkpass for this card.
   @MainActor
-  static func make(card: EmergencyCard, language: String, ambulance: String, front: Set<Field>) throws -> Data {
+  static func make(card: EmergencyCard, language: String, ambulance: String, front: Set<Field>,
+                   trip: ClosedRange<Date>? = nil) throws -> Data {
     let credentials = try Credentials.load()
-    var files: [(String, Data)] = [("pass.json", try passJSON(card: card, language: language, ambulance: ambulance, front: front))]
+    var files: [(String, Data)] = [("pass.json", try passJSON(card: card, language: language, ambulance: ambulance, front: front, trip: trip))]
     files += images()
     let manifest = try JSONSerialization.data(
       withJSONObject: Dictionary(uniqueKeysWithValues: files.map { ($0.0, sha1($0.1)) }), options: [.sortedKeys])
@@ -58,7 +59,8 @@ enum WalletPass {
   }
 
   @MainActor
-  static func passJSON(card: EmergencyCard, language: String, ambulance: String, front: Set<Field>) throws -> Data {
+  static func passJSON(card: EmergencyCard, language: String, ambulance: String, front: Set<Field>,
+                       trip: ClosedRange<Date>? = nil) throws -> Data {
     // Front, like an event ticket (the traveler's pick): 119 and blood type small in the top
     // corner, the name big, then one item per row: allergies, medicines, contact. Wallet shows at
     // most three rows under the name on this style, and a value that wraps runs into the next
@@ -88,7 +90,12 @@ enum WalletPass {
       return "\(first) / \(other)"
     }
     var header: [[String: Any]] = [], primary: [[String: Any]] = [], secondary: [[String: Any]] = [], auxiliary: [[String: Any]] = []
-    header.append(["key": "call", "label": local == nil ? "EMERGENCY" : "救急", "value": ambulance])
+    // Top corner: the trip's dates; with no trip booked, the ambulance number (also on the back and in the QR).
+    if let trip {
+      header.append(["key": "trip", "label": label(local?["trip"], "TRIP"), "value": tripDates(trip)])
+    } else {
+      header.append(["key": "call", "label": local == nil ? "EMERGENCY" : "救急", "value": ambulance])
+    }
     let name = card.ownerName.trimmingCharacters(in: .whitespacesAndNewlines)
     primary.append(name.isEmpty
       ? ["key": "title", "label": "EMERGENCY MEDICAL CARD", "value": labels?.title ?? "Emergency medical card"]
@@ -151,7 +158,8 @@ enum WalletPass {
       "formatVersion": 1,
       // The whole card as text, for anyone who scans it with a phone camera (works offline).
       "barcodes": [["format": "PKBarcodeFormatQR", "message": qrText(card: card, language: language, ambulance: ambulance),
-                    "messageEncoding": "utf-8"]],   // no caption: the code stands alone
+                    "messageEncoding": "utf-8",
+                    "altText": "More details"]],   // Wallet prints it under the code, inside the white box
       "passTypeIdentifier": passTypeIdentifier,
       "teamIdentifier": teamIdentifier,
       "serialNumber": "emergency-card",
@@ -172,6 +180,14 @@ enum WalletPass {
   /// left out. Short text keeps the code coarse and quick to scan off a phone screen (the local
   /// words would triple its size); the back of the pass has both languages.
   @MainActor
+  /// "Nov 26 – Dec 2", or "Nov 26" for a one-day trip.
+  static func tripDates(_ trip: ClosedRange<Date>) -> String {
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX"); f.timeZone = TripTimeline.calendar.timeZone; f.dateFormat = "MMM d"
+    let a = f.string(from: trip.lowerBound), b = f.string(from: trip.upperBound)
+    return a == b ? a : "\(a) – \(b)"
+  }
+
   static func qrText(card: EmergencyCard, language: String, ambulance: String) -> String {
     func list(_ items: [String]) -> String { items.joined(separator: ", ") }
     func person(_ name: String, _ relation: String, _ phone: String) -> String {

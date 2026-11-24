@@ -74,13 +74,26 @@ struct WalletPassTests {
     #expect(aux[2]["value"] as? String == "Jamie Lee (+1 415 555 0134)")
   }
 
+  /// The top corner shows the trip's dates; with no trip, the ambulance number.
+  @MainActor @Test func cornerShowsTheTripDates() throws {
+    let cal = TripTimeline.calendar
+    let a = cal.date(from: DateComponents(year: 2026, month: 11, day: 26))!, b = cal.date(from: DateComponents(year: 2026, month: 12, day: 2))!
+    let data = try WalletPass.passJSON(card: Self.sample(), language: "ja", ambulance: "119", front: WalletPass.Field.defaultFront, trip: a...b)
+    let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let header = try #require((json["eventTicket"] as? [String: Any])?["headerFields"] as? [[String: Any]])
+    #expect(header.map { $0["key"] as? String } == ["trip"])
+    #expect(header.first?["value"] as? String == "Nov 26 – Dec 2")
+    #expect(header.first?["label"] as? String == "旅行 · TRIP")
+    #expect(WalletPass.tripDates(a...a) == "Nov 26")
+  }
+
   /// The QR code carries what isn't on the front: birth date, address, conditions, phone numbers.
   @MainActor @Test func qrCodeHasTheWholeCard() throws {
     let data = try WalletPass.passJSON(card: Self.sample(), language: "ja", ambulance: "119", front: WalletPass.Field.defaultFront)
     let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     let code = try #require((json["barcodes"] as? [[String: Any]])?.first)
     #expect(code["format"] as? String == "PKBarcodeFormatQR")
-    #expect(code["altText"] == nil)   // the code stands alone in its box
+    #expect(code["altText"] as? String == "More details")
     let text = try #require(code["message"] as? String)
     for part in ["1 Example St", "2000", "Asthma", "+1 415 555 0134", "Penicillin", "119"] { #expect(text.contains(part), "\(part)") }
     #expect(text.utf8.count <= 400)   // short, so the code stays coarse and easy to scan
@@ -89,7 +102,9 @@ struct WalletPassTests {
   /// Writes a signed sample pass to PASS_PREVIEW (a folder) to look at in the Simulator.
   @MainActor @Test func writesAPreviewPass() throws {
     guard let dir = ProcessInfo.processInfo.environment["PASS_PREVIEW"] else { return }
-    let data = try WalletPass.make(card: Self.sample(), language: "ja", ambulance: "119", front: WalletPass.Field.defaultFront)
+    let cal = TripTimeline.calendar
+    let trip = cal.date(from: DateComponents(year: 2026, month: 11, day: 26))!...cal.date(from: DateComponents(year: 2026, month: 12, day: 2))!
+    let data = try WalletPass.make(card: Self.sample(), language: "ja", ambulance: "119", front: WalletPass.Field.defaultFront, trip: trip)
     try data.write(to: URL(fileURLWithPath: dir).appendingPathComponent("preview.pkpass"))
   }
 }

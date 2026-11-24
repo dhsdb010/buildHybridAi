@@ -1,4 +1,5 @@
 import PassKit
+import SwiftData
 import SwiftUI
 
 /// "Add to Apple Wallet": choose what the front of the pass shows (it's readable on a locked
@@ -13,6 +14,8 @@ struct WalletPassSheet: View {
   @State private var name = ""
   @Environment(AuthService.self) private var auth
   @State private var error: String?
+  @Query private var items: [VaultItem]
+  @Query private var plans: [TripPlan]
 
   private var front: Set<WalletPass.Field> {
     Set(stored.split(separator: ",").compactMap { WalletPass.Field(rawValue: String($0)) })
@@ -85,7 +88,8 @@ struct WalletPassSheet: View {
     error = nil
     card.ownerName = name.trimmingCharacters(in: .whitespacesAndNewlines)
     do {
-      let data = try WalletPass.make(card: card, language: language, ambulance: ambulance, front: front)
+      let data = try WalletPass.make(card: card, language: language, ambulance: ambulance, front: front,
+                                       trip: TripTimeline.range(TripTimeline.events(items: items, plans: plans)))
       pass = try PKPass(data: data)
     } catch {
       self.error = error.localizedDescription
