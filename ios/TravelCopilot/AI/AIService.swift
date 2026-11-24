@@ -63,6 +63,7 @@ final class AIService {
     _ task: String, kind: TaskKind, prompt: String, instructions: String? = nil, as type: T.Type
   ) async throws -> (T, AIMeta) {
     let route = try resolveRoute(task, kind: kind)
+    let hidden = Redact.sensitive(prompt), prompt = hidden.text
     let start = ContinuousClock.now
     do {
       let (response, retries) = try await CloudRetry.run {
@@ -73,7 +74,7 @@ final class AIService {
       let meta = AIMeta(
         route: route.route, source: ModelRouter.source(of: response.rawResponse),
         latencyMs: (ContinuousClock.now - start).milliseconds)
-      log(task, kind, reason: route.reason + CloudRetry.note(retries), outcome: "ok", meta: meta)
+      log(task, kind, reason: route.reason + hidden.note + CloudRetry.note(retries), outcome: "ok", meta: meta)
       return (response.content, meta)
     } catch {
       log(task, kind, reason: route.reason, outcome: "error", route: route.route,
@@ -90,6 +91,7 @@ final class AIService {
   ) async throws -> (text: String, places: [GoogleMapsGroundingChunk], meta: AIMeta) {
     let route = try resolveRoute(task, kind: .prepare)
     guard TravelCopilotApp.firebaseConfigured else { throw ModelRouter.NotConfigured() }
+    let hidden = Redact.sensitive(prompt), prompt = hidden.text
     let start = ContinuousClock.now
     do {
       let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
@@ -100,7 +102,7 @@ final class AIService {
       let (response, retries) = try await CloudRetry.run { try await model.generateContent(prompt) }
       let chunks = response.candidates.first?.groundingMetadata?.groundingChunks.compactMap(\.maps) ?? []
       let meta = AIMeta(route: .cloudOnly, source: .inCloud, latencyMs: (ContinuousClock.now - start).milliseconds)
-      log(task, .prepare, reason: route.reason + " · Google Maps" + CloudRetry.note(retries), outcome: "ok", meta: meta)
+      log(task, .prepare, reason: route.reason + " · Google Maps" + hidden.note + CloudRetry.note(retries), outcome: "ok", meta: meta)
       return (response.text ?? "", chunks, meta)
     } catch {
       log(task, .prepare, reason: route.reason, outcome: "error", route: .cloudOnly,
