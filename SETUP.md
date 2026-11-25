@@ -115,8 +115,8 @@ Friends, @IDs, invite links and trip rooms use Cloud Firestore; invite links use
    `cd firebase/rules-test && npm install && npm run emulate`
 4. Deploy the rules and the link page from `firebase/`:
    `firebase deploy --only firestore:rules,hosting --project <your-project-id>`
-5. Optional, so links open the app directly instead of the web page: in `ios/project.yml` add the Associated Domains entitlement
-   `com.apple.developer.associated-domains: ["applinks:<your-project-id>.web.app"]`, then `xcodegen generate`.
-   Without it, a link opens the web page, whose **Open in Travel Copilot** button (`travelcopilot://i/CODE`) opens the app.
+5. Links open the app directly through Associated Domains (`applinks:travelcopilot-01.web.app` in `ios/project.yml`).
+   iOS checks `/.well-known/apple-app-site-association` on that site when the app is installed. If you use a different
+   Firebase project, change the domain there. Without the app, a link opens the web page, which shows the code to type in.
 
 Simulator check without a second account: launch with `-socialDemo` (in-memory friends Mina, Jun and Kenta, a request from Sora, and @kenji who isn't a friend yet). Add `-socialNoID` to start before claiming an @ID.

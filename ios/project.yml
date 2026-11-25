@@ -65,6 +65,9 @@ targets:
         com.apple.developer.healthkit.access: []
         # App Check on TestFlight / App Store builds (debug builds use the debug token).
         com.apple.developer.devicecheck.appattest-environment: production
+        # Friend invite links (https://travelcopilot-01.web.app/i/CODE) open the app.
+        # The site serves /.well-known/apple-app-site-association from firebase/hosting.
+        com.apple.developer.associated-domains: ["applinks:travelcopilot-01.web.app"]
     info:
       path: TravelCopilot/Info.plist
       properties:
