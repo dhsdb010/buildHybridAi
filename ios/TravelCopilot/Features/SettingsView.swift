@@ -5,6 +5,7 @@ import SwiftData
 struct SettingsView: View {
   @Environment(AIService.self) private var ai
   @Environment(AuthService.self) private var auth
+  @Environment(SocialService.self) private var social
   @Query private var packs: [DestinationPack]
   @State private var confirmDelete = false
   @State private var deleted = false
@@ -17,6 +18,19 @@ struct SettingsView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 10) {
         Text("Settings").mta(.displayMedium).foregroundStyle(MTA.text).padding(.bottom, 6)
+
+        NavigationLink { ProfileView() } label: {
+          HStack(spacing: 12) {
+            ProfileAvatar(size: 40)
+            VStack(alignment: .leading, spacing: 2) {
+              Text("Profile").mta(.body1).foregroundStyle(MTA.text)
+              Text("Name, home, how you travel").mta(.body2).foregroundStyle(MTA.text2)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").foregroundStyle(MTA.text2)
+          }
+          .frame(minHeight: 60)
+        }
 
         section("Network")
         MTAToggleRow(title: "Data saver when roaming", isOn: $ai.dataSaver)
@@ -73,7 +87,7 @@ struct SettingsView: View {
     .background(MTA.surface)
     .overlay { if auth.busy { ProgressView() } }
     .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
-      Button("Delete account", role: .destructive) { Task { deleted = await auth.deleteAccount() } }
+      Button("Delete account", role: .destructive) { Task { await social.deleteMyData(); deleted = await auth.deleteAccount() } }
     } message: {
       Text("You'll sign in once more to confirm. Your trip on this iPhone stays; only planning needs an account.")
     }

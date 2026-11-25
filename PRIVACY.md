@@ -4,7 +4,7 @@ Effective November 20, 2026
 
 Travel Copilot is a travel app for iPhone. This policy explains what the app keeps on your iPhone, what it sends to other services and why, and the choices you have.
 
-**In short:** your trip lives on your iPhone. There is no Travel Copilot server and no trip backup. The app sends text to Google's Gemini only when a feature needs the cloud, and the app's Routing Log shows every one of those requests. There are no ads, no analytics and no tracking, and nothing is sold.
+**In short:** your trip lives on your iPhone. There is no trip backup, and the only things stored on a server are the optional friends and trip rooms you choose to use (see below). The app sends text to Google's Gemini only when a feature needs the cloud, and the app's Routing Log shows every one of those requests. There are no ads, no analytics and no tracking, and nothing is sold.
 
 ## What stays on your iPhone
 
@@ -36,6 +36,22 @@ Travel Copilot uses Firebase AI Logic, a Google service, to send requests to Goo
 
 Google processes these requests under the [Gemini API terms](https://ai.google.dev/gemini-api/terms) and the [Firebase terms](https://firebase.google.com/terms). Under those terms, Google may use content sent to free-of-charge Gemini services to improve its products. Don't put information in the app that you don't want sent to Google for these features.
 
+## Friends and trip rooms (optional)
+
+Planning with friends needs a signed-in account. If you use it, Travel Copilot stores the following in Google Cloud Firestore (part of Firebase), so the people you plan with can see it:
+
+- **Your @ID and display name.** Anyone signed in can look up an @ID if they type it exactly; nobody can browse or search a list of people. Your email, photo and account details are never shown to friends.
+- **Your friends, friend requests and the people you block.** Only you can see your friends and blocked lists.
+- **Invite codes.** A friend link or QR holds a random code that works for 7 days. Reset it in Add friend → Link at any time.
+- **Trip rooms.** Each room's name, its members (their names and @IDs) and the messages written in it. Only the room's members can read them. Only friends can be added to a room.
+- **Reports.** If you report a message, the message, who wrote it and the reason are kept so the Travel Copilot team can review it.
+
+Rooms share only what you write in them and the trip's day plan. Your bookings (Vault), receipts, emergency card, health data and chats with Blue stay on your iPhone and are never added to a room.
+
+Blocking someone ends the friendship, hides their messages and stops their requests; they aren't told. Leaving a trip leaves its room; when the owner leaves, the room is closed for everyone. Mute and pin are saved on your iPhone only.
+
+Deleting your account removes your @ID, friends, requests, invites and blocked list, and takes you out of every room. Messages you already sent stay in rooms you were in, under the name you used.
+
 ## Other services
 
 - **Firebase App Check (Google and Apple).** It checks that requests come from the real app, using Apple's App Attest. It doesn't send your trip data.
@@ -48,7 +64,7 @@ Google processes these requests under the [Gemini API terms](https://ai.google.d
 - **Location (while using the app).** It shows where you are on your saved trip map. Your location is used on the iPhone only and is not sent to Gemini.
 - **Apple Health (read only, optional).** It can fill your emergency card with your blood type and the medicines you choose. Health data stays on your iPhone: it is never sent to Gemini or any other service, used for advertising, or sold. The app never writes to Health.
 - **Microphone and speech recognition (optional).** Used only when you tap the mic or Talk in the planner. Apple's speech recognizer turns your voice into text on the iPhone when the iPhone supports it; otherwise Apple's speech service does, under [Apple's privacy policy](https://www.apple.com/legal/privacy/). Recordings are not kept by Travel Copilot.
-- **Camera and photos (optional).** A photo you take or pick in the planner is read on the iPhone with Apple Vision; only the words it finds are used for planning. Travel Copilot can only see the photos you choose.
+- **Camera and photos (optional).** A photo you take or pick in the planner is read on the iPhone with Apple Vision; only the words it finds are used for planning. Travel Copilot can only see the photos you choose. The camera also scans a friend's QR code when you tap Scan; the image isn't saved or sent.
 - **Notifications.** Trip reminders are scheduled on the iPhone. No push server is involved.
 
 ## Children
@@ -57,7 +73,7 @@ Travel Copilot is not directed at children under 13, and it doesn't knowingly co
 
 ## Your choices
 
-- Use the app without signing in. Only the trip planner needs an account.
+- Use the app without signing in. Only the trip planner and planning with friends need an account.
 - Sign out or delete your account in Settings at any time.
 - Turn on Airplane Mode: offline features keep working, and nothing is sent.
 - Check the Routing Log at any time to see what went to the cloud.

@@ -104,3 +104,19 @@ For a public release, move signing to a server: a key inside an app can be extra
    [AppleWWDRCAG4.cer](https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer).
 5. Put both files in `ios/TravelCopilot/Resources/Wallet/`, plus a text file `PassCertificate.password`
    holding the password. Git ignores this folder. Build again.
+
+## Friends and trip rooms (Firestore and Hosting)
+
+Friends, @IDs, invite links and trip rooms use Cloud Firestore; invite links use Firebase Hosting. The rules and the link page live in `firebase/`.
+
+1. Firebase console → **Firestore Database** → Create database (production mode).
+2. Install the CLI once: `npm i -g firebase-tools`, then `firebase login`.
+3. Test the security rules against the local emulator (no project needed):
+   `cd firebase/rules-test && npm install && npm run emulate`
+4. Deploy the rules and the link page from `firebase/`:
+   `firebase deploy --only firestore:rules,hosting --project <your-project-id>`
+5. Optional, so links open the app directly instead of the web page: in `ios/project.yml` add the Associated Domains entitlement
+   `com.apple.developer.associated-domains: ["applinks:<your-project-id>.web.app"]`, then `xcodegen generate`.
+   Without it, a link opens the web page, whose **Open in Travel Copilot** button (`travelcopilot://i/CODE`) opens the app.
+
+Simulator check without a second account: launch with `-socialDemo` (in-memory friends Mina, Jun and Kenta, a request from Sora, and @kenji who isn't a friend yet). Add `-socialNoID` to start before claiming an @ID.

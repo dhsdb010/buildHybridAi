@@ -85,7 +85,7 @@ targets:
         NSHealthUpdateUsageDescription: Travel Copilot doesn't write to Health.
         NSMicrophoneUsageDescription: Lets you speak to Blue instead of typing, when you tap the mic or Talk.
         NSSpeechRecognitionUsageDescription: Turns what you say to Blue into text, on this iPhone when it can.
-        NSCameraUsageDescription: Lets you take a photo to show Blue while you plan.
+        NSCameraUsageDescription: Lets you take a photo to show Blue while you plan, and scan a friend's QR code to add them.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.buildhybridai.travelcopilot

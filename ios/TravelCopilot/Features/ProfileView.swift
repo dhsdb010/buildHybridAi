@@ -1,7 +1,7 @@
 import PhotosUI
 import SwiftUI
 
-/// Your photo or initial. Home's top-left button (Figma 12 · option B) and Profile's header.
+/// Your photo or initial. Settings' Profile row and Profile's header.
 struct ProfileAvatar: View {
   var size: CGFloat = 32
   @Environment(AuthService.self) private var auth
@@ -50,22 +50,7 @@ struct ProfileView: View {
       VStack(alignment: .leading, spacing: 14) {
         header
 
-        // Settings lives here (Figma 12 · option B): Home's top right is for the group chat.
-        NavigationLink { SettingsView() } label: {
-          HStack(spacing: 12) {
-            Image(systemName: "gearshape").font(.system(size: 17, weight: .semibold)).foregroundStyle(MTA.text)
-              .frame(width: 32, height: 32)
-            VStack(alignment: .leading, spacing: 2) {
-              Text("Settings").mta(.body1).foregroundStyle(MTA.text)
-              Text("Network, appearance, privacy").mta(.body2).foregroundStyle(MTA.text2)
-            }
-            Spacer()
-            Image(systemName: "chevron.right").foregroundStyle(MTA.text2)
-          }
-          .padding(.horizontal, 14).frame(minHeight: 60)
-          .background(MTA.raised, in: .rect(cornerRadius: 16))
-        }
-        .buttonStyle(.plain)
+        YourIDCard().padding(.top, 6)
 
         MTALabel("About you").padding(.top, 6)
         card {
@@ -134,7 +119,7 @@ struct ProfileView: View {
           .tint(MTA.onTrack).frame(minHeight: 52)
         }
 
-        Text("Kept on this iPhone. Used to plan with you and for your trip summary. When you plan with friends, only your name and photo are shown to them.")
+        Text("Kept on this iPhone. Used to plan with you and for your trip summary. When you plan with friends, they see only your name, initial and @ID.")
           .mta(.body2).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true).padding(.top, 4)
 
         if !isEmpty {

@@ -12,7 +12,7 @@ import UIKit
 @MainActor
 @Observable
 final class AuthService {
-  struct Account: Equatable { let name: String; let email: String; let provider: String }
+  struct Account: Equatable { let name: String; let email: String; let provider: String; var uid: String = "" }
 
   private(set) var account: Account?
   var error: String?
@@ -31,7 +31,7 @@ final class AuthService {
 
   private static func account(_ user: User) -> Account {
     let provider = user.providerData.first?.providerID == "apple.com" ? "Apple" : "Google"
-    return Account(name: user.displayName ?? "", email: user.email ?? "", provider: provider)
+    return Account(name: user.displayName ?? "", email: user.email ?? "", provider: provider, uid: user.uid)
   }
 
   // MARK: Google

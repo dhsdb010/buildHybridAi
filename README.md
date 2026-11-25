@@ -97,7 +97,7 @@ The models are wrapped in code that decides what they may do and checks what the
 - **Everything is logged.** Every call becomes a `RoutingEntry` (route requested, where it ran, latency, reason, result); the Log tab shows it, compacts older days into daily totals, and exports CSV.
 
 ### Privacy
-Bookings, chats, the emergency card and the Routing Log are stored on the phone (SwiftData) and never synced. Open questions send Gemini only the trip's country, hotel name, area and dates, never booking codes or phone numbers. The Health app is read-only and only for blood type and the medications you choose to share, and medicines from Health are never sent for translation.
+Bookings, chats with Blue, the emergency card and the Routing Log are stored on the phone (SwiftData) and never synced. Only the optional friends and trip rooms are stored in Firestore (see PRIVACY.md and `firebase/firestore.rules`). Open questions send Gemini only the trip's country, hotel name, area and dates, never booking codes or phone numbers. The Health app is read-only and only for blood type and the medications you choose to share, and medicines from Health are never sent for translation.
 
 Before any prompt leaves [`AIService`](ios/TravelCopilot/AI/AIService.swift), [`Redact`](ios/TravelCopilot/AI/Redact.swift) hides card numbers (Luhn-checked), security codes, passport numbers and passport code lines, on both routes, since a hybrid call can fall back to the cloud. Booking references, flight numbers and phone numbers stay. The Routing Log notes when something was hidden ("hid 1 card number").
 

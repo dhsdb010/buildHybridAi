@@ -1,0 +1,360 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model (written by ios/TravelCopilot/Social/FirestoreSocial.swift)
+// ===============================================================
+//
+// Collection: users            Document ID: Firebase Auth uid
+//   - handle: string (required, ^[a-z0-9_]{3,20}$, must be claimed in handles/{handle} by this uid)
+//   - name: string (required, 1..60) - display name friends see
+//   - createdAt: timestamp (required, request.time)
+//   - inviteCode: string (optional, 8 chars) - current friend invite
+//   Private to the owner. No email, phone or photo is stored.
+//
+// Collection: users/{uid}/friends   Document ID: the friend's uid
+//   - handle: string (required, claimed by the friend's uid)
+//   - name: string (required, 1..60)
+//   - since: timestamp (required, request.time)
+//   - via: string (required) - "request:{from}_{to}" or "invite:{CODE}"
+//   Readable only by {uid}. Created in pairs when a request is accepted or an invite redeemed.
+//   Either side may delete (unfriend / block).
+//
+// Collection: users/{uid}/blocked   Document ID: the blocked uid
+//   - handle: string (required, 0..20), name: string (required, 0..60), since: timestamp (request.time)
+//   Owner only.
+//
+// Collection: handles          Document ID: the @ID (^[a-z0-9_]{3,20}$)
+//   - uid: string (required, the claimer)
+//   - name: string (required, 1..60)
+//   Get by exact ID for signed-in users; never listable.
+//
+// Collection: friendRequests   Document ID: "{from}_{to}"
+//   - from, to: string uids (required, immutable)
+//   - fromHandle, toHandle: string (required, claimed by from / to)
+//   - fromName, toName: string (required, 1..60)
+//   - createdAt: timestamp (request.time)
+//   Readable by from or to. No updates.
+//
+// Collection: invites          Document ID: 8-char code (ABCDEFGHJKMNPQRSTUVWXYZ23456789)
+//   - owner: string uid (required), ownerHandle: string (claimed by owner), ownerName: string (1..60)
+//   - createdAt: timestamp (request.time), expiresAt: timestamp (<= request.time + 8 days)
+//   Get by exact code for signed-in users; never listable. No updates.
+//
+// Collection: rooms            Document ID: auto
+//   - name: string (1..80), owner: string uid (immutable)
+//   - memberIds: list<string> (1..50 uids), members: map uid -> {name, handle, role}
+//     role in ['owner','editor','viewer']; only the owner has 'owner'
+//   - tripTitle: string (optional, 1..80), friendsCanEdit: bool, createdAt: timestamp (immutable)
+//   - lastText: string (optional, 0..200), lastAt: timestamp (optional)
+//   Readable by members. Members are added one at a time, and only friends of whoever adds them.
+//
+// Collection: rooms/{roomId}/messages   Document ID: auto
+//   - author: string uid (== auth uid), authorName: string (1..60), text: string (1..2000)
+//   - kind: 'text' | 'system', sentAt: timestamp (request.time)
+//   Members read and create. No updates or deletes.
+//
+// Collection: reports          Document ID: auto
+//   - reporter (== auth uid), roomId, messageId, author: string; text: string (0..2000);
+//     reason: string (1..60); createdAt: timestamp (request.time)
+//   Create only, by a member of the room. Read by nobody in the app.
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =============================================================
+    // Helper Functions
+    // =============================================================
+
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+    function data() { return request.resource.data; }
+    function hasOnlyAllowedFields(fields) { return data().keys().hasOnly(fields); }
+    function hasRequiredFields(fields) { return data().keys().hasAll(fields); }
+    function isStr(v, minLen, maxLen) { return v is string && v.size() >= minLen && v.size() <= maxLen; }
+    function isUid(v) { return isStr(v, 1, 128) && v.matches('^[A-Za-z0-9]+$'); }
+    function isHandle(h) { return h is string && h.matches('^[a-z0-9_]{3,20}$'); }
+    function isInviteCode(c) { return c is string && c.matches('^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$'); }
+    function isNow(t) { return t is timestamp && t == request.time; }
+
+    // The @ID is claimed by that uid right now.
+    function handleOwnedBy(h, uid) {
+      return isHandle(h) && exists(/databases/$(database)/documents/handles/$(h))
+        && get(/databases/$(database)/documents/handles/$(h)).data.uid == uid;
+    }
+    function areFriends(a, b) { return exists(/databases/$(database)/documents/users/$(a)/friends/$(b)); }
+    function hasBlocked(blocker, other) { return exists(/databases/$(database)/documents/users/$(blocker)/blocked/$(other)); }
+
+    // =============================================================
+    // Domain Validators
+    // =============================================================
+
+    function isValidUser(uid) {
+      return hasOnlyAllowedFields(['handle', 'name', 'createdAt', 'inviteCode'])
+        && hasRequiredFields(['handle', 'name', 'createdAt'])
+        && isHandle(data().handle)
+        // The user doc can only point at an ID this uid holds (checked after the transaction).
+        && getAfter(/databases/$(database)/documents/handles/$(data().handle)).data.uid == uid
+        && isStr(data().name, 1, 60)
+        && data().createdAt is timestamp
+        && (!('inviteCode' in data()) || isInviteCode(data().inviteCode));
+    }
+
+    function isValidHandleDoc(h) {
+      return hasOnlyAllowedFields(['uid', 'name']) && hasRequiredFields(['uid', 'name'])
+        && isHandle(h) && data().uid == request.auth.uid && isStr(data().name, 1, 60)
+        // Claimed together with users/{uid}.handle in one transaction.
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.handle == h;
+    }
+
+    function isValidFriendDoc(friendUid) {
+      return hasOnlyAllowedFields(['handle', 'name', 'since', 'via'])
+        && hasRequiredFields(['handle', 'name', 'since', 'via'])
+        && handleOwnedBy(data().handle, friendUid)
+        && isStr(data().name, 1, 60)
+        && isNow(data().since)
+        && isStr(data().via, 1, 300);
+    }
+
+    // Accepting: the recipient of request {from}_{to} writes both friend docs.
+    function viaAcceptedRequest(uid, friendUid) {
+      return (isOwner(uid)
+                && data().via == 'request:' + friendUid + '_' + uid
+                && exists(/databases/$(database)/documents/friendRequests/$(friendUid + '_' + uid)))
+          || (isOwner(friendUid)
+                && data().via == 'request:' + uid + '_' + friendUid
+                && exists(/databases/$(database)/documents/friendRequests/$(uid + '_' + friendUid)));
+    }
+
+    // Redeeming: whoever opens owner's invite writes both friend docs.
+    function inviteDoc(code) { return get(/databases/$(database)/documents/invites/$(code)).data; }
+    function validInviteFrom(code, ownerUid, redeemer) {
+      return isInviteCode(code)
+        && exists(/databases/$(database)/documents/invites/$(code))
+        && inviteDoc(code).owner == ownerUid
+        && inviteDoc(code).expiresAt > request.time
+        && ownerUid != redeemer
+        && !hasBlocked(ownerUid, redeemer);
+    }
+    function viaRedeemedInvite(uid, friendUid) {
+      let code = data().via.split(':')[1];
+      return data().via.matches('^invite:[A-Z0-9]{8}$')
+        && ((isOwner(uid) && validInviteFrom(code, friendUid, uid))
+            || (isOwner(friendUid) && validInviteFrom(code, uid, friendUid)));
+    }
+
+    function isValidBlocked() {
+      return hasOnlyAllowedFields(['handle', 'name', 'since']) && hasRequiredFields(['handle', 'name', 'since'])
+        && isStr(data().handle, 0, 20) && isStr(data().name, 0, 60) && isNow(data().since);
+    }
+
+    function isValidRequest(requestId) {
+      return hasOnlyAllowedFields(['from', 'to', 'fromHandle', 'fromName', 'toHandle', 'toName', 'createdAt'])
+        && hasRequiredFields(['from', 'to', 'fromHandle', 'fromName', 'toHandle', 'toName', 'createdAt'])
+        && data().from == request.auth.uid
+        && isUid(data().to) && data().to != data().from
+        && requestId == data().from + '_' + data().to
+        && handleOwnedBy(data().fromHandle, data().from)
+        && handleOwnedBy(data().toHandle, data().to)
+        && isStr(data().fromName, 1, 60) && isStr(data().toName, 1, 60)
+        && isNow(data().createdAt);
+    }
+
+    function isValidInvite(code) {
+      return hasOnlyAllowedFields(['owner', 'ownerHandle', 'ownerName', 'createdAt', 'expiresAt'])
+        && hasRequiredFields(['owner', 'ownerHandle', 'ownerName', 'createdAt', 'expiresAt'])
+        && isInviteCode(code)
+        && data().owner == request.auth.uid
+        && handleOwnedBy(data().ownerHandle, request.auth.uid)
+        && isStr(data().ownerName, 1, 60)
+        && isNow(data().createdAt)
+        && data().expiresAt is timestamp
+        && data().expiresAt > request.time
+        && data().expiresAt <= request.time + duration.value(8, 'd');
+    }
+
+    function isValidMember(m, uid, role) {
+      return m is map && m.keys().hasOnly(['name', 'handle', 'role']) && m.keys().hasAll(['name', 'handle', 'role'])
+        && isStr(m.name, 1, 60) && handleOwnedBy(m.handle, uid) && m.role == role;
+    }
+
+    // Fields every room must keep valid, on create and on every update.
+    function isValidRoom() {
+      return hasOnlyAllowedFields(['name', 'owner', 'memberIds', 'members', 'tripTitle', 'friendsCanEdit', 'createdAt', 'lastText', 'lastAt'])
+        && hasRequiredFields(['name', 'owner', 'memberIds', 'members', 'friendsCanEdit', 'createdAt'])
+        && isStr(data().name, 1, 80)
+        && isUid(data().owner)
+        && data().memberIds is list && data().memberIds.size() >= 1 && data().memberIds.size() <= 50
+        && data().members is map && data().members.size() == data().memberIds.size()
+        && data().members.keys().toSet() == data().memberIds.toSet()
+        && (!('tripTitle' in data()) || isStr(data().tripTitle, 1, 80))
+        && data().friendsCanEdit is bool
+        && data().createdAt is timestamp
+        && (!('lastText' in data()) || isStr(data().lastText, 0, 200))
+        && (!('lastAt' in data()) || data().lastAt is timestamp);
+    }
+
+    function isMemberOf(roomId) {
+      return isAuthenticated()
+        && request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomId)).data.memberIds;
+    }
+
+    // =============================================================
+    // users/{uid} and its subcollections
+    // =============================================================
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && isValidUser(uid);
+      allow delete: if isOwner(uid);
+
+      match /friends/{friendUid} {
+        allow read: if isOwner(uid);
+        allow create, update: if isAuthenticated() && uid != friendUid && isValidFriendDoc(friendUid)
+          && (viaAcceptedRequest(uid, friendUid) || viaRedeemedInvite(uid, friendUid));
+        // Either side can end the friendship (unfriend, block, delete account).
+        allow delete: if isOwner(uid) || isOwner(friendUid);
+      }
+
+      match /blocked/{otherUid} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && otherUid != uid && isValidBlocked();
+      }
+    }
+
+    // =============================================================
+    // handles/{handle}: exact lookup only
+    // =============================================================
+
+    match /handles/{handle} {
+      allow get: if isAuthenticated();
+      allow list: if false;
+      allow create: if isAuthenticated() && isValidHandleDoc(handle);
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid && isValidHandleDoc(handle);
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // =============================================================
+    // friendRequests/{from}_{to}
+    // =============================================================
+
+    match /friendRequests/{requestId} {
+      allow read: if isAuthenticated()
+        && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+      allow create: if isAuthenticated() && isValidRequest(requestId)
+        && !hasBlocked(data().to, data().from)
+        && !areFriends(data().to, data().from);
+      allow update: if false;
+      // By id, so deleting a request that doesn't exist (block, account deletion) still works.
+      allow delete: if isAuthenticated() && request.auth.uid in requestId.split('_');
+    }
+
+    // =============================================================
+    // invites/{code}
+    // =============================================================
+
+    match /invites/{code} {
+      allow get: if isAuthenticated();
+      allow list: if false;
+      allow create: if isAuthenticated() && isValidInvite(code);
+      allow update: if false;
+      allow delete: if isAuthenticated() && resource.data.owner == request.auth.uid;
+    }
+
+    // =============================================================
+    // rooms/{roomId}
+    // =============================================================
+
+    match /rooms/{roomId} {
+      // a. Add one member X (appended by arrayUnion), who must be the writer's friend.
+      function isAddingOneFriend() {
+        let oldIds = resource.data.memberIds;
+        let newIds = data().memberIds;
+        let x = newIds[newIds.size() - 1];
+        let mDiff = data().members.diff(resource.data.members);
+        let writer = resource.data.members[request.auth.uid];
+        return data().diff(resource.data).affectedKeys().hasOnly(['memberIds', 'members'])
+          && newIds.size() == oldIds.size() + 1
+          && newIds[0:oldIds.size()] == oldIds
+          && !(x in oldIds)
+          && mDiff.addedKeys() == [x].toSet()
+          && mDiff.removedKeys().size() == 0 && mDiff.changedKeys().size() == 0
+          && (writer.role == 'owner' || (writer.role == 'editor' && resource.data.friendsCanEdit))
+          && areFriends(request.auth.uid, x)
+          && !hasBlocked(x, request.auth.uid)
+          && isValidMember(data().members[x], x, resource.data.friendsCanEdit ? 'editor' : 'viewer');
+      }
+
+      // b. Remove one member: the owner removes someone else, or a member leaves.
+      function isRemovingOne() {
+        let mDiff = data().members.diff(resource.data.members);
+        let gone = mDiff.removedKeys();
+        return data().diff(resource.data).affectedKeys().hasOnly(['memberIds', 'members'])
+          && gone.size() == 1
+          && mDiff.addedKeys().size() == 0 && mDiff.changedKeys().size() == 0
+          && data().memberIds.size() == resource.data.memberIds.size() - 1
+          && data().memberIds.toSet() == resource.data.memberIds.toSet().difference(gone)
+          && !gone.hasAny([resource.data.owner])
+          && (resource.data.owner == request.auth.uid || gone.hasOnly([request.auth.uid]));
+      }
+
+      // c. Any member updates the room's last message preview.
+      function isPostingLast() {
+        return data().diff(resource.data).affectedKeys().hasOnly(['lastText', 'lastAt'])
+          && isStr(data().lastText, 0, 200)
+          && isNow(data().lastAt);
+      }
+
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.memberIds;
+
+      allow create: if isAuthenticated() && isValidRoom()
+        && data().owner == request.auth.uid
+        && data().memberIds == [request.auth.uid]
+        && isValidMember(data().members[request.auth.uid], request.auth.uid, 'owner')
+        && isNow(data().createdAt)
+        && !('lastText' in data()) && !('lastAt' in data());
+
+      allow update: if isAuthenticated() && isValidRoom()
+        && request.auth.uid in resource.data.memberIds
+        // name, owner, friendsCanEdit, tripTitle and createdAt never change here.
+        && data().name == resource.data.name
+        && data().owner == resource.data.owner
+        && data().friendsCanEdit == resource.data.friendsCanEdit
+        && data().createdAt == resource.data.createdAt
+        && data().get('tripTitle', null) == resource.data.get('tripTitle', null)
+        && (isAddingOneFriend() || isRemovingOne() || isPostingLast());
+
+      allow delete: if isAuthenticated() && resource.data.owner == request.auth.uid;
+
+      match /messages/{messageId} {
+        allow read: if isMemberOf(roomId);
+        allow create: if isMemberOf(roomId)
+          && hasOnlyAllowedFields(['author', 'authorName', 'text', 'kind', 'sentAt'])
+          && hasRequiredFields(['author', 'authorName', 'text', 'kind', 'sentAt'])
+          && data().author == request.auth.uid
+          && isStr(data().authorName, 1, 60)
+          && isStr(data().text, 1, 2000)
+          && data().kind in ['text', 'system']
+          && isNow(data().sentAt);
+        allow update, delete: if false;
+      }
+    }
+
+    // =============================================================
+    // reports/{id}: create only
+    // =============================================================
+
+    match /reports/{reportId} {
+      allow read, update, delete: if false;
+      allow create: if isAuthenticated()
+        && hasOnlyAllowedFields(['reporter', 'roomId', 'messageId', 'author', 'text', 'reason', 'createdAt'])
+        && hasRequiredFields(['reporter', 'roomId', 'messageId', 'author', 'text', 'reason', 'createdAt'])
+        && data().reporter == request.auth.uid
+        && isStr(data().roomId, 1, 128) && isStr(data().messageId, 1, 128) && isStr(data().author, 1, 128)
+        && isStr(data().text, 0, 2000) && isStr(data().reason, 1, 60)
+        && isNow(data().createdAt)
+        && isMemberOf(data().roomId);
+    }
+  }
+}

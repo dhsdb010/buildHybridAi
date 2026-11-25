@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Add a friend · Travel Copilot</title>
+<style>
+  :root { --text: #000; --text2: #3b3b3b; --surface: #fff; --raised: #f5f5f5; --accent: #0050ea; }
+  @media (prefers-color-scheme: dark) { :root { --text: #fff; --text2: #969696; --surface: #000; --raised: #3b3b3b; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--surface); color: var(--text); font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 420px; margin: 0 auto; padding: 48px 16px 32px; text-align: center; }
+  .logo { width: 72px; height: 72px; border-radius: 18px; background: var(--accent); color: #fff; font-size: 48px; font-weight: 700;
+          line-height: 72px; margin: 0 auto 20px; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 0 0 10px; }
+  p { color: var(--text2); margin: 0 0 20px; }
+  .btn { display: block; width: 100%; padding: 15px; border-radius: 999px; font-weight: 600; font-size: 17px; text-decoration: none; margin-bottom: 12px; }
+  .primary { background: var(--accent); color: #fff; }
+  .secondary { border: 2px solid var(--text); color: var(--text); }
+  .code { background: var(--raised); border-radius: 16px; padding: 18px 16px; margin: 24px 0 12px; }
+  .code b { display: block; font-size: 32px; letter-spacing: 2px; margin-bottom: 6px; }
+  .code span { color: var(--text2); font-size: 14px; }
+  small { color: var(--text2); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="logo" aria-hidden="true">✱</div>
+  <h1>A friend wants to plan with you</h1>
+  <p>Become friends on Travel Copilot, then they can add you to a trip room to plan together.</p>
+  <a class="btn primary" id="open" href="travelcopilot://i/">Open in Travel Copilot</a>
+  <a class="btn secondary" href="https://testflight.apple.com/">Get Travel Copilot</a>
+  <div class="code" id="codebox" hidden>
+    <b id="code"></b>
+    <span>No luck opening it? In the app: Chats → Add friend → Link → Enter code</span>
+  </div>
+  <small>This page doesn't show who sent it or load anything about them. The code stops working after 7 days or when they reset it.</small>
+</main>
+<script>
+  // /i/K7Q4MZ2H → the 8-letter code (no look-alike characters).
+  var m = location.pathname.match(/\/i\/([ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8})\/?$/i);
+  if (m) {
+    var code = m[1].toUpperCase();
+    document.getElementById('open').href = 'travelcopilot://i/' + code;
+    document.getElementById('code').textContent = code.slice(0, 4) + ' ' + code.slice(4);
+    document.getElementById('codebox').hidden = false;
+  }
+</script>
+</body>
+</html>

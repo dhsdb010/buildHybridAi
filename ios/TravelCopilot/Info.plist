@@ -34,7 +34,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>Lets you take a photo to show Blue while you plan.</string>
+	<string>Lets you take a photo to show Blue while you plan, and scan a friend's QR code to add them.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Fills your emergency card with your blood type and the medications you choose to share, and counts your steps for your trip summary when you ask. Read only; stays on this iPhone.</string>
 	<key>NSHealthUpdateUsageDescription</key>

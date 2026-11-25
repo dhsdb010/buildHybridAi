@@ -16,6 +16,7 @@
 		1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE0344074B989FEB2BBE0ED /* HelpView.swift */; };
 		177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E61DA002322A92847F3F1B /* RoutingLogView.swift */; };
 		1F463F14CEEEA373C4118480 /* EmergencyCardWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291992C06439F851FB34CCE /* EmergencyCardWidgets.swift */; };
+		1F7D28EB32A9AAD97E849B96 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B10DBCFCC25F9002F138538 /* SocialService.swift */; };
 		20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C7BA93EA70257ECCAE299C /* CatchUpService.swift */; };
 		215022EF9C17A53E593FDCA2 /* TripTimeZones.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206CD8F0DF7FB8EA5DB50074 /* TripTimeZones.swift */; };
 		23D81E4E732F2C70DE97A14E /* TripTimeZoneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1884381D2E5A99055D0C670 /* TripTimeZoneTests.swift */; };
@@ -54,11 +55,13 @@
 		7CBB28B65FC5A1B91079A6F5 /* EmergencyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6672923C69095FC3E0869FDD /* EmergencyIntent.swift */; };
 		7E14881422F56284192FE1F3 /* EmergencyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D09794BD64245A7C0D7F10 /* EmergencyCard.swift */; };
 		8488FF24EB3313796D9A1829 /* EmergencySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */; };
+		85610F6AE7CF3478B0AA9D54 /* FriendsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70067056015E41B944B5BE35 /* FriendsViews.swift */; };
 		86C27AE5FCAAD519E00875B8 /* DayPlanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D35FAE9B201F8E428C351A /* DayPlanSheet.swift */; };
 		8944AD49BDFC6DBEB450B98C /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E4C8A9C14CB7AA0238C904 /* Profile.swift */; };
 		89B1BC6196B581658C1CC3F0 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B01E54B5BE66127232A220 /* SignInView.swift */; };
 		8D0D46B4C2A7C721C6F204B5 /* MapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6F5800C063D8BE20AB2C4E /* MapTests.swift */; };
 		8FC3BFC72D2DC6BE4E4F4A96 /* DayStops.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB47F46C89D2B7D77711AF51 /* DayStops.swift */; };
+		914D80CE90595C42176F48CB /* RoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF4FDD0722375976D3DDC9F /* RoomView.swift */; };
 		91B00235AE3EC34B29EC1B44 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 106B1C4E768A77DEA65D8986 /* GoogleSignIn */; };
 		91EE705CA3474BFF9F1AFD89 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */; };
 		934B7CEAC9B772EFA7944440 /* EmergencyNumbers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */; };
@@ -74,6 +77,7 @@
 		A569B663C6231D599C587EDE /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811A9F16C58C5478C0F5FE7D /* AIService.swift */; };
 		A5ECDE61815292E24596CFF5 /* RoutingLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A24E6641C1AD2D6E6596AF /* RoutingLog.swift */; };
 		A601F3A7AB2DBA660776B769 /* EmergencyTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0D1CCACE2A8CDF2E94793 /* EmergencyTranslator.swift */; };
+		A8405CF926307377ECCC12AE /* FirestoreSocial.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41CD7A9107497DFE414768B /* FirestoreSocial.swift */; };
 		A933F4D97B70519B8DE624A7 /* EmergencyICE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66FA11F403615263A0F7192B /* EmergencyICE.swift */; };
 		AAA32FEF0B263583EE635B39 /* TripActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77E1D276180137848AD1DF /* TripActivity.swift */; };
 		ADE671ECADA19D9F3EF9C110 /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC8F0D05AD9666A98CF3104 /* NotificationTests.swift */; };
@@ -98,11 +102,14 @@
 		C6E27337324372E40C98F972 /* MapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96719AC94683792A5682336E /* MapService.swift */; };
 		C76A9977CF56DBC0BC6E47A1 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85770C210B04BD401039AF32 /* Expense.swift */; };
 		C7A674ABCF03F400FE506BD4 /* BlueOpenQuestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6F879C3B29864AFC832C8B /* BlueOpenQuestions.swift */; };
+		C9DD4081CEE3B275A36168FF /* SocialModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F430E74167257E32D2BEDBE1 /* SocialModels.swift */; };
 		CD8111B35C422F3ABBD94440 /* AppleWWDRCAG4.cer in Resources */ = {isa = PBXBuildFile; fileRef = 41919414C3C76F971C0AF5DD /* AppleWWDRCAG4.cer */; };
 		CE98C72D27FF3A0099C28A20 /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 613C423B335623E6820F3919 /* Journey.swift */; };
 		D0C1C8802F9B786D02E19648 /* UpNext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 487CBDECE3270169836256FC /* UpNext.swift */; };
 		D4A7258E26C6DBCCDB4014D8 /* SpendTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 947397E3FC455E7650DAB37E /* SpendTests.swift */; };
 		D7F91A2AFB71D01596FF420F /* EmergencyCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF50028C4639B474A47F989F /* EmergencyCardTests.swift */; };
+		E1DA9CD1ECF0AE168B900FB9 /* SocialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F9125777ED4E99485F510B /* SocialTests.swift */; };
+		E2B74EF2F4A47709433F1096 /* DemoSocial.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5FE07520A0EF46134C7CE81 /* DemoSocial.swift */; };
 		E40AC5FD4F2EDABFA5F9672E /* JourneyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985D06F52FFB9D2128C266F2 /* JourneyIntent.swift */; };
 		E460494B5EA29C431BE2CFDD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DA202436DE294BFF1AEF008F /* PrivacyInfo.xcprivacy */; };
 		E55B5D7A60BAEE6091257919 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 73FC01A36D34395EAEE3ED2C /* Assets.xcassets */; };
@@ -171,8 +178,10 @@
 		28AA496609E50964250A9257 /* WalletPassSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPassSheet.swift; sourceTree = "<group>"; };
 		2E4084E2D51493C65A6D5C74 /* EmergencyHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyHealth.swift; sourceTree = "<group>"; };
 		2E77E1D276180137848AD1DF /* TripActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripActivity.swift; sourceTree = "<group>"; };
+		36F9125777ED4E99485F510B /* SocialTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialTests.swift; sourceTree = "<group>"; };
 		37D35FAE9B201F8E428C351A /* DayPlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlanSheet.swift; sourceTree = "<group>"; };
 		3A40447BA01D88A0365DFB46 /* TripSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSummaryView.swift; sourceTree = "<group>"; };
+		3B10DBCFCC25F9002F138538 /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialService.swift; sourceTree = "<group>"; };
 		3D50AE79158429E6D3D374DC /* RoutingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicy.swift; sourceTree = "<group>"; };
 		4025F623B2B9D63B80F160A5 /* PhotoTaste.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTaste.swift; sourceTree = "<group>"; };
 		4123B7895DFC98EC04DA53C4 /* WalletPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletPass.swift; sourceTree = "<group>"; };
@@ -198,6 +207,7 @@
 		68DE0758D6330D4582B09973 /* TravelCopilotShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelCopilotShortcuts.swift; sourceTree = "<group>"; };
 		6E02FC1AF031F047E940AC9C /* TravelCopilotWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = TravelCopilotWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6F5800C063D8BE20AB2C4E /* MapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTests.swift; sourceTree = "<group>"; };
+		70067056015E41B944B5BE35 /* FriendsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsViews.swift; sourceTree = "<group>"; };
 		704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareView.swift; sourceTree = "<group>"; };
 		73B01E54B5BE66127232A220 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		73FC01A36D34395EAEE3ED2C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -212,6 +222,7 @@
 		87C7BA93EA70257ECCAE299C /* CatchUpService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchUpService.swift; sourceTree = "<group>"; };
 		885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardViews.swift; sourceTree = "<group>"; };
 		8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProgressTests.swift; sourceTree = "<group>"; };
+		8DF4FDD0722375976D3DDC9F /* RoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomView.swift; sourceTree = "<group>"; };
 		8F3D1DC5B07860C1E7DD453D /* PlanDayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDayView.swift; sourceTree = "<group>"; };
 		947397E3FC455E7650DAB37E /* SpendTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendTests.swift; sourceTree = "<group>"; };
 		96719AC94683792A5682336E /* MapService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapService.swift; sourceTree = "<group>"; };
@@ -225,8 +236,10 @@
 		AB6A81683B7BACE878B25814 /* AskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskService.swift; sourceTree = "<group>"; };
 		ADE8F03E31DE4DEB13130D49 /* TravelCopilot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TravelCopilot.entitlements; sourceTree = "<group>"; };
 		AE9947A0ADC3385A1F1317EB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		B41CD7A9107497DFE414768B /* FirestoreSocial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSocial.swift; sourceTree = "<group>"; };
 		B4F1789438F4D0CEC32FB024 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B514C832175BEB0434DF2179 /* FallbackProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FallbackProbeTests.swift; sourceTree = "<group>"; };
+		B5FE07520A0EF46134C7CE81 /* DemoSocial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSocial.swift; sourceTree = "<group>"; };
 		B74E3E4AF4BB8D92998A4366 /* BlueEvalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueEvalTests.swift; sourceTree = "<group>"; };
 		BB23245D5263C04F74A21BDD /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 		BE0D68D3DBF952B3805C9D32 /* FloatingAsk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingAsk.swift; sourceTree = "<group>"; };
@@ -244,6 +257,7 @@
 		ECD65BD2D80277E815A4BCCA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		F291992C06439F851FB34CCE /* EmergencyCardWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyCardWidgets.swift; sourceTree = "<group>"; };
 		F2E61DA002322A92847F3F1B /* RoutingLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingLogView.swift; sourceTree = "<group>"; };
+		F430E74167257E32D2BEDBE1 /* SocialModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialModels.swift; sourceTree = "<group>"; };
 		F58FE3DEB0D81AB48852109B /* ExpenseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseService.swift; sourceTree = "<group>"; };
 		F78EE745724CF7139C52C6A1 /* PlanChat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChat.swift; sourceTree = "<group>"; };
 		FAE0344074B989FEB2BBE0ED /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
@@ -289,6 +303,7 @@
 				FD503B45A8210BB16CBE4DF8 /* PrepareDedupTests.swift */,
 				80438ACB64DEC708FF39F5A8 /* RedactTests.swift */,
 				2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */,
+				36F9125777ED4E99485F510B /* SocialTests.swift */,
 				947397E3FC455E7650DAB37E /* SpendTests.swift */,
 				8DD3EA4EA054B5580E1D78C0 /* TripProgressTests.swift */,
 				9E562407EC97F34A8A03D33D /* TripTimelineTests.swift */,
@@ -297,6 +312,17 @@
 				5A13877DB6FF882A3A10C3D5 /* WalletPassTests.swift */,
 			);
 			path = TravelCopilotTests;
+			sourceTree = "<group>";
+		};
+		05F79A1D7A636177FB832B82 /* Social */ = {
+			isa = PBXGroup;
+			children = (
+				B5FE07520A0EF46134C7CE81 /* DemoSocial.swift */,
+				B41CD7A9107497DFE414768B /* FirestoreSocial.swift */,
+				F430E74167257E32D2BEDBE1 /* SocialModels.swift */,
+				3B10DBCFCC25F9002F138538 /* SocialService.swift */,
+			);
+			path = Social;
 			sourceTree = "<group>";
 		};
 		1A9F347582824E052DBAD5EE /* TravelCopilotWidgets */ = {
@@ -389,6 +415,7 @@
 				37D35FAE9B201F8E428C351A /* DayPlanSheet.swift */,
 				251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */,
 				C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */,
+				70067056015E41B944B5BE35 /* FriendsViews.swift */,
 				FAE0344074B989FEB2BBE0ED /* HelpView.swift */,
 				AA389F0DEF42A8FF498C2FB1 /* HomeView.swift */,
 				00CB8AF8CFFC97B61CB2B58E /* MapScreen.swift */,
@@ -397,6 +424,7 @@
 				FD0A5B99648BA70E434E2030 /* PlanView.swift */,
 				704FAC0CA1A28CF7EBDEA5F9 /* PrepareView.swift */,
 				226052C8B24B93A6F82F11D0 /* ProfileView.swift */,
+				8DF4FDD0722375976D3DDC9F /* RoomView.swift */,
 				F2E61DA002322A92847F3F1B /* RoutingLogView.swift */,
 				650C8F1632B44DFCBC5B981D /* SettingsView.swift */,
 				73B01E54B5BE66127232A220 /* SignInView.swift */,
@@ -451,6 +479,7 @@
 				AAA291C16B159B76C67848B8 /* Map */,
 				FF359605FB3290F403985DC0 /* Network */,
 				FD252585B786614B7FC3B10A /* Resources */,
+				05F79A1D7A636177FB832B82 /* Social */,
 				6FA88329C8D7808A4EC66B93 /* Spike */,
 				CC0470671563500034F3A374 /* Store */,
 			);
@@ -687,6 +716,7 @@
 				FEE517F5818C1C5A0A775A85 /* Connectivity.swift in Sources */,
 				86C27AE5FCAAD519E00875B8 /* DayPlanSheet.swift in Sources */,
 				8FC3BFC72D2DC6BE4E4F4A96 /* DayStops.swift in Sources */,
+				E2B74EF2F4A47709433F1096 /* DemoSocial.swift in Sources */,
 				7E14881422F56284192FE1F3 /* EmergencyCard.swift in Sources */,
 				46D39048C94145FCB45D601C /* EmergencyCardView.swift in Sources */,
 				412986252DAEE02E80FF847A /* EmergencyHealth.swift in Sources */,
@@ -697,7 +727,9 @@
 				A601F3A7AB2DBA660776B769 /* EmergencyTranslator.swift in Sources */,
 				C76A9977CF56DBC0BC6E47A1 /* Expense.swift in Sources */,
 				BC78B671A560426D972564CE /* ExpenseService.swift in Sources */,
+				A8405CF926307377ECCC12AE /* FirestoreSocial.swift in Sources */,
 				4ACB0C7D633ED0601046DD86 /* FloatingAsk.swift in Sources */,
+				85610F6AE7CF3478B0AA9D54 /* FriendsViews.swift in Sources */,
 				1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */,
 				91EE705CA3474BFF9F1AFD89 /* HomeView.swift in Sources */,
 				CE98C72D27FF3A0099C28A20 /* Journey.swift in Sources */,
@@ -719,11 +751,14 @@
 				2F8918DB21C855CD69CF3BC1 /* ProfileView.swift in Sources */,
 				9DFD62C5E1C155A9BAF8ED11 /* Prompts.swift in Sources */,
 				C0EA59705057219ADC59FBF6 /* Redact.swift in Sources */,
+				914D80CE90595C42176F48CB /* RoomView.swift in Sources */,
 				A5ECDE61815292E24596CFF5 /* RoutingLog.swift in Sources */,
 				177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */,
 				935CB47592B1C362B3F95B11 /* RoutingPolicy.swift in Sources */,
 				C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */,
 				89B1BC6196B581658C1CC3F0 /* SignInView.swift in Sources */,
+				C9DD4081CEE3B275A36168FF /* SocialModels.swift in Sources */,
+				1F7D28EB32A9AAD97E849B96 /* SocialService.swift in Sources */,
 				12C8A5B538C1CF391AC3555B /* Speech.swift in Sources */,
 				C3D6E9429FBF4EDA6FAD2430 /* SpendView.swift in Sources */,
 				0E31CD5EFFB88BEE0AE1A487 /* SpikeView.swift in Sources */,
@@ -777,6 +812,7 @@
 				2CA10D403969CCFB0126BF36 /* PrepareDedupTests.swift in Sources */,
 				FCA1DFAC4E9D23F52767B46B /* RedactTests.swift in Sources */,
 				512A06FAC332DB7B31704621 /* RoutingPolicyTests.swift in Sources */,
+				E1DA9CD1ECF0AE168B900FB9 /* SocialTests.swift in Sources */,
 				D4A7258E26C6DBCCDB4014D8 /* SpendTests.swift in Sources */,
 				A11D6D3F100F44A910823B5F /* TripProgressTests.swift in Sources */,
 				23D81E4E732F2C70DE97A14E /* TripTimeZoneTests.swift in Sources */,

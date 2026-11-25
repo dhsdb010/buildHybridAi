@@ -35,6 +35,7 @@ struct TravelCopilotApp: App {
   @State private var router = AppRouter()
   @State private var location = LocationService()
   @State private var auth = AuthService()
+  @State private var social = SocialService.live()
   private let notifications = NotificationActions()
 
   init() {
@@ -77,7 +78,14 @@ struct TravelCopilotApp: App {
         .environment(router)
         .environment(location)
         .environment(auth)
+        .environment(social)
         .onOpenURL { url in if !router.open(url) { GIDSignIn.sharedInstance.handle(url) } }
+        // Friends and trip rooms follow the signed-in account.
+        .onChange(of: auth.account?.uid, initial: true) { _, uid in
+          if let uid, !uid.isEmpty {
+            social.start(uid: uid, name: Profile.firstName(account: auth.account?.name) ?? auth.account?.name ?? "")
+          } else if !social.isDemo { social.stop() }
+        }
         .onAppear {
           notifications.router = router
           // Siri, the Action Button and the Control Center control open the emergency card.
@@ -90,6 +98,8 @@ struct TravelCopilotApp: App {
 }
 
 enum AppTab: Hashable { case home, trip, map, prepare, log }
+
+struct InviteRequest: Identifiable { let code: String; var id: String { code } }
 
 struct AskRequest: Identifiable {
   let id = UUID()
@@ -106,7 +116,6 @@ final class AppRouter {
   var ask: AskRequest?
   var showHelp = false
   var showSettings = false
-  var showProfile = false
   var showChats = false
   /// Opens the taxi card on Home (from a Live Activity or notification button).
   var showTaxi = false
@@ -114,10 +123,15 @@ final class AppRouter {
   var tripMode: Int?
   /// The emergency card or its setup quiz, over everything (travelcopilot://emergency, Siri, debug).
   var emergency: EmergencyScreen?
+  /// A friend's invite code from a link or QR (travelcopilot://i/CODE or https://…/i/CODE).
+  var inviteCode: InviteRequest?
 
   /// travelcopilot://ask?q=… · ://trip · ://taxi · ://map · ://home. Returns false for other URLs.
   @discardableResult
   func open(_ url: URL) -> Bool {
+    if (url.scheme == "https" || url.host() == "i"), let code = InviteCode.parse(url.absoluteString) {
+      tab = .home; showChats = true; inviteCode = InviteRequest(code: code); return true
+    }
     guard url.scheme == "travelcopilot" else { return false }
     switch url.host() {
     case "ask":
@@ -139,7 +153,7 @@ final class AppRouter {
       switch d.string(forKey: "tab") { case "trip": tab = .trip; case "map": tab = .map; case "prepare": tab = .prepare; case "log": tab = .log; default: break }
       if let q = d.string(forKey: "askQuestion") { ask = AskRequest(mode: 0, text: q, autoSubmit: true) }
       if let q = d.string(forKey: "sayText") { ask = AskRequest(mode: 1, text: q, autoSubmit: true) }
-      switch d.string(forKey: "screen") { case "help": showHelp = true; case "settings": showSettings = true; case "profile": showProfile = true; case "chats": showChats = true; case "ask": ask = AskRequest(); default: break }
+      switch d.string(forKey: "screen") { case "help": showHelp = true; case "settings": showSettings = true; case "chats": showChats = true; case "ask": ask = AskRequest(); default: break }
       // `-emergency setup|card|english`: open the emergency card flow (simulator checks).
       if let e = d.string(forKey: "emergency") { emergency = EmergencyScreen(rawValue: e) }
     #endif

@@ -1,0 +1,21 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "hosting",
+    "ignore": ["**/.*", "!.well-known/**", "rules-test/**"],
+    "rewrites": [{ "source": "/i/**", "destination": "/i/index.html" }],
+    "headers": [
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      }
+    ]
+  },
+  "emulators": {
+    "firestore": { "port": 8080 },
+    "singleProjectMode": true
+  }
+}

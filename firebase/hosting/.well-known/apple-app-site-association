@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["WGAA2WP5T4.dev.buildhybridai.travelcopilot"],
+        "components": [{ "/": "/i/*", "comment": "Friend invite links" }]
+      }
+    ]
+  }
+}
