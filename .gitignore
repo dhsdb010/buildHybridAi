@@ -31,3 +31,6 @@ ios/TravelCopilot/Resources/Wallet/
 *.cer
 .build-archive/
 appstore-assets/
+
+# Firebase CLI deploy cache
+firebase/.firebase/
