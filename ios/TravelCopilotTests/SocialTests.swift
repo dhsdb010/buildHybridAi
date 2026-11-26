@@ -109,3 +109,42 @@ import Testing
     #expect(p.contains("Question from Alex: what should we do first?"))
   }
 }
+
+@Suite struct MentionsTests {
+  let room = TripRoom(id: "r", name: "Tokyo trip", owner: "me",
+                      members: [.init(id: "me", name: "Alex", handle: "alex_k", role: .owner),
+                                .init(id: "m", name: "Mina Park", handle: "mina", role: .editor),
+                                .init(id: "j", name: "Jun", handle: "jun_t", role: .editor)],
+                      tripTitle: nil, friendsCanEdit: true, createdAt: Date())
+
+  @Test func activeQuery() {
+    #expect(Mentions.activeQuery(in: "Saturday works. @") == "")
+    #expect(Mentions.activeQuery(in: "Saturday works. @Mi") == "mi")
+    #expect(Mentions.activeQuery(in: "@") == "")
+    #expect(Mentions.activeQuery(in: "mail a@b") == nil)          // not a word start
+    #expect(Mentions.activeQuery(in: "@mina hi") == nil)          // finished, then more text
+    #expect(Mentions.activeQuery(in: "no mention") == nil)
+  }
+
+  @Test func suggestionsBlueFirstThenRoomOnly() {
+    let all = Mentions.suggestions(query: "", room: room, me: "me")
+    #expect(all.map(\.title) == ["Blue", "Mina Park", "Jun"])     // never yourself
+    #expect(Mentions.suggestions(query: "mi", room: room, me: "me").map(\.title) == ["Mina Park"])
+    #expect(Mentions.suggestions(query: "b", room: room, me: "me").map(\.title) == ["Blue"])
+    #expect(Mentions.suggestions(query: "jun_", room: room, me: "me").map(\.title) == ["Jun"])   // by @ID too
+    #expect(Mentions.suggestions(query: "ken", room: room, me: "me").isEmpty)
+  }
+
+  @Test func insertReplacesTheTypedWord() {
+    let mina = Mentions.suggestions(query: "mi", room: room, me: "me")[0]
+    #expect(Mentions.insert(mina, into: "Saturday works. @mi") == "Saturday works. @Mina ")
+    let blue = Mentions.suggestions(query: "", room: room, me: "me")[0]
+    #expect(Mentions.insert(blue, into: "@") == "@Blue ")
+  }
+
+  @Test func boldOnlyKnownMentions() {
+    let text = "Saturday works. @Mina @Blue is it open? mail a@b.com @ken"
+    let words = Mentions.ranges(in: text, room: room).map { String(text[$0]) }
+    #expect(words == ["@Mina", "@Blue"])
+  }
+}

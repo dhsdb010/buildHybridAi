@@ -108,7 +108,7 @@ struct RoomView: View {
         BlueBadge(size: 26)
         VStack(alignment: .leading, spacing: 4) {
           Text("BLUE · FOR THE GROUP").mta(.label).foregroundStyle(MTA.accent)
-          Text(m.text).mta(.body1).foregroundStyle(MTA.text)
+          Text(room.map { Mentions.attributed(m.text, room: $0) } ?? AttributedString(m.text)).mta(.body1).foregroundStyle(MTA.text)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(MTA.raised, in: .rect(cornerRadius: 18))
@@ -120,7 +120,7 @@ struct RoomView: View {
       Text(m.text).mta(.body2).foregroundStyle(MTA.text2).frame(maxWidth: .infinity).multilineTextAlignment(.center)
     } else if m.author == me {
       VStack(alignment: .trailing, spacing: 4) {
-        Text(m.text).mta(.body1).foregroundStyle(MTA.onColor)
+        Text(room.map { Mentions.attributed(m.text, room: $0) } ?? AttributedString(m.text)).mta(.body1).foregroundStyle(MTA.onColor)
           .padding(.horizontal, 14).padding(.vertical, 10)
           .background(MTA.accent, in: .rect(cornerRadius: 18))
         if m.pending {
@@ -133,7 +133,7 @@ struct RoomView: View {
         PersonBadge(initial: String(m.authorName.prefix(1)).uppercased(), size: 26)
         VStack(alignment: .leading, spacing: 2) {
           Text(m.authorName).mta(.label).foregroundStyle(MTA.text2)
-          Text(m.text).mta(.body1).foregroundStyle(MTA.text)
+          Text(room.map { Mentions.attributed(m.text, room: $0) } ?? AttributedString(m.text)).mta(.body1).foregroundStyle(MTA.text)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(MTA.raised, in: .rect(cornerRadius: 18))
@@ -151,6 +151,49 @@ struct RoomView: View {
   }
 
   private func composer(_ room: TripRoom) -> some View {
+    VStack(spacing: 8) {
+      if let q = Mentions.activeQuery(in: text) {
+        let list = Mentions.suggestions(query: q, room: room, me: me)
+        if !list.isEmpty { mentionPanel(list, showLabel: q.isEmpty) }
+      }
+      composerRow(room)
+    }
+    .padding(.horizontal, MTA.gutter).padding(.vertical, 10)
+    .background(MTA.surface)
+    .disabled(room.member(me)?.role == .viewer)
+    .animation(.easeOut(duration: 0.15), value: Mentions.activeQuery(in: text))
+  }
+
+  /// Typing @ shows Blue first, then the people in this room (Figma 12 · screens 19–20).
+  private func mentionPanel(_ list: [Mentions.Suggestion], showLabel: Bool) -> some View {
+    VStack(alignment: .leading, spacing: 2) {
+      if showLabel { MTALabel("Mention").padding(.horizontal, 10).padding(.top, 6).padding(.bottom, 2) }
+      ForEach(Array(list.prefix(6).enumerated()), id: \.element.id) { i, s in
+        Button { text = Mentions.insert(s, into: text) } label: {
+          HStack(spacing: 12) {
+            if s.isBlue { BlueBadge(size: 36) } else { PersonBadge(initial: s.initial) }
+            VStack(alignment: .leading, spacing: 2) {
+              Text(s.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(MTA.text)
+              Text(s.subtitle).mta(.body2).foregroundStyle(MTA.text2)
+            }
+            Spacer(minLength: 0)
+          }
+          .padding(.horizontal, 10).padding(.vertical, 8)
+          .background(i == 0 ? MTA.raised : .clear, in: .rect(cornerRadius: 12))
+          .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Mention \(s.title)")
+      }
+    }
+    .padding(8)
+    .background(MTA.surface, in: .rect(cornerRadius: 18))
+    .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(MTA.raised, lineWidth: 1) }
+    .shadow(color: .black.opacity(0.14), radius: 14, y: 4)
+    .transition(.opacity.combined(with: .move(edge: .bottom)))
+  }
+
+  private func composerRow(_ room: TripRoom) -> some View {
     HStack(spacing: 10) {
       TextField("Message \(room.name)", text: $text, axis: .vertical)
         .mta(.body1).lineLimit(1...4)
@@ -168,9 +211,6 @@ struct RoomView: View {
       .frame(width: 40, height: 40).background(MTA.accent, in: .circle)
       .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
-    .padding(.horizontal, MTA.gutter).padding(.vertical, 10)
-    .background(MTA.surface)
-    .disabled(room.member(me)?.role == .viewer)
   }
 }
 

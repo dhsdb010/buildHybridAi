@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0371E127256F891BF6CD7207 /* TripSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422AB43EF59FED00A9DA7CBD /* TripSummary.swift */; };
 		0702F99C137A564745A48C3F /* WalletPassSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AA496609E50964250A9257 /* WalletPassSheet.swift */; };
+		0B53E78D65A02635CD0F00E1 /* Mentions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 243F8AD04B8F9FB616AC7362 /* Mentions.swift */; };
 		0CA359B8DCF267EEF45FF095 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836881F86764F2101174C04F /* TripView.swift */; };
 		0E31CD5EFFB88BEE0AE1A487 /* SpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */; };
 		0E39493FDAFEAE38C37158B9 /* BlueInRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444CF70837DA15C54AE8970D /* BlueInRoom.swift */; };
@@ -172,6 +173,7 @@
 		226052C8B24B93A6F82F11D0 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		229406D623A78AE9C8FCA9E8 /* SpendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendView.swift; sourceTree = "<group>"; };
 		2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutingPolicyTests.swift; sourceTree = "<group>"; };
+		243F8AD04B8F9FB616AC7362 /* Mentions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mentions.swift; sourceTree = "<group>"; };
 		24C356B2AE6D3C67EBE11285 /* EmergencyNumbers.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = EmergencyNumbers.json; sourceTree = "<group>"; };
 		24E4C8A9C14CB7AA0238C904 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		251D92D48C4F4CDBB24DE834 /* EmergencyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyCardView.swift; sourceTree = "<group>"; };
@@ -322,6 +324,7 @@
 				444CF70837DA15C54AE8970D /* BlueInRoom.swift */,
 				B5FE07520A0EF46134C7CE81 /* DemoSocial.swift */,
 				B41CD7A9107497DFE414768B /* FirestoreSocial.swift */,
+				243F8AD04B8F9FB616AC7362 /* Mentions.swift */,
 				F430E74167257E32D2BEDBE1 /* SocialModels.swift */,
 				3B10DBCFCC25F9002F138538 /* SocialService.swift */,
 			);
@@ -741,6 +744,7 @@
 				C6C342E5081EFB32E09111CC /* LocationService.swift in Sources */,
 				430F10EE367826B6BB9454E5 /* MapScreen.swift in Sources */,
 				C6E27337324372E40C98F972 /* MapService.swift in Sources */,
+				0B53E78D65A02635CD0F00E1 /* Mentions.swift in Sources */,
 				BC774D6160886C11D1E131E3 /* ModelRouter.swift in Sources */,
 				60E045A5EFE6DBEBFA95DB83 /* Models.swift in Sources */,
 				3B897321DD1855EB1F1AFEA4 /* PhotoTaste.swift in Sources */,
