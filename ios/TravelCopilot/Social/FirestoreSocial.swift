@@ -253,13 +253,15 @@ final class FirestoreSocialBackend: SocialBackend {
   }
 
   /// Not awaited past the local write: offline, it shows "Sends when you're back online".
-  func send(_ text: String, in room: TripRoom, me: SocialUser) async throws {
+  /// `.blue`: Blue's reply, posted by the asker's iPhone under the name "Blue".
+  func send(_ text: String, in room: TripRoom, me: SocialUser, kind: RoomMessage.Kind) async throws {
     let db = try store()
     let roomRef = db.collection("rooms").document(room.id)
+    let name = kind == .blue ? "Blue" : me.name
     let b = db.batch()
-    b.setData(["author": me.id, "authorName": me.name, "text": text, "kind": "text", "sentAt": FieldValue.serverTimestamp()],
+    b.setData(["author": me.id, "authorName": name, "text": text, "kind": kind.rawValue, "sentAt": FieldValue.serverTimestamp()],
               forDocument: roomRef.collection("messages").document())
-    b.updateData(["lastText": "\(me.name): \(text.prefix(80))", "lastAt": FieldValue.serverTimestamp()], forDocument: roomRef)
+    b.updateData(["lastText": "\(name): \(text.prefix(80))", "lastAt": FieldValue.serverTimestamp()], forDocument: roomRef)
     b.commit { _ in }
   }
 

@@ -80,3 +80,32 @@ import Testing
     #expect(router.inviteCode?.code == "K7Q4MZ2H" && router.showChats)
   }
 }
+
+@Suite struct BlueInRoomTests {
+  @Test func mentions() {
+    #expect(BlueInRoom.mentions("@blue can you suggest for our trip plan?"))
+    #expect(BlueInRoom.mentions("Hey @Blue, what's good on Friday?"))
+    #expect(!BlueInRoom.mentions("I love the blue lagoon"))
+    #expect(!BlueInRoom.mentions("mail me at me@blue.com"))
+    #expect(!BlueInRoom.mentions("@bluebird is my ID"))
+  }
+
+  @Test func questionDropsTheMention() {
+    #expect(BlueInRoom.question("@blue can you suggest for our trip plan?") == "can you suggest for our trip plan?")
+    #expect(BlueInRoom.question("@Blue, rain plan?") == "rain plan?")
+  }
+
+  @Test func promptUsesOnlyTheRoom() {
+    let room = TripRoom(id: "r", name: "Seoul trip", owner: "me",
+                        members: [.init(id: "me", name: "Alex", handle: "alex_k", role: .owner),
+                                  .init(id: "j", name: "Jun", handle: "jun_t", role: .editor)],
+                        tripTitle: "Seoul · Mar 3–7", friendsCanEdit: true, createdAt: Date())
+    let msgs = [RoomMessage(id: "1", author: "me", authorName: "Alex", text: "Alex made this room", sentAt: nil, kind: .system, pending: false),
+                RoomMessage(id: "2", author: "j", authorName: "Jun", text: "Hi everyone!", sentAt: nil, kind: .text, pending: false)]
+    let p = BlueInRoom.prompt(room: room, messages: msgs, question: "what should we do first?", asker: "Alex")
+    #expect(p.contains("Room: Seoul trip · trip: Seoul · Mar 3–7"))
+    #expect(p.contains("Jun: Hi everyone!"))
+    #expect(!p.contains("made this room"))            // system lines aren't sent
+    #expect(p.contains("Question from Alex: what should we do first?"))
+  }
+}

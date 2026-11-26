@@ -168,7 +168,29 @@ final class SocialService {
   func send(_ text: String, in room: TripRoom) async {
     let t = MessageFilter.clean(text.trimmingCharacters(in: .whitespacesAndNewlines))
     guard let me, !t.isEmpty else { return }
-    _ = await run { try await self.backend.send(t, in: room, me: me) }
+    _ = await run { try await self.backend.send(t, in: room, me: me, kind: .text) }
+  }
+
+  /// Rooms where Blue is answering right now (shows "Blue is typing…").
+  private(set) var blueThinking: Set<String> = []
+
+  /// @Blue: the asker's iPhone asks once (in the cloud, logged in the Routing Log) and posts the
+  /// reply for everyone. Blue sees only this room's name, trip title and recent messages.
+  func askBlue(_ text: String, in room: TripRoom, recent: [RoomMessage], ai: AIService) async {
+    guard let me else { return }
+    blueThinking.insert(room.id); defer { blueThinking.remove(room.id) }
+    let prompt = BlueInRoom.prompt(room: room, messages: recent, question: BlueInRoom.question(text), asker: me.name)
+    do {
+      let (reply, _) = try await ai.generate("Room · @Blue", kind: .open, prompt: prompt,
+                                             instructions: BlueInRoom.instructions, as: BlueGroupReply.self)
+      let answer = MessageFilter.clean(reply.text.trimmingCharacters(in: .whitespacesAndNewlines))
+      guard !answer.isEmpty else { return }
+      _ = await run { try await self.backend.send(answer, in: room, me: me, kind: .blue) }
+    } catch {
+      self.error = ai.connectivity.isOnline
+        ? "Blue couldn't answer just now. Try @Blue again in a moment."
+        : "Blue answers in rooms when you're online. Ask again once you're connected."
+    }
   }
 
   func report(_ m: RoomMessage, in room: TripRoom, reason: String) async -> Bool {
@@ -229,7 +251,7 @@ protocol SocialBackend: AnyObject {
   func remove(_ uid: String, from room: TripRoom, me: SocialUser) async throws
   func leave(_ room: TripRoom, me: SocialUser) async throws
   func listen(room: String, onChange: @escaping ([RoomMessage]) -> Void) -> () -> Void
-  func send(_ text: String, in room: TripRoom, me: SocialUser) async throws
+  func send(_ text: String, in room: TripRoom, me: SocialUser, kind: RoomMessage.Kind) async throws
   func report(_ m: RoomMessage, in room: TripRoom, reason: String, me: SocialUser) async throws
   func deleteData(me: SocialUser) async throws
 }

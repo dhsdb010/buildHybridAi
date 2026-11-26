@@ -11,6 +11,7 @@
 		0702F99C137A564745A48C3F /* WalletPassSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AA496609E50964250A9257 /* WalletPassSheet.swift */; };
 		0CA359B8DCF267EEF45FF095 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836881F86764F2101174C04F /* TripView.swift */; };
 		0E31CD5EFFB88BEE0AE1A487 /* SpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */; };
+		0E39493FDAFEAE38C37158B9 /* BlueInRoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444CF70837DA15C54AE8970D /* BlueInRoom.swift */; };
 		0EB0CA84789ED29D6B2BD897 /* AskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6A81683B7BACE878B25814 /* AskService.swift */; };
 		12C8A5B538C1CF391AC3555B /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657B71922D12DD14BBCF2B72 /* Speech.swift */; };
 		1407D7E0B736F019FE6D1D53 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE0344074B989FEB2BBE0ED /* HelpView.swift */; };
@@ -188,6 +189,7 @@
 		41919414C3C76F971C0AF5DD /* AppleWWDRCAG4.cer */ = {isa = PBXFileReference; path = AppleWWDRCAG4.cer; sourceTree = "<group>"; };
 		422AB43EF59FED00A9DA7CBD /* TripSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSummary.swift; sourceTree = "<group>"; };
 		4342DAC3349082046F1E3C3E /* TravelCopilotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TravelCopilotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		444CF70837DA15C54AE8970D /* BlueInRoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueInRoom.swift; sourceTree = "<group>"; };
 		487CBDECE3270169836256FC /* UpNext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpNext.swift; sourceTree = "<group>"; };
 		4BFD6EE5165FAF2C98B0E783 /* CatchUpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchUpTests.swift; sourceTree = "<group>"; };
 		4FC96B2931020B88925A1319 /* EmergencyNumbers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyNumbers.swift; sourceTree = "<group>"; };
@@ -317,6 +319,7 @@
 		05F79A1D7A636177FB832B82 /* Social */ = {
 			isa = PBXGroup;
 			children = (
+				444CF70837DA15C54AE8970D /* BlueInRoom.swift */,
 				B5FE07520A0EF46134C7CE81 /* DemoSocial.swift */,
 				B41CD7A9107497DFE414768B /* FirestoreSocial.swift */,
 				F430E74167257E32D2BEDBE1 /* SocialModels.swift */,
@@ -707,6 +710,7 @@
 				0EB0CA84789ED29D6B2BD897 /* AskService.swift in Sources */,
 				BFB008F7F55B47546A9E1AE3 /* AskView.swift in Sources */,
 				622FC6E0748A92A3918E17A5 /* AuthService.swift in Sources */,
+				0E39493FDAFEAE38C37158B9 /* BlueInRoom.swift in Sources */,
 				C7A674ABCF03F400FE506BD4 /* BlueOpenQuestions.swift in Sources */,
 				4F4CC24018A6BC22ECCD6C41 /* CardViews.swift in Sources */,
 				20B4F815B2B5C2BE8F70F6ED /* CatchUpService.swift in Sources */,

@@ -50,7 +50,7 @@ struct TripRoom: Identifiable, Hashable, Sendable {
 }
 
 struct RoomMessage: Identifiable, Hashable, Sendable {
-  enum Kind: String, Sendable { case text, system }
+  enum Kind: String, Sendable { case text, system, blue }
   let id: String
   var author: String
   var authorName: String

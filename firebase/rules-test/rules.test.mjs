@@ -199,3 +199,14 @@ test('a member can report a message; a stranger cannot', async () => {
   await assertFails(report(as(K), K));
   await assertFails(getDoc(doc(as(A), 'reports', `rep-${A}`)));
 });
+
+test('Blue replies are posted by the asker under the name Blue', async () => {
+  const alex = as(A);
+  await assertSucceeds(setDoc(doc(alex, 'rooms', 'r1', 'messages', 'b1'),
+    { author: A, authorName: 'Blue', text: 'Try Ikseon-dong on day 2.', kind: 'blue', sentAt: serverTimestamp() }));
+  // A "blue" message can't pretend to be from someone else's name.
+  await assertFails(setDoc(doc(alex, 'rooms', 'r1', 'messages', 'b2'),
+    { author: A, authorName: 'Mina', text: 'fake', kind: 'blue', sentAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(alex, 'rooms', 'r1', 'messages', 'b3'),
+    { author: A, authorName: 'Alex', text: 'x', kind: 'admin', sentAt: serverTimestamp() }));
+});

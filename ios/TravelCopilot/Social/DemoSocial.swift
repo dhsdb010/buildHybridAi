@@ -73,10 +73,10 @@
       post(.init(id: UUID().uuidString, author: me.id, authorName: me.name,
                  text: "\(me.name) added \(ListFormatter.localizedString(byJoining: people.map(\.name)))", sentAt: Date(), kind: .system, pending: false), room: room.id)
       push()
-      // A friend says hi a moment later.
+      // A friend says hi a moment later (about this room, not anything made up).
       if let first = people.first {
         try? await Task.sleep(for: .seconds(2))
-        post(.init(id: UUID().uuidString, author: first.id, authorName: first.name, text: "Yay! I'll add TeamLab for Friday.",
+        post(.init(id: UUID().uuidString, author: first.id, authorName: first.name, text: "Hi everyone! Excited for \(room.name).",
                    sentAt: Date(), kind: .text, pending: false), room: room.id, last: true)
       }
     }
@@ -89,8 +89,9 @@
       feeds[room] = onChange; onChange(messages[room] ?? [])
       return { [weak self] in self?.feeds[room] = nil }
     }
-    func send(_ text: String, in room: TripRoom, me: SocialUser) async throws {
-      post(.init(id: UUID().uuidString, author: me.id, authorName: me.name, text: text, sentAt: Date(), kind: .text, pending: false), room: room.id, last: true)
+    func send(_ text: String, in room: TripRoom, me: SocialUser, kind: RoomMessage.Kind) async throws {
+      post(.init(id: UUID().uuidString, author: me.id, authorName: kind == .blue ? "Blue" : me.name, text: text,
+                 sentAt: Date(), kind: kind, pending: false), room: room.id, last: true)
     }
     private func post(_ m: RoomMessage, room: String, last: Bool = false) {
       messages[room, default: []].append(m); feeds[room]?(messages[room] ?? [])

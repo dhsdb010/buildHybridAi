@@ -5,6 +5,7 @@ import SwiftUI
 struct RoomView: View {
   let roomID: String
   @Environment(SocialService.self) private var social
+  @Environment(AIService.self) private var ai
   @Environment(\.dismiss) private var dismiss
   @State private var messages: [RoomMessage] = []
   @State private var stopListening: (() -> Void)?
@@ -32,7 +33,6 @@ struct RoomView: View {
     .toolbar {
       if room != nil {
         ToolbarItemGroup(placement: .topBarTrailing) {
-          Button { addingPeople = true } label: { Image(systemName: "person.badge.plus") }.accessibilityLabel("Add people")
           Button { showInfo = true } label: { Image(systemName: "info.circle") }.accessibilityLabel("Room info")
         }
       }
@@ -61,6 +61,16 @@ struct RoomView: View {
             membersBar(room)
             if room.members.count == 1 && room.owner == me { WhoIsComing(room: room) }
             ForEach(messages) { m in bubble(m).id(m.id) }
+            if social.blueThinking.contains(room.id) {
+              HStack(spacing: 8) {
+                BlueBadge(size: 26)
+                Text("Blue is typing…").mta(.body2).foregroundStyle(MTA.text2)
+              }
+              .id("blue-typing")
+            }
+            if let e = social.error {
+              Text(e).mta(.body2).foregroundStyle(MTA.obstacle).frame(maxWidth: .infinity).multilineTextAlignment(.center)
+            }
           }
           .mtaScreen().padding(.top, 8).padding(.bottom, 12)
         }
@@ -68,6 +78,9 @@ struct RoomView: View {
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: messages.count) { _, _ in
           if let last = messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
+        }
+        .onChange(of: social.blueThinking.contains(room.id)) { _, on in
+          if on { withAnimation { proxy.scrollTo("blue-typing", anchor: .bottom) } }
         }
       }
       if room.member(me)?.role == .viewer {
@@ -90,7 +103,20 @@ struct RoomView: View {
 
   @ViewBuilder
   private func bubble(_ m: RoomMessage) -> some View {
-    if m.kind == .system {
+    if m.kind == .blue {
+      HStack(alignment: .bottom, spacing: 8) {
+        BlueBadge(size: 26)
+        VStack(alignment: .leading, spacing: 4) {
+          Text("BLUE · FOR THE GROUP").mta(.label).foregroundStyle(MTA.accent)
+          Text(m.text).mta(.body1).foregroundStyle(MTA.text)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(MTA.raised, in: .rect(cornerRadius: 18))
+        .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(MTA.accent.opacity(0.35), lineWidth: 1) }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 32)
+      .accessibilityElement(children: .combine)
+    } else if m.kind == .system {
       Text(m.text).mta(.body2).foregroundStyle(MTA.text2).frame(maxWidth: .infinity).multilineTextAlignment(.center)
     } else if m.author == me {
       VStack(alignment: .trailing, spacing: 4) {
@@ -132,7 +158,11 @@ struct RoomView: View {
         .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(MTA.subtle, lineWidth: 1) }
       Button("Send", systemImage: "paperplane.fill") {
         let t = text; text = ""
-        Task { await social.send(t, in: room) }
+        Task {
+          await social.send(t, in: room)
+          // Only the asker's iPhone asks Blue, so the room gets one answer.
+          if BlueInRoom.mentions(t) { await social.askBlue(t, in: room, recent: messages, ai: ai) }
+        }
       }
       .labelStyle(.iconOnly).font(.system(size: 16, weight: .semibold)).foregroundStyle(MTA.onColor)
       .frame(width: 40, height: 40).background(MTA.accent, in: .circle)
@@ -154,6 +184,7 @@ struct FriendPicker: View {
   @Environment(SocialService.self) private var social
   @State private var query = ""
   @State private var stranger: SocialUser?
+  @FocusState private var searching: Bool
 
   private var candidates: [SocialUser] {
     let q = Handle.normalize(query)
@@ -200,8 +231,10 @@ struct FriendPicker: View {
         .background(MTA.surface, in: .rect(cornerRadius: 14))
         Text("Only friends can join a trip room. \(s.name) can be added once they accept.")
           .mta(.body2).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
-      } else if !query.isEmpty && candidates.isEmpty && Handle.isValid(query) {
-        Text("No friend matches. Type their exact @ID to send a request.").mta(.body2).foregroundStyle(MTA.text2)
+      } else if !query.isEmpty && Handle.isValid(query) {
+        Text(candidates.isEmpty ? "No friend matches. Type someone's full @ID to send a friend request."
+                                : "Looking for someone else? Type their full @ID.")
+          .mta(.body2).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
       }
     }
     .task(id: query) {
@@ -213,28 +246,37 @@ struct FriendPicker: View {
     }
   }
 
+  // The whole bar focuses the field; chips scroll on their own so the field always has room.
   private var toBar: some View {
     HStack(spacing: 8) {
       Text("To:").mta(.body1).foregroundStyle(MTA.text2)
-      ScrollView(.horizontal) {
-        HStack(spacing: 6) {
-          ForEach(picked) { p in
-            Button { toggle(p) } label: {
-              HStack(spacing: 4) { Text(p.name); Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
-                .font(.system(size: 14, weight: .semibold)).foregroundStyle(MTA.onColor)
-                .padding(.horizontal, 10).padding(.vertical, 5).background(MTA.accent, in: .capsule)
+      if !picked.isEmpty {
+        ScrollView(.horizontal) {
+          HStack(spacing: 6) {
+            ForEach(picked) { p in
+              Button { toggle(p) } label: {
+                HStack(spacing: 4) { Text(p.name); Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
+                  .font(.system(size: 14, weight: .semibold)).foregroundStyle(MTA.onColor)
+                  .padding(.horizontal, 10).padding(.vertical, 5).background(MTA.accent, in: .capsule)
+              }
+              .buttonStyle(.plain).accessibilityLabel("Remove \(p.name)")
             }
-            .buttonStyle(.plain).accessibilityLabel("Remove \(p.name)")
           }
-          TextField(picked.isEmpty ? "Search friends or @ID" : "", text: $query)
-            .textInputAutocapitalization(.never).autocorrectionDisabled()
-            .mta(.body1).frame(minWidth: 120)
         }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(maxWidth: 190)
+        .fixedSize(horizontal: picked.count <= 2, vertical: false)
       }
-      .scrollIndicators(.hidden)
+      TextField(picked.isEmpty ? "Search friends or @ID" : "Add more", text: $query)
+        .textInputAutocapitalization(.never).autocorrectionDisabled()
+        .focused($searching)
+        .mta(.body1).frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(.horizontal, 12).frame(minHeight: 48)
     .background(MTA.surface, in: .rect(cornerRadius: 14))
+    .contentShape(.rect)
+    .onTapGesture { searching = true }
   }
 
   private func toggle(_ f: SocialUser) {
@@ -416,5 +458,15 @@ struct RoomInfoView: View {
     .background(MTA.surface)
     .navigationTitle("Room info")
     .navigationBarTitleDisplayMode(.inline)
+  }
+}
+
+/// Blue's mark in rooms: the app's blue asterisk.
+struct BlueBadge: View {
+  var size: CGFloat = 26
+  var body: some View {
+    Image(systemName: "asterisk").font(.system(size: size * 0.5, weight: .bold)).foregroundStyle(MTA.onColor)
+      .frame(width: size, height: size).background(MTA.accent, in: .circle)
+      .accessibilityLabel("Blue")
   }
 }

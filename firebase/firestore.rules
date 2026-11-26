@@ -50,7 +50,8 @@ rules_version = '2';
 //
 // Collection: rooms/{roomId}/messages   Document ID: auto
 //   - author: string uid (== auth uid), authorName: string (1..60), text: string (1..2000)
-//   - kind: 'text' | 'system', sentAt: timestamp (request.time)
+//   - kind: 'text' | 'system' | 'blue', sentAt: timestamp (request.time)
+//     'blue' is Blue's answer to an @Blue question, posted by the asker; authorName must be "Blue"
 //   Members read and create. No updates or deletes.
 //
 // Collection: reports          Document ID: auto
@@ -335,7 +336,9 @@ service cloud.firestore {
           && data().author == request.auth.uid
           && isStr(data().authorName, 1, 60)
           && isStr(data().text, 1, 2000)
-          && data().kind in ['text', 'system']
+          && data().kind in ['text', 'system', 'blue']
+          // Blue's reply is posted by the member who asked @Blue, always under the name "Blue".
+          && (data().kind != 'blue' || data().authorName == 'Blue')
           && isNow(data().sentAt);
         allow update, delete: if false;
       }
