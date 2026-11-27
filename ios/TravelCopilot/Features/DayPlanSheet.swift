@@ -68,7 +68,7 @@ struct DayPlanSheet: View {
           s.dayStops[day, default: []].append(stop)
           s.dayStops[day]?.sort { $0.time < $1.time }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
       }
     }
   }
@@ -231,17 +231,25 @@ struct StopDetailView: View {
   }
 }
 
-/// Add your own stop: what and when. Apple Maps finds the place.
+/// Add a stop with live Apple Maps search: type a name, pick the right place from the list or the
+/// map (icon, name, distance · address), see what it is (street photo, type, address, phone, website,
+/// Apple's own card with hours, photos and reviews), then set the time.
 struct AddStopSheet: View {
   let day: Date
   let city: String
   let near: CLLocationCoordinate2D?
   var onAdd: (DayStop) -> Void
   @Environment(\.dismiss) private var dismiss
-  @State private var name = ""
+  @State private var query = ""
+  @State private var hits: [DayStops.Hit] = []
+  @State private var searching = false
+  @State private var picked: DayStops.Hit?
+  @State private var mapPick: UUID?
+  @State private var appleCard: MKMapItem?
+  @State private var scene: MKLookAroundScene?
+  @State private var sceneChecked = false
   @State private var time: Date
-  @State private var finding = false
-  @State private var error: String?
+  @FocusState private var focused: Bool
 
   init(day: Date, city: String, near: CLLocationCoordinate2D?, onAdd: @escaping (DayStop) -> Void) {
     self.day = day; self.city = city; self.near = near; self.onAdd = onAdd
@@ -250,33 +258,196 @@ struct AddStopSheet: View {
 
   var body: some View {
     NavigationStack {
-      VStack(alignment: .leading, spacing: 16) {
-        MTALabel(TripTimeline.dayTitle(day))
-        TextField("Where? e.g. Ohori Park", text: $name).mta(.body1).padding(14)
-          .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(MTA.border, lineWidth: 2) }
-        DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute).mta(.body1).tint(MTA.accent)
-        if let error { Text(error).mta(.body2).foregroundStyle(MTA.urgent) }
-        Spacer()
-        Button(finding ? "Finding it on the map…" : "Add stop") { Task { await add() } }
-          .buttonStyle(.mtaPrimary).disabled(name.nilIfEmpty == nil || finding)
+      Group {
+        if let picked {
+          ScrollView { placeCard(picked).mtaScreen().padding(.top, 8).padding(.bottom, 24) }
+            .safeAreaInset(edge: .bottom) {
+              Button("Add stop") { add() }.buttonStyle(.mtaPrimary).padding(.horizontal, MTA.margin).padding(.bottom, 8)
+            }
+        } else {
+          VStack(alignment: .leading, spacing: 14) {
+            MTALabel(TripTimeline.dayTitle(day))
+            searchField
+            if !hits.isEmpty { resultsMap }
+            results
+            Spacer(minLength: 0)
+          }
+          .mtaScreen().padding(.top, 8)
+        }
       }
-      .mtaScreen().padding(.top, 8).padding(.bottom, 16)
       .background(MTA.surface)
-      .navigationTitle("Add a stop")
+      .navigationTitle(picked == nil ? "Add a stop" : "Place")
       .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel", systemImage: "xmark") { dismiss() } } }
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          if picked != nil {
+            Button("Back to results", systemImage: "chevron.left") { picked = nil; mapPick = nil }
+          } else {
+            Button("Cancel", systemImage: "xmark") { dismiss() }
+          }
+        }
+      }
+      .mapItemDetailSheet(item: $appleCard)
+      .task(id: query) {
+        let q = query
+        guard q.trimmingCharacters(in: .whitespaces).count >= 2 else { hits = []; searching = false; return }
+        searching = true
+        try? await Task.sleep(for: .milliseconds(350))
+        guard !Task.isCancelled else { return }
+        let found = await DayStops.search(q, city: city, near: near)
+        guard !Task.isCancelled else { return }
+        hits = found; searching = false
+      }
+      .task(id: picked?.id) {
+        scene = nil; sceneChecked = false
+        guard let item = picked?.item else { return }
+        scene = try? await MKLookAroundSceneRequest(mapItem: item).scene
+        sceneChecked = true
+      }
+      .onChange(of: mapPick) { _, id in
+        if let id, let h = hits.first(where: { $0.id == id }) { picked = h; focused = false }
+      }
+      .onAppear { focused = true }
     }
   }
 
-  private func add() async {
-    finding = true; error = nil
-    defer { finding = false }
-    guard let hit = await DayStops.find("\(name), \(city)", near: near) else {
-      error = "Couldn't find \"\(name)\" near \(city). Try its full name."
-      return
+  // MARK: Search
+
+  private var searchField: some View {
+    HStack(spacing: 10) {
+      Image(systemName: "magnifyingglass").foregroundStyle(MTA.text2)
+      TextField(city.isEmpty ? "Search places" : "Search places in \(city)", text: $query)
+        .mta(.body1).focused($focused).submitLabel(.search).autocorrectionDisabled()
+      if !query.isEmpty {
+        Button { query = ""; hits = [] } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(MTA.text2) }
+          .buttonStyle(.plain).accessibilityLabel("Clear")
+      }
     }
-    onAdd(DayStop(time: time, kind: "Stop", name: hit.name ?? name, why: "", address: hit.address,
-                  latitude: hit.coordinate.latitude, longitude: hit.coordinate.longitude, cost: 0))
+    .padding(.horizontal, 14).frame(minHeight: 50)
+    .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(MTA.border, lineWidth: 2) }
+  }
+
+  /// The results as pins, like Apple Maps. Tap a pin to open that place.
+  private var resultsMap: some View {
+    Map(initialPosition: .automatic, selection: $mapPick) {
+      ForEach(hits) { h in
+        Marker(h.name, systemImage: h.symbol, coordinate: h.coordinate).tint(MTA.accent).tag(h.id)
+      }
+    }
+    .mapStyle(.standard(pointsOfInterest: .excludingAll))
+    .frame(height: 170)
+    .clipShape(.rect(cornerRadius: 16))
+    .id(hits.map(\.id))
+  }
+
+  @ViewBuilder
+  private var results: some View {
+    if searching && hits.isEmpty {
+      HStack(spacing: 10) { ProgressView(); Text("Searching Apple Maps…").mta(.body2).foregroundStyle(MTA.text2) }
+    } else if !searching, hits.isEmpty, query.trimmingCharacters(in: .whitespaces).count >= 2 {
+      Text("No places found\(city.isEmpty ? "" : " near \(city)"). Try another name.").mta(.body2).foregroundStyle(MTA.text2)
+    } else if !hits.isEmpty {
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 0) {
+          ForEach(hits) { h in
+            Button { picked = h; focused = false } label: { row(h) }.buttonStyle(.plain)
+            if h != hits.last { Divider().padding(.leading, 52) }
+          }
+        }
+      }
+      .scrollDismissesKeyboard(.immediately)
+    }
+  }
+
+  private func row(_ h: DayStops.Hit) -> some View {
+    HStack(spacing: 12) {
+      icon(h)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(h.name).mta(.body1).fontWeight(.semibold).foregroundStyle(MTA.text).lineLimit(1)
+        Text(subtitle(h)).mta(.body2).foregroundStyle(MTA.text2).lineLimit(1)
+      }
+      Spacer(minLength: 0)
+      Image(systemName: "chevron.right").foregroundStyle(MTA.text2)
+    }
+    .padding(.vertical, 10).contentShape(.rect)
+    .accessibilityElement(children: .combine)
+  }
+
+  private func icon(_ h: DayStops.Hit) -> some View {
+    Image(systemName: h.symbol).font(.system(size: 15, weight: .semibold)).foregroundStyle(MTA.text)
+      .frame(width: 40, height: 40).background(MTA.raised, in: .circle)
+  }
+
+  private func subtitle(_ h: DayStops.Hit) -> String {
+    [DayStops.distance(near, h.coordinate), h.address.isEmpty ? nil : h.address].compactMap { $0 }.joined(separator: " · ")
+  }
+
+  // MARK: Place
+
+  /// What the place is before you add it: street photo, type and distance, address, phone, website,
+  /// and Apple's own place card (hours, and photos or reviews where Apple has them).
+  private func placeCard(_ h: DayStops.Hit) -> some View {
+    VStack(alignment: .leading, spacing: 14) {
+      photo(h)
+      VStack(alignment: .leading, spacing: 6) {
+        Text(h.name).mta(.headline).foregroundStyle(MTA.text)
+        HStack(spacing: 8) {
+          KindTag(text: h.kind)
+          Text([h.label, DayStops.distance(near, h.coordinate).map { "\($0) away" }].compactMap { $0 }.joined(separator: " · "))
+            .mta(.body2).foregroundStyle(MTA.text2)
+        }
+      }
+      OutlineCard(stroke: MTA.border) {
+        if !h.address.isEmpty { info("mappin.and.ellipse", h.address) }
+        if let phone = h.item?.phoneNumber, !phone.isEmpty, let tel = URL(string: "tel:" + phone.filter { $0.isNumber || $0 == "+" }) {
+          Link(destination: tel) { info("phone", phone, link: true) }
+        }
+        if let url = h.item?.url {
+          Link(destination: url) { info("globe", url.host() ?? url.absoluteString, link: true) }
+        }
+      }
+      if h.item != nil {
+        Button { appleCard = h.item } label: {
+          Label("Hours & more in Apple Maps", systemImage: "clock").frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.mtaSecondary)
+      }
+      MTALabel(TripTimeline.dayTitle(day))
+      OutlineCard(stroke: MTA.border) {
+        DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute).mta(.body1).tint(MTA.accent)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func photo(_ h: DayStops.Hit) -> some View {
+    Group {
+      if let scene {
+        LookAroundPreview(initialScene: scene, allowsNavigation: true, badgePosition: .topTrailing)
+      } else if sceneChecked {
+        Map(initialPosition: .camera(.init(centerCoordinate: h.coordinate, distance: 1200))) {
+          Marker(h.name, systemImage: h.symbol, coordinate: h.coordinate).tint(MTA.accent)
+        }
+      } else {
+        Rectangle().fill(MTA.raised).overlay { ProgressView() }
+      }
+    }
+    .frame(height: 200)
+    .clipShape(.rect(cornerRadius: 16))
+  }
+
+  private func info(_ symbol: String, _ text: String, link: Bool = false) -> some View {
+    HStack(spacing: 12) {
+      Image(systemName: symbol).foregroundStyle(MTA.text2).frame(width: 22)
+      Text(text).mta(.body1).foregroundStyle(link ? MTA.accent : MTA.text).lineLimit(2).multilineTextAlignment(.leading)
+      Spacer(minLength: 0)
+    }
+  }
+
+  private func add() {
+    guard let h = picked else { return }
+    onAdd(DayStop(time: time, kind: h.kind, name: h.name, why: h.label, address: h.address,
+                  latitude: h.coordinate.latitude, longitude: h.coordinate.longitude, cost: 0))
     dismiss()
   }
 }

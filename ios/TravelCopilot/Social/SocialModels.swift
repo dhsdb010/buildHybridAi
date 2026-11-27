@@ -155,3 +155,84 @@ enum MessageFilter {
     return String(out.prefix(maxLength))
   }
 }
+
+/// One stop in a room's shared plan (Figma 12 · screens 24–26). Stored at rooms/{id}/plan/{stopID}.
+struct SharedStop: Identifiable, Hashable, Sendable {
+  var id: String
+  var date: Date
+  var title: String
+  var detail: String
+  var kind: String
+  var latitude: Double?
+  var longitude: Double?
+  var addedBy: String
+  var addedByName: String
+  /// Set when someone other than the adder changed it ("Mina changed").
+  var editedByName: String?
+  /// Rough cost per person in US dollars, a note and the address, as in Plan a day.
+  var cost = 0
+  var note = ""
+  var address = ""
+
+  /// What the planner hands over before ids and authors exist.
+  struct Draft: Hashable, Sendable {
+    var date: Date
+    var title: String
+    var detail: String
+    var kind: String
+    var latitude: Double?
+    var longitude: Double?
+    var cost = 0
+    var note = ""
+    var address = ""
+  }
+}
+
+/// The shared plan grouped by day, for the room's pinned bar and the edit screen.
+enum SharedPlan {
+  static func days(_ stops: [SharedStop]) -> [Date] {
+    let cal = TripTimeline.calendar
+    return Array(Set(stops.map { cal.startOfDay(for: $0.date) })).sorted()
+  }
+
+  static func stops(on day: Date, _ stops: [SharedStop]) -> [SharedStop] {
+    stops.filter { TripTimeline.calendar.isDate($0.date, inSameDayAs: day) }.sorted { $0.date < $1.date }
+  }
+
+  /// "Dec 2–7 · 6 days · 14 stops"
+  static func summary(_ stops: [SharedStop]) -> String {
+    let d = days(stops)
+    guard let first = d.first, let last = d.last else { return "No stops yet" }
+    let f = Date.FormatStyle.dateTime.month(.abbreviated).day()
+    let range = first == last ? first.formatted(f)
+      : TripTimeline.calendar.isDate(first, equalTo: last, toGranularity: .month)
+        ? "\(first.formatted(f))–\(last.formatted(.dateTime.day()))" : "\(first.formatted(f)) – \(last.formatted(f))"
+    return "\(range) · \(d.count) day\(d.count == 1 ? "" : "s") · \(stops.count) stop\(stops.count == 1 ? "" : "s")"
+  }
+
+  /// Short lines for Blue: "Dec 3 10:00 teamLab Planets (See)".
+  static func lines(_ stops: [SharedStop]) -> [String] {
+    stops.sorted { $0.date < $1.date }.map {
+      "\($0.date.formatted(.dateTime.month(.abbreviated).day())) \(TripTimeline.time($0.date)) \($0.title)\($0.kind.isEmpty ? "" : " (\($0.kind))")"
+    }
+  }
+}
+
+extension SharedStop {
+  var hasCoordinate: Bool { (latitude ?? 0) != 0 || (longitude ?? 0) != 0 }
+
+  /// As a Plan a day stop, so the shared plan uses the same map, rows and stop detail.
+  func dayStop(id: UUID) -> DayStop {
+    DayStop(id: id, time: date, kind: kind.isEmpty ? "Stop" : kind, name: title, why: detail, address: address,
+            latitude: latitude ?? 0, longitude: longitude ?? 0, cost: cost, note: note)
+  }
+
+  /// Takes the edits from the stop detail screen.
+  func applying(_ d: DayStop) -> SharedStop {
+    var s = self
+    s.date = d.time; s.title = d.name; s.detail = d.why; s.kind = d.kind == "Stop" ? kind : d.kind
+    s.cost = d.cost; s.note = d.note; s.address = d.address
+    if d.latitude != 0 || d.longitude != 0 { s.latitude = d.latitude; s.longitude = d.longitude }
+    return s
+  }
+}

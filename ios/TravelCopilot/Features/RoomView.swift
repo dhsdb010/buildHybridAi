@@ -13,6 +13,10 @@ struct RoomView: View {
   @State private var addingPeople = false
   @State private var showInfo = false
   @State private var reporting: RoomMessage?
+  @State private var plan: [SharedStop] = []
+  @State private var stopPlan: (() -> Void)?
+  @State private var planning = false
+  @State private var showPlan = false
 
   private var room: TripRoom? { social.rooms.first { $0.id == roomID } }
   private var me: String { social.me?.id ?? "" }
@@ -38,6 +42,12 @@ struct RoomView: View {
       }
     }
     .navigationDestination(isPresented: $showInfo) { RoomInfoView(roomID: roomID) }
+    .navigationDestination(isPresented: $showPlan) {
+      SharedPlanView(roomID: roomID) { ask in text = ask; showPlan = false }
+    }
+    .fullScreenCover(isPresented: $planning) {
+      if let room { PlanView(room: room, onClose: { planning = false }) }
+    }
     .sheet(isPresented: $addingPeople) { if let room { AddPeopleSheet(room: room) } }
     .confirmationDialog("Report this message?", isPresented: Binding(get: { reporting != nil }, set: { if !$0 { reporting = nil } }),
                         titleVisibility: .visible) {
@@ -48,18 +58,21 @@ struct RoomView: View {
     .onAppear {
       guard stopListening == nil, let room else { return }
       stopListening = social.messages(room) { messages = $0 }
+      stopPlan = social.plan(room) { plan = $0 }
     }
-    .onDisappear { stopListening?(); stopListening = nil }
+    .onDisappear { stopListening?(); stopListening = nil; stopPlan?(); stopPlan = nil }
   }
 
   @ViewBuilder
   private func content(_ room: TripRoom) -> some View {
     VStack(spacing: 0) {
+      if !plan.isEmpty { planBar(room) }
       ScrollViewReader { proxy in
         ScrollView {
           VStack(alignment: .leading, spacing: 12) {
             membersBar(room)
             if room.members.count == 1 && room.owner == me { WhoIsComing(room: room) }
+            if plan.isEmpty { noPlanCard(room) }
             ForEach(messages) { m in bubble(m).id(m.id) }
             if social.blueThinking.contains(room.id) {
               HStack(spacing: 8) {
@@ -88,6 +101,46 @@ struct RoomView: View {
       }
       composer(room)
     }
+  }
+
+  /// Before there's a plan (Figma 12 · screen 22): the same planner as planning alone, for the room.
+  private func noPlanCard(_ room: TripRoom) -> some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(spacing: 10) {
+        BlueBadge(size: 32)
+        Text("No plan yet").mta(.subheadNormal).foregroundStyle(MTA.text)
+      }
+      if social.canEditPlan(room) {
+        Text("Plan it with Blue step by step: where, when, stay, eat, see. Everyone here gets the plan and can change it after.")
+          .mta(.body2).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
+        Button("Plan with Blue") { planning = true }.buttonStyle(.mtaPrimary)
+      } else {
+        Text("The plan shows here once someone who can edit makes it with Blue. You can ask @Blue questions any time.")
+          .mta(.body2).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
+      }
+    }
+    .padding(16)
+    .background(MTA.raised, in: .rect(cornerRadius: 20))
+  }
+
+  /// Pinned on top once shared (Figma 12 · screen 25); opens the plan to edit together.
+  private func planBar(_ room: TripRoom) -> some View {
+    Button { showPlan = true } label: {
+      HStack(spacing: 10) {
+        Image(systemName: "calendar").font(.system(size: 18, weight: .semibold)).foregroundStyle(MTA.accent)
+        VStack(alignment: .leading, spacing: 2) {
+          Text("Plan · \(room.name)").font(.system(size: 15, weight: .semibold)).foregroundStyle(MTA.text).lineLimit(1)
+          Text(SharedPlan.summary(plan) + (social.canEditPlan(room) ? " · tap to edit" : "")).mta(.body2).foregroundStyle(MTA.text2).lineLimit(1)
+        }
+        Spacer(minLength: 0)
+        Image(systemName: "chevron.right").foregroundStyle(MTA.text2)
+      }
+      .padding(.horizontal, 12).frame(minHeight: 56)
+      .background(MTA.raised, in: .rect(cornerRadius: 14))
+      .padding(.horizontal, MTA.gutter).padding(.top, 6).padding(.bottom, 4)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("Shared plan, \(SharedPlan.summary(plan))")
   }
 
   private func membersBar(_ room: TripRoom) -> some View {
@@ -204,7 +257,7 @@ struct RoomView: View {
         Task {
           await social.send(t, in: room)
           // Only the asker's iPhone asks Blue, so the room gets one answer.
-          if BlueInRoom.mentions(t) { await social.askBlue(t, in: room, recent: messages, ai: ai) }
+          if BlueInRoom.mentions(t) { await social.askBlue(t, in: room, recent: messages, plan: plan, ai: ai) }
         }
       }
       .labelStyle(.iconOnly).font(.system(size: 16, weight: .semibold)).foregroundStyle(MTA.onColor)
@@ -286,13 +339,13 @@ struct FriendPicker: View {
     }
   }
 
-  // The whole bar focuses the field; chips scroll on their own so the field always has room.
+  // Chips wrap onto more lines with the search field after them; the whole bar focuses the field.
   private var toBar: some View {
-    HStack(spacing: 8) {
+    HStack(alignment: .firstTextBaseline, spacing: 8) {
       Text("To:").mta(.body1).foregroundStyle(MTA.text2)
-      if !picked.isEmpty {
-        ScrollView(.horizontal) {
-          HStack(spacing: 6) {
+      VStack(alignment: .leading, spacing: 8) {
+        if !picked.isEmpty {
+          WrapLayout(spacing: 6) {
             ForEach(picked) { p in
               Button { toggle(p) } label: {
                 HStack(spacing: 4) { Text(p.name); Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
@@ -303,17 +356,14 @@ struct FriendPicker: View {
             }
           }
         }
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
-        .frame(maxWidth: 190)
-        .fixedSize(horizontal: picked.count <= 2, vertical: false)
+        TextField(picked.isEmpty ? "Search friends or @ID" : "Add more", text: $query)
+          .textInputAutocapitalization(.never).autocorrectionDisabled()
+          .focused($searching)
+          .mta(.body1).frame(maxWidth: .infinity, alignment: .leading)
       }
-      TextField(picked.isEmpty ? "Search friends or @ID" : "Add more", text: $query)
-        .textInputAutocapitalization(.never).autocorrectionDisabled()
-        .focused($searching)
-        .mta(.body1).frame(maxWidth: .infinity, alignment: .leading)
     }
-    .padding(.horizontal, 12).frame(minHeight: 48)
+    .padding(.horizontal, 12).padding(.vertical, 12)
+    .frame(minHeight: 48)
     .background(MTA.surface, in: .rect(cornerRadius: 14))
     .contentShape(.rect)
     .onTapGesture { searching = true }

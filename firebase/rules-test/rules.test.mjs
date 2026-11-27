@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { after, before, beforeEach, test } from 'node:test';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  arrayRemove, arrayUnion, deleteField, doc, getDoc, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch,
+  arrayRemove, arrayUnion, deleteDoc, deleteField, doc, getDoc, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch,
 } from 'firebase/firestore';
 
 let env;
@@ -209,4 +209,36 @@ test('Blue replies are posted by the asker under the name Blue', async () => {
     { author: A, authorName: 'Mina', text: 'fake', kind: 'blue', sentAt: serverTimestamp() }));
   await assertFails(setDoc(doc(alex, 'rooms', 'r1', 'messages', 'b3'),
     { author: A, authorName: 'Alex', text: 'x', kind: 'admin', sentAt: serverTimestamp() }));
+});
+
+test('shared plan: the owner shares, an editor changes, viewers and strangers cannot', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await updateDoc(doc(db, 'rooms', 'r1'), {
+      memberIds: arrayUnion(M), [`members.${M}`]: { name: 'Mina', handle: 'mina', role: 'editor' },
+    });
+    await setDoc(doc(db, 'rooms', 'r2'), {
+      name: 'View only', owner: A, memberIds: [A, M], friendsCanEdit: false, createdAt: Timestamp.now(),
+      members: { [A]: { name: 'Alex', handle: 'alex_k', role: 'owner' }, [M]: { name: 'Mina', handle: 'mina', role: 'viewer' } },
+    });
+  });
+  const stop = (uid, name, extra = {}) => ({ date: Timestamp.fromDate(new Date('2026-12-03T10:00:00Z')), title: 'teamLab Planets',
+    detail: 'art', kind: 'See', addedBy: uid, addedByName: name, updatedAt: serverTimestamp(), cost: 25, note: 'Book ahead', address: 'Toyosu', ...extra });
+  const alex = as(A), mina = as(M), ken = as(K);
+  // Owner shares the plan (batch).
+  const b = writeBatch(alex);
+  b.set(doc(alex, 'rooms', 'r1', 'plan', 's1'), stop(A, 'Alex'));
+  b.set(doc(alex, 'rooms', 'r1', 'plan', 's2'), stop(A, 'Alex', { title: 'Shibuya Sky', kind: 'See' }));
+  await assertSucceeds(b.commit());
+  // Editor moves a stop; can't rewrite who added it.
+  await assertSucceeds(setDoc(doc(mina, 'rooms', 'r1', 'plan', 's1'), stop(A, 'Alex', { editedByName: 'Mina' })));
+  await assertFails(setDoc(doc(mina, 'rooms', 'r1', 'plan', 's2'), stop(M, 'Mina')));
+  await assertSucceeds(getDoc(doc(mina, 'rooms', 'r1', 'plan', 's1')));
+  // Strangers can't read or write; viewers can't write.
+  await assertFails(getDoc(doc(ken, 'rooms', 'r1', 'plan', 's1')));
+  await assertFails(setDoc(doc(ken, 'rooms', 'r1', 'plan', 's9'), stop(K, 'Ken')));
+  await assertFails(setDoc(doc(mina, 'rooms', 'r2', 'plan', 's1'), stop(M, 'Mina')));
+  await assertSucceeds(setDoc(doc(alex, 'rooms', 'r2', 'plan', 's1'), stop(A, 'Alex')));
+  // Editor removes a stop.
+  await assertSucceeds(deleteDoc(doc(mina, 'rooms', 'r1', 'plan', 's2')));
 });

@@ -176,10 +176,10 @@ final class SocialService {
 
   /// @Blue: the asker's iPhone asks once (in the cloud, logged in the Routing Log) and posts the
   /// reply for everyone. Blue sees only this room's name, trip title and recent messages.
-  func askBlue(_ text: String, in room: TripRoom, recent: [RoomMessage], ai: AIService) async {
+  func askBlue(_ text: String, in room: TripRoom, recent: [RoomMessage], plan: [SharedStop] = [], ai: AIService) async {
     guard let me else { return }
     blueThinking.insert(room.id); defer { blueThinking.remove(room.id) }
-    let prompt = BlueInRoom.prompt(room: room, messages: recent, question: BlueInRoom.question(text), asker: me.name)
+    let prompt = BlueInRoom.prompt(room: room, messages: recent, question: BlueInRoom.question(text), asker: me.name, plan: plan)
     do {
       let (reply, _) = try await ai.generate("Room · @Blue", kind: .open, prompt: prompt,
                                              instructions: BlueInRoom.instructions, as: BlueGroupReply.self)
@@ -196,6 +196,48 @@ final class SocialService {
   func report(_ m: RoomMessage, in room: TripRoom, reason: String) async -> Bool {
     guard let me else { return false }
     return await run { try await self.backend.report(m, in: room, reason: reason, me: me) }
+  }
+
+  // MARK: Shared plan
+
+  /// Owners and editors change the plan; viewers suggest changes in the chat.
+  func canEditPlan(_ room: TripRoom) -> Bool {
+    guard let r = room.member(me?.id ?? "")?.role else { return false }
+    return r == .owner || (r == .editor && room.friendsCanEdit)
+  }
+
+  func plan(_ room: TripRoom, onChange: @escaping ([SharedStop]) -> Void) -> () -> Void {
+    backend.listenPlan(room: room.id, onChange: onChange)
+  }
+
+  /// The planner's result replaces the room's plan, and the chat says so.
+  func sharePlan(_ drafts: [SharedStop.Draft], in room: TripRoom) async -> Bool {
+    guard let me, canEditPlan(room), !drafts.isEmpty else { return false }
+    return await run {
+      try await self.backend.sharePlan(drafts, in: room, me: me)
+      let days = Set(drafts.map { TripTimeline.calendar.startOfDay(for: $0.date) }).count
+      try await self.backend.note("\(me.name) shared the plan · \(days) day\(days == 1 ? "" : "s"), \(drafts.count) stops", in: room, me: me)
+    }
+  }
+
+  /// Add or change a stop. `note` goes in the chat ("Mina moved Tokyo Tower to Dec 6").
+  func saveStop(_ stop: SharedStop, in room: TripRoom, note: String) async {
+    guard let me, canEditPlan(room) else { return }
+    var s = stop
+    if s.addedBy.isEmpty { s.addedBy = me.id; s.addedByName = me.name }
+    else if s.addedBy != me.id { s.editedByName = me.name }
+    _ = await run {
+      try await self.backend.saveStop(s, in: room, me: me)
+      try await self.backend.note(note, in: room, me: me)
+    }
+  }
+
+  func removeStop(_ stop: SharedStop, in room: TripRoom) async {
+    guard let me, canEditPlan(room) else { return }
+    _ = await run {
+      try await self.backend.removeStop(stop, in: room, me: me)
+      try await self.backend.note("\(me.name) removed \(stop.title)", in: room, me: me)
+    }
   }
 
   /// Account deletion: your ID, friends, invites and memberships. Your old messages stay, unnamed.
@@ -254,4 +296,10 @@ protocol SocialBackend: AnyObject {
   func send(_ text: String, in room: TripRoom, me: SocialUser, kind: RoomMessage.Kind) async throws
   func report(_ m: RoomMessage, in room: TripRoom, reason: String, me: SocialUser) async throws
   func deleteData(me: SocialUser) async throws
+  // Shared plan
+  func listenPlan(room: String, onChange: @escaping ([SharedStop]) -> Void) -> () -> Void
+  func sharePlan(_ drafts: [SharedStop.Draft], in room: TripRoom, me: SocialUser) async throws
+  func saveStop(_ stop: SharedStop, in room: TripRoom, me: SocialUser) async throws
+  func removeStop(_ stop: SharedStop, in room: TripRoom, me: SocialUser) async throws
+  func note(_ text: String, in room: TripRoom, me: SocialUser) async throws
 }

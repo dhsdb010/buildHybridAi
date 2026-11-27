@@ -85,11 +85,22 @@ struct PlanView: View {
   var onBooked: (() -> Void)?
   var onClose: () -> Void
 
-  init(template: PlanTemplate? = nil, onBooked: (() -> Void)? = nil, onClose: @escaping () -> Void) {
+  /// Planning for a trip room (Figma 12 · screens 23–24): same steps, for everyone in the room;
+  /// the last step shares the plan to the room.
+  var room: TripRoom?
+
+  init(template: PlanTemplate? = nil, room: TripRoom? = nil, onBooked: (() -> Void)? = nil, onClose: @escaping () -> Void) {
     self.onBooked = onBooked
     self.onClose = onClose
-    _s = State(initialValue: PlanSession(template: template))
+    self.room = room
+    let session = PlanSession(template: template)
+    if let room { session.brief.travelers = max(1, room.members.count) }
+    _s = State(initialValue: session)
   }
+
+  @Environment(SocialService.self) private var social
+  @State private var keepMine = true
+  @State private var sharing = false
 
   @Environment(AIService.self) private var ai
   @Environment(Connectivity.self) private var net
@@ -197,7 +208,18 @@ struct PlanView: View {
 
   private var briefStep: some View {
     VStack(alignment: .leading, spacing: 16) {
-      ChatAI("Hi! Where would you like to go? Or shall I suggest a few places?")
+      if let room {
+        HStack(spacing: 8) {
+          MemberStack(initials: room.members.map(\.initial), size: 24)
+          Text("For \(room.name) · \(room.members.count) \(room.members.count == 1 ? "person" : "people")").mta(.body2).fontWeight(.semibold)
+            .foregroundStyle(MTA.text)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(MTA.raised, in: .capsule)
+        ChatAI("Hi \(ListFormatter.localizedString(byJoining: room.members.map(\.name))))! Where would you like to go? Or shall I suggest a few places?")
+      } else {
+        ChatAI("Hi! Where would you like to go? Or shall I suggest a few places?")
+      }
       FlowLayout {
         QuickChip(text: "Suggest for me", selected: s.brief.country == nil && s.brief.typed.isEmpty) {
           s.brief.country = nil; s.brief.typed = ""
@@ -478,7 +500,13 @@ struct PlanView: View {
         }
       }
       NoticeCard(text: "Suggestions aren't bookings. Only pasted confirmations go into your Vault.")
-      if onBooked != nil {
+      if let room {
+        Toggle(isOn: $keepMine) { Text("Also add to my trip").mta(.body1).foregroundStyle(MTA.text) }
+          .tint(MTA.onTrack)
+        Text("Everyone in \(room.name) gets this plan and can change it. Your bookings and Vault stay on this iPhone.")
+          .mta(.body2).foregroundStyle(MTA.text2).fixedSize(horizontal: false, vertical: true)
+      }
+      if onBooked != nil && room == nil {
         Button("Book later") { Task { await save(); onClose() } }.buttonStyle(.mtaSecondary)
       }
     }
@@ -521,6 +549,9 @@ struct PlanView: View {
       return s.hotel == nil ? nil : StepAction(title: "Next: eat & see") { s.step = .eat; Task { await loadPlaces() } }
     case .eat: return StepAction(title: "Done, book these", enabled: !s.loading) { s.step = .book }
     case .book:
+      if room != nil {
+        return StepAction(title: sharing ? "Sharing…" : "Share plan with the room", enabled: !sharing) { Task { await shareToRoom() } }
+      }
       if let onBooked { return StepAction(title: "I've booked, paste confirmations") { Task { await save(); onBooked() } } }
       return StepAction(title: "Save to my trip") { Task { await save(); onClose() } }
     }
@@ -841,6 +872,16 @@ struct PlanView: View {
 
   private func toggle(_ p: PlanPlace) {
     if let i = s.kept.firstIndex(of: p) { s.kept.remove(at: i) } else { s.kept.append(p) }
+  }
+
+  /// Shares the plan to the room (and keeps a copy in your own trip when the switch is on).
+  private func shareToRoom() async {
+    guard let room else { return }
+    sharing = true; defer { sharing = false }
+    let drafts = PlanService.sharedStops(brief: s.brief, outline: s.outline, stops: s.dayStops, hotel: s.hotel, kept: s.kept)
+    guard await social.sharePlan(drafts, in: room) else { s.error = social.error ?? "Couldn't share the plan. Try again."; return }
+    if keepMine { await save() }
+    onClose()
   }
 
   private func save() async {

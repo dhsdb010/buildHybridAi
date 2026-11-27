@@ -39,6 +39,7 @@
 		4F3CCBC386A596D1DC65E69A /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4B1F716BFA6457A45F6FC5 /* WelcomeView.swift */; };
 		4F4CC24018A6BC22ECCD6C41 /* CardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885B7F4E78F0BE4ED942E4F6 /* CardViews.swift */; };
 		4FFC75FE7FF3C448A76355FA /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 95AAFA502E2AC7582C1402ED /* FirebaseAuth */; };
+		50082DAD50A8A0B988E6719C /* SharedPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D70877584976B15FB31457AF /* SharedPlanView.swift */; };
 		50EB0458D3FB3D4E6458A9D9 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = 2F9D8F0429A92267AA991FD6 /* FirebaseAILogic */; };
 		510DF67EBC8B2255EEA1496C /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F1789438F4D0CEC32FB024 /* Theme.swift */; };
 		512A06FAC332DB7B31704621 /* RoutingPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2332BD4A0E58A491B2DC949A /* RoutingPolicyTests.swift */; };
@@ -252,6 +253,7 @@
 		C33BC2EA6361EE2BB55A585F /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		C6BEAAE13097EA1E3C592B89 /* EmergencySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencySetupView.swift; sourceTree = "<group>"; };
 		CA5492B0747E7054BCBA3908 /* TripLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripLiveActivity.swift; sourceTree = "<group>"; };
+		D70877584976B15FB31457AF /* SharedPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPlanView.swift; sourceTree = "<group>"; };
 		D73B616FA1A9ACCB87CC0F8F /* SpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpikeView.swift; sourceTree = "<group>"; };
 		DA202436DE294BFF1AEF008F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		DB47F46C89D2B7D77711AF51 /* DayStops.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayStops.swift; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 				8DF4FDD0722375976D3DDC9F /* RoomView.swift */,
 				F2E61DA002322A92847F3F1B /* RoutingLogView.swift */,
 				650C8F1632B44DFCBC5B981D /* SettingsView.swift */,
+				D70877584976B15FB31457AF /* SharedPlanView.swift */,
 				73B01E54B5BE66127232A220 /* SignInView.swift */,
 				229406D623A78AE9C8FCA9E8 /* SpendView.swift */,
 				3A40447BA01D88A0365DFB46 /* TripSummaryView.swift */,
@@ -764,6 +767,7 @@
 				177FDBBEC63E759786A915E9 /* RoutingLogView.swift in Sources */,
 				935CB47592B1C362B3F95B11 /* RoutingPolicy.swift in Sources */,
 				C38172CE0676692F4B6FEB59 /* SettingsView.swift in Sources */,
+				50082DAD50A8A0B988E6719C /* SharedPlanView.swift in Sources */,
 				89B1BC6196B581658C1CC3F0 /* SignInView.swift in Sources */,
 				C9DD4081CEE3B275A36168FF /* SocialModels.swift in Sources */,
 				1F7D28EB32A9AAD97E849B96 /* SocialService.swift in Sources */,

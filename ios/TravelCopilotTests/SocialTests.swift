@@ -1,3 +1,4 @@
+import MapKit
 import Foundation
 import Testing
 @testable import TravelCopilot
@@ -146,5 +147,58 @@ import Testing
     let text = "Saturday works. @Mina @Blue is it open? mail a@b.com @ken"
     let words = Mentions.ranges(in: text, room: room).map { String(text[$0]) }
     #expect(words == ["@Mina", "@Blue"])
+  }
+}
+
+@Suite struct SharedPlanTests {
+  let cal = TripTimeline.calendar
+  func at(_ day: Int, _ hour: Int) -> Date {
+    cal.date(from: DateComponents(year: 2026, month: 12, day: day, hour: hour))!
+  }
+  func stop(_ day: Int, _ hour: Int, _ title: String) -> SharedStop {
+    SharedStop(id: title, date: at(day, hour), title: title, detail: "", kind: "See", addedBy: "me", addedByName: "Alex")
+  }
+
+  @Test func summaryAndDays() {
+    let stops = [stop(3, 10, "teamLab"), stop(2, 18, "Shibuya Sky"), stop(3, 13, "Toyosu"), stop(7, 11, "Shopping")]
+    #expect(SharedPlan.days(stops).count == 3)
+    #expect(SharedPlan.summary(stops) == "Dec 2–7 · 3 days · 4 stops")
+    #expect(SharedPlan.stops(on: at(3, 0), stops).map(\.title) == ["teamLab", "Toyosu"])
+    #expect(SharedPlan.summary([]) == "No stops yet")
+  }
+
+  @MainActor @Test func plannerOutlineBecomesStops() {
+    let brief = PlanBrief(start: at(2, 0), end: at(4, 0))
+    let outline = [DayIdea(title: "Arrive · Shibuya", area: "Shibuya"), DayIdea(title: "Art day", area: "Roppongi"),
+                   DayIdea(title: "Fly home", area: "Haneda")]
+    let drafts = PlanService.sharedStops(brief: brief, outline: outline, hotel: nil, kept: [])
+    #expect(drafts.map(\.title) == ["Arrive · Shibuya", "Art day", "Fly home"])
+    #expect(cal.component(.hour, from: drafts[0].date) == 9)
+    #expect(cal.component(.day, from: drafts[2].date) == 4)
+  }
+
+  @Test func blueSeesTheSharedPlan() {
+    let room = TripRoom(id: "r", name: "Tokyo trip", owner: "me", members: [.init(id: "me", name: "Alex", handle: "alex_k", role: .owner)],
+                        tripTitle: nil, friendsCanEdit: true, createdAt: Date())
+    let p = BlueInRoom.prompt(room: room, messages: [], question: "swap Dec 3?", asker: "Alex", plan: [stop(3, 10, "teamLab")])
+    #expect(p.contains("Shared plan:"))
+    #expect(p.contains("teamLab (See)"))
+  }
+}
+
+@Suite("Add a stop search") @MainActor
+struct AddStopSearchTests {
+  @Test func categoriesBecomeKindsAndIcons() {
+    #expect(DayStops.style(.cafe) == ("cup.and.saucer", "Food", "Café"))
+    #expect(DayStops.style(.hotel).kind == "Stay")
+    #expect(DayStops.style(.landmark).label == "Landmark")
+    #expect(DayStops.style(nil) == ("mappin", "Stop", "Place"))
+  }
+
+  @Test func distanceReadsLikeMaps() {
+    let a = CLLocationCoordinate2D(latitude: 35.6586, longitude: 139.7454)   // Tokyo Tower
+    #expect(DayStops.distance(nil, a) == nil)
+    #expect(DayStops.distance(a, CLLocationCoordinate2D(latitude: 35.6616, longitude: 139.7454))?.hasSuffix(" m") == true)
+    #expect(DayStops.distance(a, CLLocationCoordinate2D(latitude: 35.6595, longitude: 139.7005)) == "4.1 km")
   }
 }

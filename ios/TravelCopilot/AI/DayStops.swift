@@ -81,6 +81,72 @@ enum DayStops {
     return (item.name, item.address?.shortAddress ?? item.address?.fullAddress ?? "", c)
   }
 
+  /// One Apple Maps search result for Add a stop.
+  struct Hit: Identifiable, Equatable {
+    let id = UUID()
+    let name: String
+    let address: String
+    let coordinate: CLLocationCoordinate2D
+    let symbol: String   // SF Symbol for the kind of place
+    let kind: String     // "Food", "See", "Stay", "Shop" or "Stop"
+    let label: String    // "Landmark", "Hotel", "Café"…
+    var item: MKMapItem? = nil
+    static func == (a: Hit, b: Hit) -> Bool { a.id == b.id }
+  }
+
+  /// Up to 8 places matching what's typed, near the day's stops (or in the city), like Apple Maps search.
+  static func search(_ query: String, city: String, near center: CLLocationCoordinate2D?) async -> [Hit] {
+    let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard q.count >= 2 else { return [] }
+    let request = MKLocalSearch.Request()
+    request.naturalLanguageQuery = center == nil && !city.isEmpty ? "\(q), \(city)" : q
+    request.resultTypes = [.pointOfInterest, .address]
+    if let center { request.region = MKCoordinateRegion(center: center, latitudinalMeters: 30_000, longitudinalMeters: 30_000) }
+    guard let items = try? await MKLocalSearch(request: request).start().mapItems else { return [] }
+    return items.compactMap { item -> Hit? in
+      let c = item.location.coordinate
+      if let center, PlaceFacts.meters(center.latitude, center.longitude, c.latitude, c.longitude) > 40_000 { return nil }
+      let (symbol, kind, label) = style(item.pointOfInterestCategory)
+      return Hit(name: item.name ?? q, address: item.address?.shortAddress ?? item.address?.fullAddress ?? "",
+                 coordinate: c, symbol: symbol, kind: kind, label: label, item: item)
+    }
+    .prefix(8).map { $0 }
+  }
+
+  /// An icon, a stop kind and a plain label for an Apple Maps category.
+  static func style(_ c: MKPointOfInterestCategory?) -> (symbol: String, kind: String, label: String) {
+    switch c {
+    case .restaurant?: return ("fork.knife", "Food", "Restaurant")
+    case .foodMarket?: return ("basket", "Food", "Food market")
+    case .bakery?: return ("birthday.cake", "Food", "Bakery")
+    case .cafe?: return ("cup.and.saucer", "Food", "Café")
+    case .nightlife?, .brewery?, .winery?: return ("wineglass", "Food", "Bar")
+    case .hotel?: return ("bed.double", "Stay", "Hotel")
+    case .museum?: return ("building.columns", "See", "Museum")
+    case .library?: return ("books.vertical", "See", "Library")
+    case .park?, .nationalPark?: return ("tree", "See", "Park")
+    case .beach?: return ("beach.umbrella", "See", "Beach")
+    case .amusementPark?: return ("ticket", "See", "Amusement park")
+    case .aquarium?: return ("fish", "See", "Aquarium")
+    case .zoo?: return ("pawprint", "See", "Zoo")
+    case .theater?, .movieTheater?: return ("theatermasks", "See", "Theater")
+    case .stadium?: return ("sportscourt", "See", "Stadium")
+    case .landmark?, .castle?, .fortress?: return ("building.2", "See", "Landmark")
+    case .store?: return ("bag", "Shop", "Shop")
+    case .airport?: return ("airplane", "Stop", "Airport")
+    case .publicTransport?: return ("tram", "Stop", "Station")
+    case nil: return ("mappin", "Stop", "Place")
+    default: return ("mappin", "Stop", "Place")
+    }
+  }
+
+  /// "400 m", "1.2 km".
+  static func distance(_ a: CLLocationCoordinate2D?, _ b: CLLocationCoordinate2D) -> String? {
+    guard let a else { return nil }
+    let m = PlaceFacts.meters(a.latitude, a.longitude, b.latitude, b.longitude)
+    return m < 1000 ? "\(max(50, Int((m / 50).rounded()) * 50)) m" : String(format: "%.1f km", m / 1000)
+  }
+
   static func at(_ hhmm: String, on day: Date) -> Date {
     let parts = hhmm.split(separator: ":").compactMap { Int($0) }
     let cal = TripTimeline.calendar

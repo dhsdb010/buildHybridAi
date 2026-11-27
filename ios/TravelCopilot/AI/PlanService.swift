@@ -563,3 +563,40 @@ enum PlanService {
     try? context.save()
   }
 }
+
+extension PlanService {
+  /// The plan as shared stops for a trip room, with the same days, times and order as `save`:
+  /// timed stops when a day has them, otherwise the day's theme at 9:00, then kept food (12:30,
+  /// 19:00) and sights (10:00, 13:00…), and the hotel on day 1 at 15:00.
+  static func sharedStops(brief: PlanBrief, outline: [DayIdea], stops: [Int: [DayStop]] = [:],
+                          hotel: PlanPlace?, kept: [PlanPlace]) -> [SharedStop.Draft] {
+    let cal = TripTimeline.calendar
+    func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+      let d = cal.date(byAdding: .day, value: day, to: cal.startOfDay(for: brief.start)) ?? brief.start
+      return cal.date(bySettingHour: hour, minute: minute, second: 0, of: d) ?? d
+    }
+    var out: [SharedStop.Draft] = []
+    if let hotel { out.append(.init(date: at(0, 15), title: hotel.name, detail: "Check in · \(hotel.area)", kind: "Stay",
+                                    latitude: hotel.latitude, longitude: hotel.longitude)) }
+    for (i, d) in outline.enumerated() {
+      guard let dayStops = stops[i], !dayStops.isEmpty else {
+        out.append(.init(date: at(i, 9), title: d.title, detail: d.area, kind: ""))
+        continue
+      }
+      for st in dayStops {
+        out.append(.init(date: st.time, title: st.name, detail: st.why, kind: st.kind, latitude: st.latitude, longitude: st.longitude,
+                         cost: st.cost, note: st.note, address: st.address))
+      }
+    }
+    var foodSlot: [Int: Int] = [:]
+    for p in kept {
+      let day = p.day ?? 0
+      let date: Date
+      if p.kind == .food { let n = foodSlot[day, default: 0]; foodSlot[day] = n + 1; date = n == 0 ? at(day, 12, 30) : at(day, 19) }
+      else { date = at(day, 10 + 3 * (kept.filter { $0.kind == .sight && $0.day == day }.firstIndex(of: p) ?? 0)) }
+      out.append(.init(date: date, title: p.name, detail: p.why, kind: p.kind == .food ? "Food" : "See",
+                       latitude: p.latitude, longitude: p.longitude))
+    }
+    return out.sorted { $0.date < $1.date }
+  }
+}

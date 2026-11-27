@@ -54,6 +54,14 @@ rules_version = '2';
 //     'blue' is Blue's answer to an @Blue question, posted by the asker; authorName must be "Blue"
 //   Members read and create. No updates or deletes.
 //
+// Collection: rooms/{roomId}/plan   Document ID: auto (one per stop)
+//   - date: timestamp (required), title: string (1..120), detail: string (0..300), kind: string (0..20)
+//   - latitude, longitude: number (optional)
+//   - addedBy: uid (== auth uid on create, immutable), addedByName: string (1..60, immutable)
+//   - editedByName: string (optional, 1..60), updatedAt: timestamp (request.time)
+//   - cost: int (optional, 0..100000 USD per person), note: string (optional, 0..300), address: string (optional, 0..200)
+//   Members read. The owner, or editors when friendsCanEdit, add, change and remove stops.
+//
 // Collection: reports          Document ID: auto
 //   - reporter (== auth uid), roomId, messageId, author: string; text: string (0..2000);
 //     reason: string (1..60); createdAt: timestamp (request.time)
@@ -327,6 +335,35 @@ service cloud.firestore {
         && (isAddingOneFriend() || isRemovingOne() || isPostingLast());
 
       allow delete: if isAuthenticated() && resource.data.owner == request.auth.uid;
+
+      // The group's shared plan: owners, and editors when friends can edit, change it.
+      function canEditPlan() {
+        let r = get(/databases/$(database)/documents/rooms/$(roomId)).data;
+        let role = r.members[request.auth.uid].role;
+        return isAuthenticated() && request.auth.uid in r.memberIds
+          && (role == 'owner' || (role == 'editor' && r.friendsCanEdit == true));
+      }
+      function isValidStop() {
+        return hasOnlyAllowedFields(['date', 'title', 'detail', 'kind', 'latitude', 'longitude', 'addedBy', 'addedByName', 'editedByName', 'updatedAt', 'cost', 'note', 'address'])
+          && hasRequiredFields(['date', 'title', 'detail', 'kind', 'addedBy', 'addedByName', 'updatedAt'])
+          && data().date is timestamp
+          && isStr(data().title, 1, 120) && isStr(data().detail, 0, 300) && isStr(data().kind, 0, 20)
+          && (!('latitude' in data()) || (data().latitude is number && data().latitude >= -90 && data().latitude <= 90))
+          && (!('longitude' in data()) || (data().longitude is number && data().longitude >= -180 && data().longitude <= 180))
+          && isUid(data().addedBy) && isStr(data().addedByName, 1, 60)
+          && (!('editedByName' in data()) || isStr(data().editedByName, 1, 60))
+          && (!('cost' in data()) || (data().cost is int && data().cost >= 0 && data().cost <= 100000))
+          && (!('note' in data()) || isStr(data().note, 0, 300))
+          && (!('address' in data()) || isStr(data().address, 0, 200))
+          && isNow(data().updatedAt);
+      }
+      match /plan/{stopId} {
+        allow read: if isMemberOf(roomId);
+        allow create: if canEditPlan() && isValidStop() && data().addedBy == request.auth.uid;
+        allow update: if canEditPlan() && isValidStop()
+          && data().addedBy == resource.data.addedBy && data().addedByName == resource.data.addedByName;
+        allow delete: if canEditPlan();
+      }
 
       match /messages/{messageId} {
         allow read: if isMemberOf(roomId);

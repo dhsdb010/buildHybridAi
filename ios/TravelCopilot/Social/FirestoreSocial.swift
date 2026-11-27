@@ -278,6 +278,65 @@ final class FirestoreSocialBackend: SocialBackend {
     ])
   }
 
+  // MARK: Shared plan (rooms/{id}/plan/{stopID})
+
+  func listenPlan(room: String, onChange: @escaping ([SharedStop]) -> Void) -> () -> Void {
+    guard let db else { return {} }
+    let reg = db.collection("rooms").document(room).collection("plan").order(by: "date").limit(to: 200)
+      .addSnapshotListener { snap, _ in
+        let list: [SharedStop] = snap?.documents.compactMap { doc in
+          let d = doc.data()
+          guard let date = (d["date"] as? Timestamp)?.dateValue(), let title = d["title"] as? String else { return nil }
+          return SharedStop(id: doc.documentID, date: date, title: title, detail: d["detail"] as? String ?? "",
+                            kind: d["kind"] as? String ?? "", latitude: d["latitude"] as? Double, longitude: d["longitude"] as? Double,
+                            addedBy: d["addedBy"] as? String ?? "", addedByName: d["addedByName"] as? String ?? "",
+                            editedByName: d["editedByName"] as? String, cost: d["cost"] as? Int ?? 0,
+                            note: d["note"] as? String ?? "", address: d["address"] as? String ?? "")
+        } ?? []
+        MainActor.assumeIsolated { onChange(list) }
+      }
+    return { reg.remove() }
+  }
+
+  private static func stopData(_ s: SharedStop) -> [String: Any] {
+    var d: [String: Any] = ["date": Timestamp(date: s.date), "title": String(s.title.prefix(120)), "detail": String(s.detail.prefix(300)),
+                            "kind": String(s.kind.prefix(20)), "addedBy": s.addedBy, "addedByName": s.addedByName,
+                            "updatedAt": FieldValue.serverTimestamp()]
+    if let lat = s.latitude, let lon = s.longitude { d["latitude"] = lat; d["longitude"] = lon }
+    if let e = s.editedByName { d["editedByName"] = e }
+    d["cost"] = max(0, min(s.cost, 100_000)); d["note"] = String(s.note.prefix(300)); d["address"] = String(s.address.prefix(200))
+    return d
+  }
+
+  /// Replaces the room's plan with the planner's result (one batch, so friends never see half a plan).
+  func sharePlan(_ drafts: [SharedStop.Draft], in room: TripRoom, me: SocialUser) async throws {
+    let db = try store()
+    let plan = db.collection("rooms").document(room.id).collection("plan")
+    let old = try await plan.getDocuments().documents
+    let b = db.batch()
+    for d in old { b.deleteDocument(d.reference) }
+    for d in drafts.prefix(150) {
+      let ref = plan.document()
+      b.setData(Self.stopData(SharedStop(id: ref.documentID, date: d.date, title: d.title, detail: d.detail, kind: d.kind,
+                                         latitude: d.latitude, longitude: d.longitude, addedBy: me.id, addedByName: me.name,
+                                         cost: d.cost, note: d.note, address: d.address)),
+                forDocument: ref)
+    }
+    try await b.commit()
+  }
+
+  func saveStop(_ stop: SharedStop, in room: TripRoom, me: SocialUser) async throws {
+    let plan = try store().collection("rooms").document(room.id).collection("plan")
+    let ref = stop.id.isEmpty ? plan.document() : plan.document(stop.id)
+    try await ref.setData(Self.stopData(stop))
+  }
+
+  func removeStop(_ stop: SharedStop, in room: TripRoom, me: SocialUser) async throws {
+    try await store().collection("rooms").document(room.id).collection("plan").document(stop.id).delete()
+  }
+
+  func note(_ text: String, in room: TripRoom, me: SocialUser) async throws { try await system(text, room: room.id, me: me) }
+
   // MARK: Delete account
 
   func deleteData(me: SocialUser) async throws {
